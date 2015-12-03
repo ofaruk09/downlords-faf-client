@@ -187,6 +187,19 @@ public class ReplayServiceImpl implements ReplayService {
     }
   }
 
+  @Override
+  public Path download(int id) {
+    ReplayDownloadTask task = applicationContext.getBean(ReplayDownloadTask.class);
+    task.setReplayId(id);
+    Path replayPath = null;
+    try {
+      replayPath = task.call();
+    } catch (Exception e) {
+      logger.warn("Error downloading replay: {}", id);
+    }
+    return replayPath;
+  }
+
   private void runReplayFile(Path path) {
     try {
       String fileName = path.getFileName().toString();

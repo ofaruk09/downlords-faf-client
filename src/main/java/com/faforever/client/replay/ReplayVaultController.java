@@ -1,33 +1,23 @@
 package com.faforever.client.replay;
 
-import com.faforever.client.fx.FxmlLoader;
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.map.MapService;
 import com.faforever.client.notification.Action;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.task.TaskService;
-import com.faforever.client.util.TimeService;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
-import javafx.application.Platform;
-import javafx.beans.binding.StringBinding;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableMap;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableCell;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTableRow;
-import javafx.scene.control.TreeTableView;
-import javafx.scene.control.cell.TextFieldTreeTableCell;
-import javafx.scene.image.ImageView;
-import javafx.util.StringConverter;
-import org.jetbrains.annotations.NotNull;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -35,223 +25,76 @@ import org.springframework.context.ApplicationContext;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.lang.invoke.MethodHandles;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public class ReplayVaultController {
 
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   @FXML
-  TreeTableView<ReplayInfoBean> replayVaultRoot;
+  StackPane replayVaultRoot;
   @FXML
-  TreeTableColumn<ReplayInfoBean, Number> idColumn;
+  VBox contentPane;
   @FXML
-  TreeTableColumn<ReplayInfoBean, String> titleColumn;
+  VBox loadingPane;
   @FXML
-  TreeTableColumn<ReplayInfoBean, String> playersColumn;
+  TextField mapField;
   @FXML
-  TreeTableColumn<ReplayInfoBean, Instant> timeColumn;
+  MenuButton gameTypeMenu;
   @FXML
-  TreeTableColumn<ReplayInfoBean, Duration> durationColumn;
+  TextField playerOneField;
   @FXML
-  TreeTableColumn<ReplayInfoBean, String> gameTypeColumn;
+  TextField playerTwoField;
   @FXML
-  TreeTableColumn<ReplayInfoBean, String> mapColumn;
+  TextField playerOneFactionField;
+  @FXML
+  TextField playerTwoFactionField;
+  @FXML
+  TextField maxRatingField;
+  @FXML
+  TextField minRatingField;
+  @FXML
+  MenuButton selectRatingTypeMenu;
+  @FXML
+  MenuItem globalRatingTypeMenuItem;
+  @FXML
+  MenuItem ladderRatingTypeMenuItem;
+  @FXML
+  MenuButton sortByMenu;
+  @FXML
+  MenuItem sortByDateMenuItem;
+  @FXML
+  MenuItem sortByMostLikedMenuItem;
+  @FXML
+  MenuItem sortByMostDownloadedMenuItem;
+  @FXML
+  MenuItem sortByHighestAverageGlobalRatingMenuItem;
+  @FXML
+  MenuItem sortByHighestAverageLadderRatingMenuItem;
+  @FXML
+  CheckBox displayWinnersCheckBox;
+  @FXML
+  VBox searchResultGroup;
+  @FXML
+  FlowPane searchResultPane;
 
-  @Resource
-  NotificationService notificationService;
-  @Resource
-  ReplayService replayService;
-  @Resource
-  MapService mapService;
-  @Resource
-  TaskService taskService;
-  @Resource
-  I18n i18n;
-  @Resource
-  TimeService timeService;
-  @Resource
-  ReportingService reportingService;
-  @Resource
-  FxmlLoader fxmlLoader;
   @Resource
   ApplicationContext applicationContext;
   @Resource
-  Locale locale;
+  TaskService taskService;
+  @Resource
+  NotificationService notificationService;
+  @Resource
+  I18n i18n;
+  @Resource
+  ReportingService reportingService;
+  @Resource
+  ReplayService replayService;
 
-  @VisibleForTesting
-  TreeItem<ReplayInfoBean> localReplaysRoot;
-  @VisibleForTesting
-  TreeItem<ReplayInfoBean> onlineReplaysRoot;
-
-
-  @SuppressWarnings("unchecked")
   @PostConstruct
   void postConstruct() {
-    localReplaysRoot = new TreeItem<>(new ReplayInfoBean(i18n.get("replays.localReplays")));
-    localReplaysRoot.setExpanded(true);
 
-    onlineReplaysRoot = new TreeItem<>(new ReplayInfoBean(i18n.get("replays.onlineReplays")));
-    onlineReplaysRoot.setExpanded(true);
-
-    TreeItem<ReplayInfoBean> tableRoot = new TreeItem<>(new ReplayInfoBean("invisibleRootItem"));
-    tableRoot.getChildren().addAll(localReplaysRoot, onlineReplaysRoot);
-
-    replayVaultRoot.setRoot(tableRoot);
-    replayVaultRoot.setRowFactory(param -> replayRowFactory());
-    replayVaultRoot.getSortOrder().setAll(Collections.singletonList(timeColumn));
-
-    idColumn.setCellValueFactory(param -> param.getValue().getValue().idProperty());
-    idColumn.setCellFactory(this::idCellFactory);
-
-    titleColumn.setCellValueFactory(param -> param.getValue().getValue().titleProperty());
-
-    timeColumn.setCellValueFactory(param -> param.getValue().getValue().startTimeProperty());
-    timeColumn.setCellFactory(this::timeCellFactory);
-    timeColumn.setSortType(TreeTableColumn.SortType.DESCENDING);
-
-    gameTypeColumn.setCellValueFactory(param -> param.getValue().getValue().gameTypeProperty());
-
-    mapColumn.setCellValueFactory(param -> param.getValue().getValue().mapProperty());
-    mapColumn.setCellFactory(this::mapCellFactory);
-
-    playersColumn.setCellValueFactory(this::playersValueFactory);
-
-    durationColumn.setCellValueFactory(this::durationCellValueFactory);
-    durationColumn.setCellFactory(this::durationCellFactory);
-  }
-
-  @NotNull
-  private TreeTableRow<ReplayInfoBean> replayRowFactory() {
-    TreeTableRow<ReplayInfoBean> row = new TreeTableRow<>();
-    row.setOnMouseClicked(event -> {
-      // If ID == 0, this isn't an entry but root node
-      if (event.getClickCount() == 2 && !row.isEmpty() && row.getItem().getId() != 0) {
-        replayService.runReplay(row.getItem());
-      }
-    });
-    return row;
-  }
-
-  private ObservableValue<String> playersValueFactory(TreeTableColumn.CellDataFeatures<ReplayInfoBean, String> features) {
-    return new StringBinding() {
-      @Override
-      protected String computeValue() {
-        ReplayInfoBean replayInfoBean = features.getValue().getValue();
-
-        ObservableMap<String, List<String>> teams = replayInfoBean.getTeams();
-        if (teams.isEmpty()) {
-          return "";
-        }
-
-        ArrayList<String> teamsAsStrings = new ArrayList<>();
-        for (List<String> playerNames : teams.values()) {
-          Collections.sort(playerNames);
-          teamsAsStrings.add(Joiner.on(i18n.get("textSeparator")).join(playerNames));
-        }
-
-        return Joiner.on(i18n.get("vsSeparator")).join(teamsAsStrings);
-      }
-    };
-  }
-
-  private TreeTableCell<ReplayInfoBean, Instant> timeCellFactory(TreeTableColumn<ReplayInfoBean, Instant> column) {
-    TextFieldTreeTableCell<ReplayInfoBean, Instant> cell = new TextFieldTreeTableCell<>();
-    cell.setConverter(new StringConverter<Instant>() {
-      @Override
-      public String toString(Instant object) {
-        return timeService.lessThanOneDayAgo(object);
-      }
-
-      @Override
-      public Instant fromString(String string) {
-        return null;
-      }
-    });
-    return cell;
-  }
-
-  private TreeTableCell<ReplayInfoBean, String> mapCellFactory(TreeTableColumn<ReplayInfoBean, String> column) {
-    final ImageView imageVew = fxmlLoader.loadAndGetRoot("map_preview_table_cell.fxml", this);
-
-    TreeTableCell<ReplayInfoBean, String> cell = new TreeTableCell<ReplayInfoBean, String>() {
-
-      @Override
-      protected void updateItem(String mapName, boolean empty) {
-        super.updateItem(mapName, empty);
-
-        if (empty || mapName == null) {
-          setText(null);
-          setGraphic(null);
-        } else {
-          imageVew.setImage(mapService.loadSmallPreview(mapName));
-          setGraphic(imageVew);
-          setText(mapName);
-        }
-      }
-    };
-    cell.setGraphic(imageVew);
-
-    return cell;
-  }
-
-  private TreeTableCell<ReplayInfoBean, Number> idCellFactory(TreeTableColumn<ReplayInfoBean, Number> column) {
-    TextFieldTreeTableCell<ReplayInfoBean, Number> cell = new TextFieldTreeTableCell<>();
-    cell.setConverter(new StringConverter<Number>() {
-      @Override
-      public String toString(Number object) {
-        if (object.intValue() == 0) {
-          return "";
-        }
-        return String.format(locale, "%d", object.intValue());
-      }
-
-      @Override
-      public Number fromString(String string) {
-        return null;
-      }
-    });
-    return cell;
-  }
-
-  private TreeTableCell<ReplayInfoBean, Duration> durationCellFactory(TreeTableColumn<ReplayInfoBean, Duration> column) {
-    TextFieldTreeTableCell<ReplayInfoBean, Duration> cell = new TextFieldTreeTableCell<>();
-    cell.setConverter(new StringConverter<Duration>() {
-      @Override
-      public String toString(Duration object) {
-        if (object == null) {
-          return "";
-        }
-        return timeService.shortDuration(object);
-      }
-
-      @Override
-      public Duration fromString(String string) {
-        return null;
-      }
-    });
-    return cell;
-  }
-
-  @NotNull
-  private ObservableValue<Duration> durationCellValueFactory(TreeTableColumn.CellDataFeatures<ReplayInfoBean, Duration> param) {
-    ReplayInfoBean replayInfoBean = param.getValue().getValue();
-    Instant startTime = replayInfoBean.getStartTime();
-    Instant endTime = replayInfoBean.getEndTime();
-
-    if (startTime == null || endTime == null) {
-      return new SimpleObjectProperty<>(null);
-    }
-
-    return new SimpleObjectProperty<>(Duration.between(startTime, endTime));
   }
 
   public CompletableFuture<Void> loadLocalReplaysInBackground() {
@@ -262,7 +105,7 @@ public class ReplayVaultController {
         .exceptionally(throwable -> {
               logger.warn("Error while loading local replays", throwable);
               notificationService.addNotification(new PersistentNotification(
-                  i18n.get("replays.loadingLocalTask.failed"),
+                  i18n.get("replayVault.loadingLocalTask.failed"),
                   Severity.ERROR,
                   Collections.singletonList(new Action(i18n.get("report"), event -> reportingService.reportError(throwable)))
               ));
@@ -271,19 +114,13 @@ public class ReplayVaultController {
         );
   }
 
-  private void addLocalReplays(Collection<ReplayInfoBean> result) {
-    Collection<TreeItem<ReplayInfoBean>> items = result.stream()
-        .map(TreeItem::new).collect(Collectors.toCollection(ArrayList::new));
-    Platform.runLater(() -> localReplaysRoot.getChildren().addAll(items));
-  }
-
   public void loadOnlineReplaysInBackground() {
     replayService.getOnlineReplays()
         .thenAccept(this::addOnlineReplays)
         .exceptionally(throwable -> {
           logger.warn("Error while loading online replays", throwable);
           notificationService.addNotification(new PersistentNotification(
-              i18n.get("replays.loadingOnlineTask.failed"),
+              i18n.get("replayVault.loadingOnlineTask.failed"),
               Severity.ERROR,
               Collections.singletonList(new Action(i18n.get("report"), event -> reportingService.reportError(throwable)))
           ));
@@ -291,13 +128,49 @@ public class ReplayVaultController {
         });
   }
 
-  private void addOnlineReplays(Collection<ReplayInfoBean> result) {
-    Collection<TreeItem<ReplayInfoBean>> items = result.stream()
-        .map(TreeItem::new).collect(Collectors.toCollection(ArrayList::new));
-    Platform.runLater(() -> onlineReplaysRoot.getChildren().addAll(items));
+  @FXML
+  void onGlobalRatingType(ActionEvent actionEvent) {
   }
 
-  public Node getRoot() {
+  @FXML
+  void onLadderRatingType(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onSortByDate(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onSortByMostLiked(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onSortByMostDownloaded(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onHighestAverageGlobalRating(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onHighestAverageLadderRating(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onReset(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onSearchReplay(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onAdvancedSearchFields(Event event) {
+  }
+
+  @FXML
+  Node getRoot() {
     return replayVaultRoot;
   }
+
 }
