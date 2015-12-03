@@ -2,6 +2,7 @@ package com.faforever.client.replay;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -17,4 +18,6 @@ public interface ReplayService {
   void runLiveReplay(int uid, String playerName) throws IOException;
 
   void runLiveReplay(URI uri) throws IOException;
+
+  Path download(int id);
 }

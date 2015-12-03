@@ -21,7 +21,7 @@ public class LoadLocalReplaysTask extends AbstractPrioritizedTask<Collection<Rep
 
   @Override
   protected Collection<ReplayInfoBean> call() throws Exception {
-    updateTitle(i18n.get("replays.loadingLocalTask.title"));
+    updateTitle(i18n.get("replayVault.loadingLocalTask.title"));
     return replayService.getLocalReplays();
   }
 

@@ -1,20 +1,138 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.TreeTableColumn?>
-<?import javafx.scene.control.TreeTableView?>
-<TreeTableView xmlns:fx="http://javafx.com/fxml/1" fx:id="replayVaultRoot" prefHeight="200.0" prefWidth="200.0"
-               showRoot="false" xmlns="http://javafx.com/javafx/8.0.40"
-               fx:controller="com.faforever.client.replay.ReplayVaultController">
-  <columns>
-    <TreeTableColumn fx:id="mapColumn" prefWidth="75.0" text="%replay.map"/>
-    <TreeTableColumn fx:id="titleColumn" prefWidth="75.0" text="%replay.title"/>
-    <TreeTableColumn fx:id="playersColumn" prefWidth="75.0" text="%replay.players"/>
-    <TreeTableColumn fx:id="timeColumn" prefWidth="75.0" text="%replay.time"/>
-    <TreeTableColumn fx:id="durationColumn" prefWidth="75.0" text="%replay.duration"/>
-    <TreeTableColumn fx:id="gameTypeColumn" prefWidth="75.0" text="%replay.gameType"/>
-    <TreeTableColumn fx:id="idColumn" prefWidth="75.0" text="%replay.id"/>
-  </columns>
-  <columnResizePolicy>
-    <TreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-  </columnResizePolicy>
-</TreeTableView>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<StackPane xmlns:fx="http://javafx.com/fxml/1" fx:id="replayVaultRoot" xmlns="http://javafx.com/javafx/8.0.40"
+           fx:controller="com.faforever.client.replay.ReplayVaultController">
+  <children>
+    <ScrollPane fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+      <content>
+        <VBox fx:id="contentPane" alignment="TOP_CENTER">
+          <children>
+            <VBox maxHeight="1.7976931348623157E308" maxWidth="1470.0" spacing="5.0" styleClass="mod-vault"
+                  VBox.vgrow="ALWAYS">
+              <children>
+                <HBox maxWidth="1.7976931348623157E308" spacing="10.0">
+                  <children>
+                    <VBox layoutX="10.0" layoutY="10.0">
+                      <children>
+                        <TextField fx:id="mapField" promptText="%replayVault.map"/>
+                        <MenuButton fx:id="gameTypeMenu" mnemonicParsing="false" text="%replayVault.gameType"/>
+                      </children>
+                    </VBox>
+                    <VBox>
+                      <children>
+                        <TextField fx:id="playerOneField"/>
+                        <TextField fx:id="playerTwoField"/>
+                      </children>
+                    </VBox>
+                    <VBox layoutX="10.0" layoutY="10.0">
+                      <children>
+                        <TextField fx:id="playerOneFactionField"/>
+                        <TextField fx:id="playerTwoFactionField"/>
+                      </children>
+                    </VBox>
+                    <VBox layoutX="169.0" layoutY="10.0">
+                      <children>
+                        <TextField fx:id="maxRatingField"/>
+                        <TextField fx:id="minRatingField"/>
+                      </children>
+                    </VBox>
+                    <VBox>
+                      <children>
+                        <MenuButton fx:id="selectRatingTypeMenu" mnemonicParsing="false"
+                                    text="%replayVault.selectRatingType">
+                          <items>
+                            <MenuItem fx:id="globalRatingTypeMenuItem" mnemonicParsing="false"
+                                      onAction="#onGlobalRatingType" text="%replayVault.selectRatingType.global"/>
+                            <MenuItem fx:id="ladderRatingTypeMenuItem" mnemonicParsing="false"
+                                      onAction="#onLadderRatingType" text="%replayVault.selectRatingType.ladder"/>
+                          </items>
+                        </MenuButton>
+                        <MenuButton disable="true" layoutX="10.0" layoutY="10.0" mnemonicParsing="false"
+                                    text="%replayVault.tags"/>
+                      </children>
+                    </VBox>
+                    <VBox>
+                      <children>
+                        <MenuButton fx:id="sortByMenu" mnemonicParsing="false" text="%replayVault.sortBy">
+                          <items>
+                            <MenuItem fx:id="sortByDateMenuItem" mnemonicParsing="false" onAction="#onSortByDate"
+                                      text="%replayVault.sortBy.date"/>
+                            <MenuItem fx:id="sortByMostLikedMenuItem" mnemonicParsing="false"
+                                      onAction="#onSortByMostLiked" text="%replayVault.sortBy.mostLiked"/>
+                            <MenuItem fx:id="sortByMostDownloadedMenuItem" mnemonicParsing="false"
+                                      onAction="#onSortByMostDownloaded" text="%replayVault.sortBy.mostDownloaded"/>
+                            <MenuItem fx:id="sortByHighestAverageGlobalRatingMenuItem" mnemonicParsing="false"
+                                      onAction="#onHighestAverageGlobalRating"
+                                      text="%replayVault.sortBy.highestAverageGlobaRating"/>
+                            <MenuItem fx:id="sortByHighestAverageLadderRatingMenuItem" mnemonicParsing="false"
+                                      onAction="#onHighestAverageLadderRating"
+                                      text="%replayVault.sortBy.highestAverageLadderRating"/>
+                          </items>
+                        </MenuButton>
+                        <CheckBox fx:id="displayWinnersCheckBox" mnemonicParsing="false"
+                                  text="%replayVault.displayWinners"/>
+                      </children>
+                    </VBox>
+                    <Button maxHeight="1.7976931348623157E308" mnemonicParsing="false" onAction="#onReset"
+                            styleClass="fontawesome" text="">
+                      <padding>
+                        <Insets left="20.0" right="20.0"/>
+                      </padding>
+                    </Button>
+                    <Button defaultButton="true" maxHeight="1.7976931348623157E308" mnemonicParsing="false"
+                            onAction="#onSearchReplay" styleClass="fontawesome" text="">
+                      <padding>
+                        <Insets left="20.0" right="20.0"/>
+                      </padding>
+                    </Button>
+                    <Button maxHeight="1.7976931348623157E308" mnemonicParsing="false" styleClass="fontawesome"
+                            text="[&amp;#xf0b0;]"/>
+                  </children>
+                  <VBox.margin>
+                    <Insets bottom="20.0" top="20.0"/>
+                  </VBox.margin>
+                </HBox>
+                <FlowPane onDragDetected="#onAdvancedSearchFields"/>
+                <VBox fx:id="searchResultGroup" spacing="5.0">
+                  <children>
+                    <Label styleClass="h1" text="%replayVault.searchResult">
+                      <VBox.margin>
+                        <Insets top="20.0"/>
+                      </VBox.margin>
+                    </Label>
+                    <FlowPane fx:id="searchResultPane" hgap="10.0" vgap="10.0"/>
+                  </children>
+                </VBox>
+              </children>
+              <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+              </padding>
+            </VBox>
+          </children>
+        </VBox>
+      </content>
+    </ScrollPane>
+    <VBox fx:id="loadingPane" alignment="CENTER">
+      <children>
+        <Label contentDisplay="TOP" text="%replayVault.loadingReplays">
+          <graphic>
+            <ProgressIndicator/>
+          </graphic>
+        </Label>
+      </children>
+    </VBox>
+  </children>
+</StackPane>
