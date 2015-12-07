@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -10,44 +11,47 @@
           maxWidth="1.7976931348623157E308" onMouseClicked="#onClick" styleClass="replay-tile-root"
           xmlns="http://javafx.com/javafx/8.0.40" fx:controller="com.faforever.client.replay.ReplayTileController">
   <columnConstraints>
-    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
-    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
+    <ColumnConstraints/>
+    <ColumnConstraints/>
   </columnConstraints>
   <rowConstraints>
-    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+    <RowConstraints/>
   </rowConstraints>
   <children>
     <ImageView fx:id="mapImageView" fitHeight="115.0" fitWidth="115.0" pickOnBounds="true" preserveRatio="true"/>
-    <VBox GridPane.columnIndex="1">
+    <VBox styleClass="replay-tile-labels-vbox" GridPane.columnIndex="1">
       <children>
-        <Label fx:id="gameTitleLabel" text="&lt;Game Title&gt;"/>
+        <Label fx:id="gameTitleLabel" styleClass="replay-tile-title" text="&lt;Game Title&gt;"/>
         <Label fx:id="gameTypeLabel" text="&lt;Game Type&gt;"/>
         <Label fx:id="gameMapLabel" text="&lt;Game Map&gt;">
           <graphic>
-            <Label styleClass="fontawesome" text=" [&amp;#xf279;]"/>
+            <Label styleClass="fontawesome" text=""/>
           </graphic>
         </Label>
         <Label fx:id="playerCountLabel" text="&lt;Player Count&gt;">
           <graphic>
-            <Label styleClass="fontawesome" text=" [&amp;#xf0c0;]"/>
+            <Label styleClass="fontawesome" text=""/>
           </graphic>
         </Label>
         <Label fx:id="durationLabel" text="&lt;Duration&gt;">
           <graphic>
-            <Label styleClass="fontawesome" text="[&amp;#xf017;]"/>
+            <Label styleClass="fontawesome" text=""/>
           </graphic>
         </Label>
         <Label fx:id="likesLabel" text="&lt;Likes&gt;">
           <graphic>
-            <Label styleClass="fontawesome" text="[&amp;#xf164;]"/>
+            <Label styleClass="fontawesome" text=""/>
           </graphic>
         </Label>
         <Label fx:id="downloadsLabel" text="&lt;Downloads&gt;">
           <graphic>
-            <Label styleClass="fontawesome" text="[&amp;#xf0ed;]"/>
+            <Label styleClass="fontawesome" text=""/>
           </graphic>
         </Label>
       </children>
+      <GridPane.margin>
+        <Insets/>
+      </GridPane.margin>
     </VBox>
   </children>
 </GridPane>
