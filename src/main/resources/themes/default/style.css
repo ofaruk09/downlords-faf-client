@@ -1123,6 +1123,48 @@
   -fx-text-fill: -fx-light-text-color;
 }
 
+/***************** Replay vault *****************/
+
+.replay-vault-search-options {
+  -fx-padding: 10px;
+}
+
+.replay-vault-search-options, .replay-vault-search-options-pair {
+  -fx-spacing: 10px;
+}
+
+.local-replay-vault-flowpane {
+  -fx-vgap: 10px;
+}
+
+/***************** Replay tile *****************/
+.replay-tile-root {
+  -fx-spacing: 10;
+  -fx-min-width: 240;
+  -fx-pref-width: 240;
+  -fx-max-width: 240;
+  -fx-padding: 10;
+  -fx-cursor: hand;
+}
+
+.replay-tile-labels-vbox {
+  -fx-padding: 0, 0, 0, 20px;
+}
+
+.replay-tile-root:hover,
+.replay-tile-root:focused {
+  -fx-background-color: -fx-control-inner-background;
+}
+
+.replay-tile-title {
+  -fx-font-weight: bold;
+  -fx-font-size: 1.1em;
+}
+
+.replay-tile-root .prefix {
+  -fx-text-fill: -fx-dark-text-color;
+  -fx-font-style: italic;
+}
 /***************** Achievements *****************/
 
 .achievement-title {

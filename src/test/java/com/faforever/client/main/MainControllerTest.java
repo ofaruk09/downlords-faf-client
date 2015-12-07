@@ -503,7 +503,7 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
   @Test
   public void testOnReplaysSelected() throws Exception {
     attachToRoot();
-    when(replayVaultController.getRoot()).thenReturn(new Pane());
+    //when(replayVaultController.getRoot()).thenReturn(new Pane());
     WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.vaultButton.getItems().get(2).fire());
   }
 

@@ -1,10 +1,7 @@
 package com.faforever.client.replay;
 
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.notification.Action;
 import com.faforever.client.notification.NotificationService;
-import com.faforever.client.notification.PersistentNotification;
-import com.faforever.client.notification.Severity;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.task.TaskService;
 import javafx.event.ActionEvent;
@@ -12,26 +9,31 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.lang.invoke.MethodHandles;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayVaultController {
 
+  private enum SelectedPane {
+    LOCAL, ONLINE, LIVE
+  }
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
+  public Label replayVaultHeaderLabel;
+  public MenuButton replayVaultSelectorMenu;
+  public MenuItem localReplayVaultSelectorMenuItem;
+  public MenuItem onlineReplayVaultSelectorMenuItem;
+  public MenuItem liveReplayVaultSelectorMenuItem;
   @FXML
   StackPane replayVaultRoot;
   @FXML
@@ -74,11 +76,6 @@ public class ReplayVaultController {
   MenuItem sortByHighestAverageLadderRatingMenuItem;
   @FXML
   CheckBox displayWinnersCheckBox;
-  @FXML
-  VBox searchResultGroup;
-  @FXML
-  FlowPane searchResultPane;
-
   @Resource
   ApplicationContext applicationContext;
   @Resource
@@ -91,30 +88,72 @@ public class ReplayVaultController {
   ReportingService reportingService;
   @Resource
   ReplayService replayService;
+  //FIXME: track in preferences
+  private boolean ladderRatingSelected = true;
+  private boolean initialized = false;
+  private SelectedPane selectedPane = SelectedPane.LOCAL;
 
-  @PostConstruct
-  void postConstruct() {
-
+  @FXML
+  void initialize() {
+    loadingPane.managedProperty().bind(loadingPane.visibleProperty());
   }
 
-  public CompletableFuture<Void> loadLocalReplaysInBackground() {
-    LoadLocalReplaysTask task = applicationContext.getBean(LoadLocalReplaysTask.class);
+  public void setUpIfNecessary() {
+    if (initialized) {
+      return;
+    }
+    initialized = true;
+    enterLoadingState();
 
-    return taskService.submitTask(task)
-        .thenAccept(this::addLocalReplays)
-        .exceptionally(throwable -> {
-              logger.warn("Error while loading local replays", throwable);
-              notificationService.addNotification(new PersistentNotification(
-                  i18n.get("replayVault.loadingLocalTask.failed"),
-                  Severity.ERROR,
-                  Collections.singletonList(new Action(i18n.get("report"), event -> reportingService.reportError(throwable)))
-              ));
-              return null;
-            }
-        );
+    playerOneField.setPromptText(i18n.get("replayVault.player", 1));
+    playerTwoField.setPromptText(i18n.get("replayVault.player", 2));
+
+    playerOneFactionField.setPromptText(i18n.get("replayVault.player.faction", 1));
+    playerTwoFactionField.setPromptText(i18n.get("replayVault.player.faction", 2));
+
+    sortByMenu.setText(i18n.get("replayVault.sortBy.date"));
+    setRatingFieldPromptText();
+    setPane();
   }
 
-  public void loadOnlineReplaysInBackground() {
+  private void enterLoadingState() {
+    contentPane.setVisible(false);
+    loadingPane.setVisible(true);
+  }
+
+  private void setRatingFieldPromptText() {
+    if (ladderRatingSelected) {
+      selectRatingTypeMenu.setText(i18n.get("replayVault.selectRatingType.ladder"));
+      maxRatingField.setPromptText(i18n.get("replayVault.maxLadderRating"));
+      minRatingField.setPromptText(i18n.get("replayVault.minLadderRating"));
+    } else {
+      selectRatingTypeMenu.setText(i18n.get("replayVault.selectRatingType.global"));
+      maxRatingField.setPromptText(i18n.get("replayVault.maxGlobalRating"));
+      minRatingField.setPromptText(i18n.get("replayVault.minLadderRating"));
+    }
+  }
+
+  private void setPane() {
+    CompletableFuture<Void> voidCompletableFuture = null;
+    switch (selectedPane) {
+      case LOCAL:
+        replayVaultSelectorMenu.setText(i18n.get("replayVault.localReplays"));
+        LocalReplayVaultController localReplayVaultController = applicationContext.getBean(LocalReplayVaultController.class);
+        contentPane.getChildren().add(localReplayVaultController.getRoot());
+        voidCompletableFuture = localReplayVaultController.loadLocalReplaysInBackground();
+        break;
+      case ONLINE:
+        break;
+      case LIVE:
+        break;
+    }
+    voidCompletableFuture.thenAccept(aVoid -> {
+      loadingPane.setVisible(false);
+      contentPane.setVisible(true);
+    });
+  }
+
+/*  public void loadOnlineReplaysInBackground() {
     replayService.getOnlineReplays()
         .thenAccept(this::addOnlineReplays)
         .exceptionally(throwable -> {
@@ -126,7 +165,7 @@ public class ReplayVaultController {
           ));
           return null;
         });
-  }
+  }*/
 
   @FXML
   void onGlobalRatingType(ActionEvent actionEvent) {
@@ -169,8 +208,18 @@ public class ReplayVaultController {
   }
 
   @FXML
-  Node getRoot() {
-    return replayVaultRoot;
+  void onLocalReplayVault(ActionEvent actionEvent) {
   }
 
+  @FXML
+  void onOnlineReplayVault(ActionEvent actionEvent) {
+  }
+
+  @FXML
+  void onLiveReplayVault(ActionEvent actionEvent) {
+  }
+
+  public Node getRoot() {
+    return replayVaultRoot;
+  }
 }

@@ -819,8 +819,7 @@ public class MainController implements OnChoseGameDirectoryListener {
   @FXML
   void onReplaysSelected(ActionEvent event) {
     // FIXME don't load every time?
-    replayVaultController.loadLocalReplaysInBackground();
-    replayVaultController.loadOnlineReplaysInBackground();
+    replayVaultController.setUpIfNecessary();
     setContent(replayVaultController.getRoot());
     setActiveNavigationButtonFromChild((MenuItem) event.getTarget());
   }

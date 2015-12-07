@@ -64,6 +64,8 @@ import com.faforever.client.notification.TransientNotificationController;
 import com.faforever.client.notification.TransientNotificationsController;
 import com.faforever.client.preferences.SettingsController;
 import com.faforever.client.rankedmatch.Ranked1v1Controller;
+import com.faforever.client.replay.LocalReplayVaultController;
+import com.faforever.client.replay.ReplayTileController;
 import com.faforever.client.replay.ReplayVaultController;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
@@ -300,10 +302,15 @@ public class UiConfig {
   }
 
   @Bean
+  @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+  ReplayTileController replayTileController() {
+    return loadController("replay_tile.fxml");
+  }
+
+  @Bean
   PersistentNotificationsController notificationsController() {
     return loadController("persistent_notifications.fxml");
   }
-
   @Bean
   CreateGameController createGameController() {
     return loadController("create_game.fxml");
@@ -333,6 +340,9 @@ public class UiConfig {
   MapVaultController mapVaultController() {
     return loadController("map_vault.fxml");
   }
+
+  @Bean
+  LocalReplayVaultController localReplayVaultController() {return loadController("local_replay_vault.fxml");}
 
   @Bean
   CastsController castsController() {
