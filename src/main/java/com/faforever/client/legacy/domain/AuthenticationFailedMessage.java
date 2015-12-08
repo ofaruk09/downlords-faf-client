@@ -1,11 +1,11 @@
 package com.faforever.client.legacy.domain;
 
-public class AuthenticationFailedMessage extends ServerMessage {
+public class AuthenticationFailedMessage extends FafServerMessage {
 
   private String text;
 
   public AuthenticationFailedMessage() {
-    super(ServerMessageType.AUTHENTICATION_FAILED);
+    super(FafServerMessageType.AUTHENTICATION_FAILED);
   }
 
   public String getText() {

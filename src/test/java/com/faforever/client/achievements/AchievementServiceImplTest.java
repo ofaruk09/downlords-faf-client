@@ -6,7 +6,7 @@ import com.faforever.client.api.PlayerAchievement;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.legacy.LobbyServerAccessor;
 import com.faforever.client.legacy.UpdatedAchievement;
-import com.faforever.client.legacy.UpdatedAchievementsInfo;
+import com.faforever.client.legacy.UpdatedAchievementsMessage;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.TransientNotification;
 import com.faforever.client.player.PlayerInfoBeanBuilder;
@@ -35,6 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -70,7 +71,7 @@ public class AchievementServiceImplTest extends AbstractPlainJavaFxTest {
   @Mock
   private LobbyServerAccessor lobbyServerAccessor;
   @Captor
-  private ArgumentCaptor<Consumer<UpdatedAchievementsInfo>> onUpdatedAchievementsCaptor;
+  private ArgumentCaptor<Consumer<UpdatedAchievementsMessage>> onUpdatedAchievementsCaptor;
 
   @Before
   public void setUp() throws Exception {
@@ -95,32 +96,32 @@ public class AchievementServiceImplTest extends AbstractPlainJavaFxTest {
 
   @Test
   public void testOnUpdatedAchievementsNewlyUnlockedTriggersNotification() {
-    verify(lobbyServerAccessor).addOnUpdatedAchievementsInfoListener(onUpdatedAchievementsCaptor.capture());
-    Consumer<UpdatedAchievementsInfo> listener = onUpdatedAchievementsCaptor.getValue();
+    verify(lobbyServerAccessor).addOnMessageListener(eq(UpdatedAchievementsMessage.class), onUpdatedAchievementsCaptor.capture());
+    Consumer<UpdatedAchievementsMessage> listener = onUpdatedAchievementsCaptor.getValue();
 
     AchievementDefinition achievementDefinition = new AchievementDefinition();
     achievementDefinition.setUnlockedIconUrl(getClass().getResource("/images/tray_icon.png").toExternalForm());
     when(fafApiAccessor.getAchievementDefinition("123")).thenReturn(achievementDefinition);
 
-    UpdatedAchievementsInfo updatedAchievementsInfo = new UpdatedAchievementsInfo();
+    UpdatedAchievementsMessage updatedAchievementsMessage = new UpdatedAchievementsMessage();
     UpdatedAchievement updatedAchievement = new UpdatedAchievement();
     updatedAchievement.setAchievementId("123");
     updatedAchievement.setNewlyUnlocked(true);
 
-    updatedAchievementsInfo.setUpdatedAchievements(Collections.singletonList(updatedAchievement));
-    listener.accept(updatedAchievementsInfo);
+    updatedAchievementsMessage.setUpdatedAchievements(Collections.singletonList(updatedAchievement));
+    listener.accept(updatedAchievementsMessage);
 
     verify(notificationService).addNotification(any(TransientNotification.class));
   }
 
   @Test
   public void testOnUpdatedAchievementsAlreadyUnlockedDoesntTriggerNotification() {
-    verify(lobbyServerAccessor).addOnUpdatedAchievementsInfoListener(onUpdatedAchievementsCaptor.capture());
-    Consumer<UpdatedAchievementsInfo> listener = onUpdatedAchievementsCaptor.getValue();
+    verify(lobbyServerAccessor).addOnMessageListener(eq(UpdatedAchievementsMessage.class), onUpdatedAchievementsCaptor.capture());
+    Consumer<UpdatedAchievementsMessage> listener = onUpdatedAchievementsCaptor.getValue();
 
-    UpdatedAchievementsInfo updatedAchievementsInfo = new UpdatedAchievementsInfo();
-    updatedAchievementsInfo.setUpdatedAchievements(Collections.singletonList(new UpdatedAchievement()));
-    listener.accept(updatedAchievementsInfo);
+    UpdatedAchievementsMessage updatedAchievementsMessage = new UpdatedAchievementsMessage();
+    updatedAchievementsMessage.setUpdatedAchievements(Collections.singletonList(new UpdatedAchievement()));
+    listener.accept(updatedAchievementsMessage);
 
     verifyZeroInteractions(notificationService);
     verify(fafApiAccessor).getPlayerAchievements(123);

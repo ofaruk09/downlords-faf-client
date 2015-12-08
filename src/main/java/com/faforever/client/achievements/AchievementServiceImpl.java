@@ -8,7 +8,7 @@ import com.faforever.client.config.CacheNames;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.legacy.LobbyServerAccessor;
 import com.faforever.client.legacy.UpdatedAchievement;
-import com.faforever.client.legacy.UpdatedAchievementsInfo;
+import com.faforever.client.legacy.UpdatedAchievementsMessage;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.TransientNotification;
 import com.faforever.client.player.PlayerService;
@@ -101,11 +101,11 @@ public class AchievementServiceImpl implements AchievementService {
 
   @PostConstruct
   void postConstruct() {
-    lobbyServerAccessor.addOnUpdatedAchievementsInfoListener(this::onUpdatedAchievements);
+    lobbyServerAccessor.addOnMessageListener(UpdatedAchievementsMessage.class, this::onUpdatedAchievements);
   }
 
-  private void onUpdatedAchievements(UpdatedAchievementsInfo updatedAchievementsInfo) {
-    updatedAchievementsInfo.getUpdatedAchievements().stream()
+  private void onUpdatedAchievements(UpdatedAchievementsMessage updatedAchievementsMessage) {
+    updatedAchievementsMessage.getUpdatedAchievements().stream()
         .filter(UpdatedAchievement::getNewlyUnlocked)
         .forEachOrdered(updatedAchievement -> getAchievementDefinition(updatedAchievement.getAchievementId())
             .thenAccept(this::notifyAboutUnlockedAchievement)

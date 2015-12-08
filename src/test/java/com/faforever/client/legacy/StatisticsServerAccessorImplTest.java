@@ -2,14 +2,14 @@ package com.faforever.client.legacy;
 
 import com.faforever.client.legacy.domain.ClientMessage;
 import com.faforever.client.legacy.domain.ClientMessageType;
-import com.faforever.client.legacy.domain.ServerMessage;
-import com.faforever.client.legacy.domain.ServerMessageType;
+import com.faforever.client.legacy.domain.FafServerMessage;
+import com.faforever.client.legacy.domain.FafServerMessageType;
 import com.faforever.client.legacy.domain.StatisticsType;
 import com.faforever.client.legacy.gson.ClientMessageTypeTypeAdapter;
 import com.faforever.client.legacy.gson.ServerMessageTypeTypeAdapter;
 import com.faforever.client.legacy.io.QDataInputStream;
 import com.faforever.client.legacy.writer.ServerWriter;
-import com.faforever.client.stats.PlayerStatistics;
+import com.faforever.client.stats.PlayerStatisticsMessage;
 import com.faforever.client.stats.RatingInfo;
 import com.faforever.client.stats.StatisticsMessage;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
@@ -80,7 +80,7 @@ public class StatisticsServerAccessorImplTest extends AbstractPlainJavaFxTest {
 
     WaitForAsyncUtils.async(() -> {
       Gson gson = new GsonBuilder()
-          .registerTypeAdapter(ServerMessageType.class, ServerMessageTypeTypeAdapter.INSTANCE)
+          .registerTypeAdapter(FafServerMessageType.class, ServerMessageTypeTypeAdapter.INSTANCE)
           .registerTypeAdapter(ClientMessageType.class, ClientMessageTypeTypeAdapter.INSTANCE)
           .create();
 
@@ -88,7 +88,7 @@ public class StatisticsServerAccessorImplTest extends AbstractPlainJavaFxTest {
         localToServerSocket = socket;
         QDataInputStream qDataInputStream = new QDataInputStream(new DataInputStream(socket.getInputStream()));
         serverToClientWriter = new ServerWriter(socket.getOutputStream());
-        serverToClientWriter.registerMessageSerializer(new ServerMessageSerializer(), ServerMessage.class);
+        serverToClientWriter.registerMessageSerializer(new ServerMessageSerializer(), FafServerMessage.class);
 
         serverWriterReadyLatch.countDown();
 
@@ -123,23 +123,23 @@ public class StatisticsServerAccessorImplTest extends AbstractPlainJavaFxTest {
   @Test
   public void testRequestPlayerStatistics() throws Exception {
     String username = "junit";
-    CompletableFuture<PlayerStatistics> future = instance.requestPlayerStatistics(StatisticsType.GLOBAL_90_DAYS, username);
+    CompletableFuture<PlayerStatisticsMessage> future = instance.requestPlayerStatistics(StatisticsType.GLOBAL_90_DAYS, username);
 
     ClientMessage clientMessage = messagesReceivedByFafServer.poll(TIMEOUT, TIMEOUT_UNIT);
     assertThat(clientMessage.getCommand(), is(ClientMessageType.STATISTICS));
 
-    PlayerStatistics playerStatistics = new PlayerStatistics();
-    playerStatistics.setPlayer(username);
-    playerStatistics.setStatisticsType(StatisticsType.GLOBAL_90_DAYS);
-    playerStatistics.setValues(Arrays.asList(new RatingInfo(), new RatingInfo()));
-    sendFromServer(playerStatistics);
+    PlayerStatisticsMessage playerStatisticsMessage = new PlayerStatisticsMessage();
+    playerStatisticsMessage.setPlayer(username);
+    playerStatisticsMessage.setStatisticsType(StatisticsType.GLOBAL_90_DAYS);
+    playerStatisticsMessage.setValues(Arrays.asList(new RatingInfo(), new RatingInfo()));
+    sendFromServer(playerStatisticsMessage);
 
-    PlayerStatistics result = future.get(TIMEOUT, TIMEOUT_UNIT);
+    PlayerStatisticsMessage result = future.get(TIMEOUT, TIMEOUT_UNIT);
 
     assertThat(result.getValues(), hasSize(2));
     assertThat(result.getStatisticsType(), is(StatisticsType.GLOBAL_90_DAYS));
     assertThat(result.getPlayer(), is(username));
-    assertThat(result.getServerMessageType(), is(ServerMessageType.STATS));
+    assertThat(result.getMessageType(), is(FafServerMessageType.STATS));
   }
 
   /**

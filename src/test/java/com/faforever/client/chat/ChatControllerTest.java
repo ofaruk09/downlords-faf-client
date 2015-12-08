@@ -1,18 +1,24 @@
 package com.faforever.client.chat;
 
+import com.faforever.client.legacy.ConnectionState;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
 import com.faforever.client.user.UserService;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.Tab;
 import javafx.stage.Stage;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.springframework.context.ApplicationContext;
 import org.testfx.util.WaitForAsyncUtils;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -29,16 +35,20 @@ public class ChatControllerTest extends AbstractPlainJavaFxTest {
   private static final long TIMEOUT = 1000;
   private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MILLISECONDS;
   @Mock
-  ChannelTabController channelTabController;
+  private ChannelTabController channelTabController;
   @Mock
-  PrivateChatTabController privateChatTabController;
+  private PrivateChatTabController privateChatTabController;
   @Mock
-  UserService userService;
+  private UserService userService;
   @Mock
-  ApplicationContext applicationContext;
+  private ApplicationContext applicationContext;
   @Mock
-  ChatService chatService;
+  private ChatService chatService;
+  @Captor
+  private ArgumentCaptor<Consumer<List<String>>> joinChannelsRequestListenerCaptor;
+
   private ChatController instance;
+  private SimpleObjectProperty<ConnectionState> connectionState;
 
   @Override
   public void start(Stage stage) throws Exception {
@@ -49,9 +59,16 @@ public class ChatControllerTest extends AbstractPlainJavaFxTest {
     instance.chatService = chatService;
     instance.applicationContext = applicationContext;
 
+    connectionState = new SimpleObjectProperty<>();
+
     when(applicationContext.getBean(PrivateChatTabController.class)).thenReturn(privateChatTabController);
     when(applicationContext.getBean(ChannelTabController.class)).thenReturn(channelTabController);
     when(userService.getUsername()).thenReturn("junit");
+    when(chatService.connectionStateProperty()).thenReturn(connectionState);
+
+    instance.postConstrut();
+
+    verify(chatService).addOnJoinChannelsRequestListener(joinChannelsRequestListenerCaptor.capture());
   }
 
   @Test
@@ -73,7 +90,7 @@ public class ChatControllerTest extends AbstractPlainJavaFxTest {
 
   @Test
   public void testOnDisconnected() throws Exception {
-    instance.onDisconnected();
+    connectionState.set(ConnectionState.DISCONNECTED);
   }
 
   @Test
@@ -119,6 +136,8 @@ public class ChatControllerTest extends AbstractPlainJavaFxTest {
   @Test
   public void testOnJoinChannelsRequest() throws Exception {
     when(channelTabController.getRoot()).thenReturn(new Tab());
-    instance.onJoinChannelsRequest(Arrays.asList(TEST_CHANNEL_NAME, TEST_CHANNEL_NAME));
+    joinChannelsRequestListenerCaptor.getValue().accept(Arrays.asList(TEST_CHANNEL_NAME, TEST_CHANNEL_NAME));
+
+    connectionState.set(ConnectionState.DISCONNECTED);
   }
 }

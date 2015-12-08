@@ -1,5 +1,7 @@
 package com.faforever.client.legacy.domain;
 
+import com.faforever.client.game.GameVisibility;
+
 public class HostGameMessage extends ClientMessage {
 
   private int gameport;
@@ -10,8 +12,7 @@ public class HostGameMessage extends ClientMessage {
   private GameAccess access;
   private Integer version;
   private String password;
-  // TODO create enum and implement properly
-  private String visibility = "public";
+  private GameVisibility visibility;
 
   public HostGameMessage(GameAccess gameAccess, String mapName, String title, int port, boolean[] options, String mod, String password, Integer version) {
     super(ClientMessageType.HOST_GAME);
@@ -23,6 +24,7 @@ public class HostGameMessage extends ClientMessage {
     this.setMapname(mapName);
     this.setGameport(port);
     this.setOptions(options);
+    this.setVisibility(GameVisibility.PUBLIC);
   }
 
   public int getGameport() {
@@ -87,5 +89,13 @@ public class HostGameMessage extends ClientMessage {
 
   public void setPassword(String password) {
     this.password = password;
+  }
+
+  public GameVisibility getVisibility() {
+    return visibility;
+  }
+
+  public void setVisibility(GameVisibility visibility) {
+    this.visibility = visibility;
   }
 }

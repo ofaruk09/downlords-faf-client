@@ -1,15 +1,13 @@
 package com.faforever.client.game;
 
+import com.faforever.client.connectivity.ConnectivityService;
 import com.faforever.client.fa.ForgedAllianceService;
-import com.faforever.client.legacy.LobbyServerAccessor;
-import com.faforever.client.legacy.OnGameInfoListener;
-import com.faforever.client.legacy.OnGameTypeInfoListener;
-import com.faforever.client.legacy.domain.GameInfo;
-import com.faforever.client.legacy.domain.GameLaunchInfo;
+import com.faforever.client.legacy.domain.GameInfoMessage;
+import com.faforever.client.legacy.domain.GameLaunchMessage;
 import com.faforever.client.legacy.domain.GameState;
-import com.faforever.client.legacy.domain.GameTypeInfo;
+import com.faforever.client.legacy.domain.GameTypeMessage;
 import com.faforever.client.legacy.domain.VictoryCondition;
-import com.faforever.client.legacy.proxy.Proxy;
+import com.faforever.client.lobby.LobbyService;
 import com.faforever.client.map.MapService;
 import com.faforever.client.patch.GameUpdateService;
 import com.faforever.client.player.PlayerService;
@@ -28,12 +26,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.env.Environment;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +50,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -72,13 +71,11 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
   @Mock
   private PreferencesService preferencesService;
   @Mock
-  private LobbyServerAccessor lobbyServerAccessor;
+  private LobbyService lobbyService;
   @Mock
   private MapService mapService;
   @Mock
   private ForgedAllianceService forgedAllianceService;
-  @Mock
-  private Proxy proxy;
   @Mock
   private GameUpdateService gameUpdateService;
   @Mock
@@ -90,40 +87,43 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
   @Mock
   private SearchExpansionTask searchExpansionTask;
   @Mock
-  private Environment environment;
-  @Mock
   private LocalRelayServer localRelayServer;
   @Mock
   private PlayerService playerService;
+  @Mock
+  private ConnectivityService connectivityService;
   @Mock
   private ScheduledExecutorService scheduledExecutorService;
   @Captor
   private ArgumentCaptor<Consumer<Void>> gameLaunchedListenerCaptor;
   @Captor
   private ArgumentCaptor<ListChangeListener.Change<? extends GameInfoBean>> gameInfoBeanChangeListenerCaptor;
+  @Captor
+  private ArgumentCaptor<Consumer<GameTypeMessage>> gameTypeMessageListenerCaptor;
+  @Captor
+  private ArgumentCaptor<Consumer<GameInfoMessage>> gameInfoMessageListenerCaptor;
 
   @Before
   public void setUp() throws Exception {
     instance = new GameServiceImpl();
-    instance.lobbyServerAccessor = lobbyServerAccessor;
+    instance.lobbyService = lobbyService;
     instance.mapService = mapService;
     instance.forgedAllianceService = forgedAllianceService;
-    instance.proxy = proxy;
+    instance.connectivityService = connectivityService;
     instance.gameUpdateService = gameUpdateService;
     instance.preferencesService = preferencesService;
     instance.applicationContext = applicationContext;
-    instance.environment = environment;
-    instance.localRelayServer = localRelayServer;
     instance.playerService = playerService;
     instance.scheduledExecutorService = scheduledExecutorService;
+    instance.localRelayServer = localRelayServer;
+
+    instance.ranked1v1SearchExpansionDelay = SEARCH_EXPANSION_DELAY;
+    instance.ranked1v1SearchMaxRadius = SEARCH_MAX_RADIUS;
+    instance.ranked1v1SearchRadiusIncrement = SEARCH_RADIUS_INCREMENT;
 
     when(preferencesService.getPreferences()).thenReturn(preferences);
     when(preferences.getForgedAlliance()).thenReturn(forgedAlliancePrefs);
     when(forgedAlliancePrefs.getPort()).thenReturn(GAME_PORT);
-    when(environment.getProperty("ranked1v1.search.expansionDelay", int.class)).thenReturn(SEARCH_EXPANSION_DELAY);
-    when(environment.getProperty("ranked1v1.search.maxRadius", float.class)).thenReturn(SEARCH_MAX_RADIUS);
-    when(environment.getProperty("ranked1v1.search.radiusIncrement", float.class)).thenReturn(SEARCH_RADIUS_INCREMENT);
-    when(environment.getProperty("playServices.minGameTime", int.class)).thenReturn(0);
 
     doAnswer(invocation -> {
       try {
@@ -136,13 +136,15 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
 
     instance.postConstruct();
 
-    verify(localRelayServer).setGameLaunchedListener(gameLaunchedListenerCaptor.capture());
+    verify(lobbyService).addOnMessageListener(eq(GameTypeMessage.class), gameTypeMessageListenerCaptor.capture());
+    verify(lobbyService).addOnMessageListener(eq(GameInfoMessage.class), gameInfoMessageListenerCaptor.capture());
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void postConstruct() {
-    verify(lobbyServerAccessor).addOnGameTypeInfoListener(any(OnGameTypeInfoListener.class));
-    verify(lobbyServerAccessor).addOnGameInfoListener(any(OnGameInfoListener.class));
+    verify(lobbyService).addOnMessageListener(eq(GameTypeMessage.class), any(Consumer.class));
+    verify(lobbyService).addOnMessageListener(eq(GameInfoMessage.class), any(Consumer.class));
   }
 
   @Test
@@ -156,13 +158,16 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     when(gameInfoBean.getSimMods()).thenReturn(simMods);
     when(gameInfoBean.getMapTechnicalName()).thenReturn("map");
 
+    GameLaunchMessage gameLaunchMessage = GameLaunchMessageBuilder.create().defaultValues().get();
     when(mapService.isAvailable("map")).thenReturn(true);
-    when(lobbyServerAccessor.requestJoinGame(gameInfoBean, null)).thenReturn(completedFuture(null));
+    when(lobbyService.requestJoinGame(gameInfoBean, null)).thenReturn(completedFuture(gameLaunchMessage));
+    when(localRelayServer.startInBackground()).thenReturn(CompletableFuture.completedFuture(111));
     when(gameUpdateService.updateInBackground(any(), any(), any(), any())).thenReturn(completedFuture(null));
 
     CompletableFuture<Void> future = instance.joinGame(gameInfoBean, null);
 
     assertThat(future.get(TIMEOUT, TIME_UNIT), is(nullValue()));
+    verify(mapService, never()).download(any());
   }
 
   @Test
@@ -175,9 +180,9 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
 
   @Test
   public void testGameTypeIsOnlyAddedOnce() throws Exception {
-    GameTypeInfo gameTypeInfo = GameTypeInfoBuilder.create().defaultValues().get();
-    instance.onGameTypeInfo(gameTypeInfo);
-    instance.onGameTypeInfo(gameTypeInfo);
+    GameTypeMessage gameTypeMessage = GameTypeInfoBuilder.create().defaultValues().get();
+    gameTypeMessageListenerCaptor.getValue().accept(gameTypeMessage);
+    gameTypeMessageListenerCaptor.getValue().accept(gameTypeMessage);
 
     List<GameTypeBean> gameTypes = instance.getGameTypes();
 
@@ -186,14 +191,14 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
 
   @Test
   public void testDifferentGameTypes() throws Exception {
-    GameTypeInfo gameTypeInfo1 = GameTypeInfoBuilder.create().defaultValues().get();
-    GameTypeInfo gameTypeInfo2 = GameTypeInfoBuilder.create().defaultValues().get();
+    GameTypeMessage gameTypeMessage1 = GameTypeInfoBuilder.create().defaultValues().get();
+    GameTypeMessage gameTypeMessage2 = GameTypeInfoBuilder.create().defaultValues().get();
 
-    gameTypeInfo1.setName("number1");
-    gameTypeInfo2.setName("number2");
+    gameTypeMessage1.setName("number1");
+    gameTypeMessage2.setName("number2");
 
-    instance.onGameTypeInfo(gameTypeInfo1);
-    instance.onGameTypeInfo(gameTypeInfo2);
+    gameTypeMessageListenerCaptor.getValue().accept(gameTypeMessage1);
+    gameTypeMessageListenerCaptor.getValue().accept(gameTypeMessage2);
 
     List<GameTypeBean> gameTypes = instance.getGameTypes();
 
@@ -206,71 +211,93 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     MapChangeListener<String, GameTypeBean> listener = mock(MapChangeListener.class);
     instance.addOnGameTypeInfoListener(listener);
 
-    instance.onGameTypeInfo(GameTypeInfoBuilder.create().defaultValues().get());
+    gameTypeMessageListenerCaptor.getValue().accept(GameTypeInfoBuilder.create().defaultValues().get());
   }
 
   @Test
   @SuppressWarnings("unchecked")
   public void testAddOnGameStartedListener() throws Exception {
-    OnGameStartedListener listener = mock(OnGameStartedListener.class);
     Process process = mock(Process.class);
+    int gamePort = 51111;
 
     NewGameInfo newGameInfo = NewGameInfoBuilder.create().defaultValues().get();
-    GameLaunchInfo gameLaunchInfo = GameLaunchInfoBuilder.create().defaultValues().get();
-    gameLaunchInfo.setArgs(Arrays.asList("/foo bar", "/bar foo"));
+    GameLaunchMessage gameLaunchMessage = GameLaunchMessageBuilder.create().defaultValues().get();
+    gameLaunchMessage.setArgs(Arrays.asList("/foo bar", "/bar foo"));
 
+    when(localRelayServer.startInBackground()).thenReturn(CompletableFuture.completedFuture(gamePort));
     when(forgedAllianceService.startGame(
-        gameLaunchInfo.getUid(), gameLaunchInfo.getMod(), null, Arrays.asList("/foo", "bar", "/bar", "foo"), GLOBAL)
+        gameLaunchMessage.getUid(), gameLaunchMessage.getMod(), null, Arrays.asList("/foo", "bar", "/bar", "foo"), GLOBAL, gamePort)
     ).thenReturn(process);
     when(gameUpdateService.updateInBackground(any(), any(), any(), any())).thenReturn(completedFuture(null));
-    when(lobbyServerAccessor.requestNewGame(newGameInfo)).thenReturn(completedFuture(gameLaunchInfo));
+    when(lobbyService.requestNewGame(newGameInfo)).thenReturn(completedFuture(gameLaunchMessage));
 
-    instance.addOnGameStartedListener(listener);
-    instance.hostGame(newGameInfo);
+    CountDownLatch gameStartedLatch = new CountDownLatch(1);
+    CountDownLatch gameTerminatedLatch = new CountDownLatch(1);
+    instance.gameRunningProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue) {
+        gameStartedLatch.countDown();
+      } else {
+        gameTerminatedLatch.countDown();
+      }
+    });
 
-    verify(listener).onGameStarted(gameLaunchInfo.getUid());
+    CountDownLatch processLatch = new CountDownLatch(1);
+
+    process = mock(Process.class);
+    doAnswer(invocation -> {
+      processLatch.await();
+      return null;
+    }).when(process).waitFor();
+
+    instance.hostGame(newGameInfo).get(TIMEOUT, TIME_UNIT);
+    gameStartedLatch.await(TIMEOUT, TIME_UNIT);
+    processLatch.countDown();
+
+    gameTerminatedLatch.await(TIMEOUT, TIME_UNIT);
     verify(forgedAllianceService).startGame(
-        gameLaunchInfo.getUid(), gameLaunchInfo.getMod(), null, Arrays.asList("/foo", "bar", "/bar", "foo"), GLOBAL
-    );
+        gameLaunchMessage.getUid(), gameLaunchMessage.getMod(), null, Arrays.asList("/foo", "bar", "/bar", "foo"), GLOBAL,
+        gamePort);
   }
 
   @Test
   public void testWaitForProcessTerminationInBackground() throws Exception {
-    CompletableFuture<Void> serviceStateDoneFuture = new CompletableFuture<>();
+    instance.gameRunningProperty().set(true);
 
-    doAnswer(invocation -> {
-      serviceStateDoneFuture.complete(null);
-      return null;
-    }).when(proxy).close();
+    CompletableFuture<Void> disconnectedFuture = new CompletableFuture<>();
+
+    instance.gameRunningProperty().addListener((observable, oldValue, newValue) -> {
+      if (!newValue) {
+        disconnectedFuture.complete(null);
+      }
+    });
 
     Process process = mock(Process.class);
 
     instance.spawnTerminationListener(process);
 
-    serviceStateDoneFuture.get(5000, TimeUnit.MILLISECONDS);
+    disconnectedFuture.get(5000, TimeUnit.MILLISECONDS);
 
     verify(process).waitFor();
-    verify(proxy).close();
   }
 
   @Test
   public void testOnGameInfoAdd() {
     assertThat(instance.getGameInfoBeans(), empty());
 
-    GameInfo gameInfo1 = new GameInfo();
-    gameInfo1.setUid(1);
-    gameInfo1.setTitle("Game 1");
-    gameInfo1.setState(GameState.OPEN);
-    instance.onGameInfo(gameInfo1);
+    GameInfoMessage gameInfoMessage1 = new GameInfoMessage();
+    gameInfoMessage1.setUid(1);
+    gameInfoMessage1.setTitle("Game 1");
+    gameInfoMessage1.setState(GameState.OPEN);
+    gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage1);
 
-    GameInfo gameInfo2 = new GameInfo();
-    gameInfo2.setUid(2);
-    gameInfo2.setTitle("Game 2");
-    gameInfo2.setState(GameState.OPEN);
-    instance.onGameInfo(gameInfo2);
+    GameInfoMessage gameInfoMessage2 = new GameInfoMessage();
+    gameInfoMessage2.setUid(2);
+    gameInfoMessage2.setTitle("Game 2");
+    gameInfoMessage2.setState(GameState.OPEN);
+    gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage2);
 
-    GameInfoBean gameInfoBean1 = new GameInfoBean(gameInfo1);
-    GameInfoBean gameInfoBean2 = new GameInfoBean(gameInfo2);
+    GameInfoBean gameInfoBean1 = new GameInfoBean(gameInfoMessage1);
+    GameInfoBean gameInfoBean2 = new GameInfoBean(gameInfoMessage2);
 
     assertThat(instance.getGameInfoBeans(), containsInAnyOrder(gameInfoBean1, gameInfoBean2));
   }
@@ -279,46 +306,46 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
   public void testOnGameInfoModify() {
     assertThat(instance.getGameInfoBeans(), empty());
 
-    GameInfo gameInfo = new GameInfo();
-    gameInfo.setUid(1);
-    gameInfo.setTitle("Game 1");
-    gameInfo.setState(GameState.OPEN);
-    instance.onGameInfo(gameInfo);
+    GameInfoMessage gameInfoMessage = new GameInfoMessage();
+    gameInfoMessage.setUid(1);
+    gameInfoMessage.setTitle("Game 1");
+    gameInfoMessage.setState(GameState.OPEN);
+    gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
-    gameInfo = new GameInfo();
-    gameInfo.setUid(1);
-    gameInfo.setTitle("Game 1 modified");
-    gameInfo.setState(GameState.OPEN);
-    instance.onGameInfo(gameInfo);
+    gameInfoMessage = new GameInfoMessage();
+    gameInfoMessage.setUid(1);
+    gameInfoMessage.setTitle("Game 1 modified");
+    gameInfoMessage.setState(GameState.OPEN);
+    gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
-    assertEquals(gameInfo.getTitle(), instance.getGameInfoBeans().iterator().next().getTitle());
+    assertEquals(gameInfoMessage.getTitle(), instance.getGameInfoBeans().iterator().next().getTitle());
   }
 
   @Test
   public void testOnGameInfoRemove() {
     assertThat(instance.getGameInfoBeans(), empty());
 
-    GameInfo gameInfo = new GameInfo();
-    gameInfo.setUid(1);
-    gameInfo.setTitle("Game 1");
-    gameInfo.setState(GameState.OPEN);
-    instance.onGameInfo(gameInfo);
+    GameInfoMessage gameInfoMessage = new GameInfoMessage();
+    gameInfoMessage.setUid(1);
+    gameInfoMessage.setTitle("Game 1");
+    gameInfoMessage.setState(GameState.OPEN);
+    gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
-    gameInfo = new GameInfo();
-    gameInfo.setUid(1);
-    gameInfo.setTitle("Game 1 modified");
-    gameInfo.setState(GameState.CLOSED);
-    instance.onGameInfo(gameInfo);
+    gameInfoMessage = new GameInfoMessage();
+    gameInfoMessage.setUid(1);
+    gameInfoMessage.setTitle("Game 1 modified");
+    gameInfoMessage.setState(GameState.CLOSED);
+    gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
     assertThat(instance.getGameInfoBeans(), empty());
   }
 
   @Test
   public void testStartSearchRanked1v1() throws Exception {
-    GameLaunchInfo gameLaunchInfo = new GameLaunchInfo();
-    gameLaunchInfo.setUid(123);
-    gameLaunchInfo.setArgs(Collections.<String>emptyList());
-    when(lobbyServerAccessor.startSearchRanked1v1(Faction.CYBRAN, GAME_PORT)).thenReturn(CompletableFuture.completedFuture(gameLaunchInfo));
+    GameLaunchMessage gameLaunchMessage = new GameLaunchMessage();
+    gameLaunchMessage.setUid(123);
+    gameLaunchMessage.setArgs(Collections.<String>emptyList());
+    when(lobbyService.startSearchRanked1v1(Faction.CYBRAN, GAME_PORT)).thenReturn(CompletableFuture.completedFuture(gameLaunchMessage));
     when(gameUpdateService.updateInBackground(GameType.LADDER_1V1.getString(), null, Collections.emptyMap(), Collections.emptySet())).thenReturn(CompletableFuture.completedFuture(null));
     when(applicationContext.getBean(SearchExpansionTask.class)).thenReturn(searchExpansionTask);
     when(scheduledExecutorService.scheduleWithFixedDelay(any(), anyLong(), anyLong(), any())).thenReturn(mock(ScheduledFuture.class));
@@ -328,7 +355,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     verify(searchExpansionTask).setMaxRadius(SEARCH_MAX_RADIUS);
     verify(searchExpansionTask).setRadiusIncrement(SEARCH_RADIUS_INCREMENT);
     verify(scheduledExecutorService).scheduleWithFixedDelay(searchExpansionTask, SEARCH_EXPANSION_DELAY, SEARCH_EXPANSION_DELAY, TimeUnit.MILLISECONDS);
-    verify(lobbyServerAccessor).startSearchRanked1v1(Faction.CYBRAN, GAME_PORT);
+    verify(lobbyService).startSearchRanked1v1(Faction.CYBRAN, GAME_PORT);
     assertThat(future.get(TIMEOUT, TIME_UNIT), is(nullValue()));
   }
 
@@ -338,12 +365,21 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     when(process.isAlive()).thenReturn(true);
 
     NewGameInfo newGameInfo = NewGameInfoBuilder.create().defaultValues().get();
-    GameLaunchInfo gameLaunchInfo = GameLaunchInfoBuilder.create().defaultValues().get();
-    when(forgedAllianceService.startGame(anyInt(), any(), any(), any(), any())).thenReturn(process);
+    GameLaunchMessage gameLaunchMessage = GameLaunchMessageBuilder.create().defaultValues().get();
+    when(forgedAllianceService.startGame(anyInt(), any(), any(), any(), any(), anyInt())).thenReturn(process);
     when(gameUpdateService.updateInBackground(any(), any(), any(), any())).thenReturn(completedFuture(null));
-    when(lobbyServerAccessor.requestNewGame(newGameInfo)).thenReturn(completedFuture(gameLaunchInfo));
+    when(lobbyService.requestNewGame(newGameInfo)).thenReturn(completedFuture(gameLaunchMessage));
+    when(localRelayServer.startInBackground()).thenReturn(CompletableFuture.completedFuture(111));
+
+    CountDownLatch gameRunningLatch = new CountDownLatch(1);
+    instance.gameRunningProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue) {
+        gameRunningLatch.countDown();
+      }
+    });
 
     instance.hostGame(newGameInfo);
+    gameRunningLatch.await(TIMEOUT, TIME_UNIT);
 
     instance.startSearchRanked1v1(Faction.AEON);
 
@@ -355,7 +391,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     instance.searching1v1Property().set(true);
     instance.stopSearchRanked1v1();
     assertThat(instance.searching1v1Property().get(), is(false));
-    verify(lobbyServerAccessor).stopSearchingRanked();
+    verify(lobbyService).stopSearchingRanked();
   }
 
   @Test
@@ -363,7 +399,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     instance.searching1v1Property().set(false);
     instance.stopSearchRanked1v1();
     assertThat(instance.searching1v1Property().get(), is(false));
-    verify(lobbyServerAccessor, never()).stopSearchingRanked();
+    verify(lobbyService, never()).stopSearchingRanked();
   }
 
   @Test
@@ -372,18 +408,18 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     ListChangeListener<GameInfoBean> listener = mock(ListChangeListener.class);
     instance.addOnGameInfoBeanListener(listener);
 
-    GameInfo gameInfo = new GameInfo();
-    gameInfo.setUid(1);
-    gameInfo.setHost("host");
-    gameInfo.setTitle("title");
-    gameInfo.setMapname("mapName");
-    gameInfo.setFeaturedMod("mod");
-    gameInfo.setNumPlayers(2);
-    gameInfo.setMaxPlayers(4);
-    gameInfo.setGameType(VictoryCondition.DOMINATION);
-    gameInfo.setState(GameState.PLAYING);
+    GameInfoMessage gameInfoMessage = new GameInfoMessage();
+    gameInfoMessage.setUid(1);
+    gameInfoMessage.setHost("host");
+    gameInfoMessage.setTitle("title");
+    gameInfoMessage.setMapname("mapName");
+    gameInfoMessage.setFeaturedMod("mod");
+    gameInfoMessage.setNumPlayers(2);
+    gameInfoMessage.setMaxPlayers(4);
+    gameInfoMessage.setGameType(VictoryCondition.DOMINATION);
+    gameInfoMessage.setState(GameState.PLAYING);
 
-    instance.onGameInfo(gameInfo);
+    gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
     verify(listener).onChanged(gameInfoBeanChangeListenerCaptor.capture());
 
