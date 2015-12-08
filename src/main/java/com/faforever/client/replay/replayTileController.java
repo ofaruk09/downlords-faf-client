@@ -11,6 +11,8 @@ import javafx.scene.layout.Pane;
 
 import javax.annotation.Resource;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 
 public class ReplayTileController {
 
@@ -32,6 +34,8 @@ public class ReplayTileController {
   Label likesLabel;
   @FXML
   Label downloadsLabel;
+  @FXML
+  Label avgRatingLabel;
   @Resource
   MapService mapService;
   @Resource
@@ -48,8 +52,14 @@ public class ReplayTileController {
     gameTypeLabel.setText(replayInfoBean.getGameType());
     gameMapLabel.setText(replayInfoBean.getMap());
 
+    int playerCount = 0;
+    double totalRating = 0;
+    for (Map.Entry<String, List<String>> team : replayInfoBean.getTeams().entrySet()) {
+      playerCount += team.getValue().size();
+    }
+    playerCountLabel.setText(String.format("%d", playerCount));
+
     //FIXME: update with api
-    playerCountLabel.setText("0");
     likesLabel.setText("0");
     downloadsLabel.setText("0");
 

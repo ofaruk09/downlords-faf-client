@@ -5,6 +5,8 @@ import com.faforever.client.i18n.I18n;
 import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -89,5 +91,10 @@ public class TimeServiceImpl implements TimeService {
     }
 
     return i18n.get("duration.hourMinutes", duration.toMinutes() / 60, duration.toMinutes() % 60);
+  }
+
+  @Override
+  public LocalDate getLocalDateFromInstant(Instant instant) {
+    return LocalDateTime.ofInstant(instant, TimeZone.getDefault().toZoneId()).toLocalDate();
   }
 }

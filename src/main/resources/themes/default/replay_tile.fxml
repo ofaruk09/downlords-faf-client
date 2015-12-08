@@ -15,13 +15,14 @@
     <ColumnConstraints/>
   </columnConstraints>
   <rowConstraints>
-    <RowConstraints/>
+    <RowConstraints minHeight="20.0" valignment="TOP"/>
+    <RowConstraints valignment="TOP"/>
   </rowConstraints>
   <children>
-    <ImageView fx:id="mapImageView" fitHeight="115.0" fitWidth="115.0" pickOnBounds="true" preserveRatio="true"/>
-    <VBox styleClass="replay-tile-labels-vbox" GridPane.columnIndex="1">
+    <ImageView fx:id="mapImageView" fitHeight="115.0" fitWidth="115.0" pickOnBounds="true" preserveRatio="true"
+               GridPane.rowIndex="1"/>
+    <VBox styleClass="replay-tile-labels-vbox" GridPane.columnIndex="1" GridPane.rowIndex="1">
       <children>
-        <Label fx:id="gameTitleLabel" styleClass="replay-tile-title" text="&lt;Game Title&gt;"/>
         <Label fx:id="gameTypeLabel" text="&lt;Game Type&gt;"/>
         <Label fx:id="gameMapLabel" text="&lt;Game Map&gt;">
           <graphic>
@@ -48,10 +49,17 @@
             <Label styleClass="fontawesome" text=""/>
           </graphic>
         </Label>
+        <Label fx:id="avgRatingLabel" text="&lt;Avg Rating&gt;">
+          <graphic>
+            <Label styleClass="fontawesome" text=""/>
+          </graphic>
+        </Label>
       </children>
       <GridPane.margin>
         <Insets/>
       </GridPane.margin>
     </VBox>
+    <Label fx:id="gameTitleLabel" maxWidth="1.7976931348623157E308" styleClass="replay-tile-title"
+           text="&lt;Game Title&gt;" GridPane.rowSpan="2147483647"/>
   </children>
 </GridPane>

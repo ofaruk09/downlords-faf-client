@@ -67,6 +67,7 @@ import com.faforever.client.rankedmatch.Ranked1v1Controller;
 import com.faforever.client.replay.LocalReplayVaultController;
 import com.faforever.client.replay.ReplayTileController;
 import com.faforever.client.replay.ReplayVaultController;
+import com.faforever.client.replay.SortedReplaysController;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -343,6 +344,12 @@ public class UiConfig {
 
   @Bean
   LocalReplayVaultController localReplayVaultController() {return loadController("local_replay_vault.fxml");}
+
+  @Bean
+  @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+  SortedReplaysController sortedReplaysController() {
+    return loadController("sorted_replays.fxml");
+  }
 
   @Bean
   CastsController castsController() {

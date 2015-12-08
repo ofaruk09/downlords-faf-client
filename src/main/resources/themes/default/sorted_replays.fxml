@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.FlowPane?>
+<TitledPane xmlns:fx="http://javafx.com/fxml/1" fx:id="sortedReplaysRoot" expanded="false"
+            xmlns="http://javafx.com/javafx/8.0.40" fx:controller="com.faforever.client.replay.SortedReplaysController">
+  <content>
+    <FlowPane fx:id="replayContentPane" alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1470.0"
+              nodeOrientation="LEFT_TO_RIGHT" orientation="VERTICAL" prefWrapLength="0.0"
+              styleClass="local-replay-vault-flowpane"/>
+  </content>
+</TitledPane>

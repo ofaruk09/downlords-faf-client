@@ -7,16 +7,17 @@
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import java.lang.String?>
 <StackPane xmlns:fx="http://javafx.com/fxml/1" fx:id="replayVaultRoot" maxWidth="1.7976931348623157E308"
            xmlns="http://javafx.com/javafx/8.0.40" fx:controller="com.faforever.client.replay.ReplayVaultController">
   <children>
-    <VBox fx:id="contentPane" alignment="TOP_CENTER" maxHeight="1.7976931348623157E308"
-          maxWidth="1.7976931348623157E308">
+    <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
       <children>
         <HBox alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"
               styleClass="replay-vault-search-options">
@@ -60,14 +61,14 @@
                               text="%replayVault.selectRatingType.ladder"/>
                   </items>
                 </MenuButton>
-                <MenuButton disable="true" layoutX="10.0" layoutY="10.0" maxHeight="1.7976931348623157E308"
-                            maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="%replayVault.tags"/>
+                <MenuButton disable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"
+                            mnemonicParsing="false" text="%replayVault.tags"/>
               </children>
             </VBox>
             <VBox styleClass="replay-vault-search-options-pair">
               <children>
                 <MenuButton fx:id="sortByMenu" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"
-                            mnemonicParsing="false">
+                            mnemonicParsing="false" text="%replayVault.sortBy">
                   <items>
                     <MenuItem fx:id="sortByDateMenuItem" mnemonicParsing="false" onAction="#onSortByDate"
                               text="%replayVault.sortBy.date"/>
@@ -140,6 +141,12 @@
             </VBox>
           </children>
         </HBox>
+        <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="1.7976931348623157E308"
+                    maxWidth="1.7976931348623157E308">
+          <content>
+            <Pane fx:id="contentPane" maxHeight="1.7976931348623157E308" maxWidth="1470.0"/>
+          </content>
+        </ScrollPane>
         <VBox fx:id="loadingPane" alignment="CENTER">
           <children>
             <Label contentDisplay="TOP" text="%replayVault.loadingReplays">
