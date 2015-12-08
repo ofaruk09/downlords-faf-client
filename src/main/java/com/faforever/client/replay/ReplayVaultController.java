@@ -13,6 +13,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ public class ReplayVaultController {
   @FXML
   StackPane replayVaultRoot;
   @FXML
-  VBox contentPane;
+  Pane contentPane;
   @FXML
   VBox loadingPane;
   @FXML
@@ -92,6 +93,11 @@ public class ReplayVaultController {
   private boolean ladderRatingSelected = true;
   private boolean initialized = false;
   private SelectedPane selectedPane = SelectedPane.LOCAL;
+  private ReplaySortingOption replay = ReplaySortingOption.MOST_LIKED;
+
+  public ReplaySortingOption getReplaySortingOption() {
+    return replay;
+  }
 
   @FXML
   void initialize() {

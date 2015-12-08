@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Random;
 
 import static com.faforever.client.util.TimeUtil.fromPythonTime;
 
@@ -28,6 +29,9 @@ public class ReplayInfoBean {
   private final StringProperty gameType;
   private final StringProperty map;
   private final ObjectProperty<Path> replayFile;
+  private final SimpleIntegerProperty likes;
+  private final SimpleIntegerProperty downloads;
+  private final SimpleIntegerProperty playerCount;
 
   public ReplayInfoBean(String title) {
     this();
@@ -43,6 +47,12 @@ public class ReplayInfoBean {
     gameType = new SimpleStringProperty();
     map = new SimpleStringProperty();
     replayFile = new SimpleObjectProperty<>();
+    likes = new SimpleIntegerProperty();
+    downloads = new SimpleIntegerProperty();
+    playerCount = new SimpleIntegerProperty();
+
+    Random r = new Random();
+    likes.set(r.nextInt(100));
   }
 
   public ReplayInfoBean(LocalReplayInfo replayInfo, Path replayFile) {
@@ -57,6 +67,7 @@ public class ReplayInfoBean {
     if (replayInfo.getTeams() != null) {
       teams.putAll(replayInfo.getTeams());
     }
+    playerCount.set(replayInfo.getNumPlayers());
   }
 
   public ReplayInfoBean(ServerReplayInfo replayInfo) {
@@ -66,6 +77,42 @@ public class ReplayInfoBean {
     map.setValue(replayInfo.map);
     startTime.setValue(Instant.ofEpochMilli(replayInfo.start * 1000));
     endTime.setValue(Instant.ofEpochMilli(replayInfo.end * 1000));
+  }
+
+  public int getPlayerCount() {
+    return playerCount.get();
+  }
+
+  public void setPlayerCount(int playerCount) {
+    this.playerCount.set(playerCount);
+  }
+
+  public SimpleIntegerProperty playerCountProperty() {
+    return playerCount;
+  }
+
+  public int getDownloads() {
+    return downloads.get();
+  }
+
+  public void setDownloads(int downloads) {
+    this.downloads.set(downloads);
+  }
+
+  public SimpleIntegerProperty downloadsProperty() {
+    return downloads;
+  }
+
+  public int getLikes() {
+    return likes.get();
+  }
+
+  public void setLikes(int likes) {
+    this.likes.set(likes);
+  }
+
+  public SimpleIntegerProperty likesProperty() {
+    return likes;
   }
 
   public Path getReplayFile() {

@@ -2,6 +2,7 @@ package com.faforever.client.util;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 
 public interface TimeService {
 
@@ -20,4 +21,6 @@ public interface TimeService {
   String asShortTime(Instant instant);
 
   String shortDuration(Duration duration);
+
+  LocalDate getLocalDateFromInstant(Instant instant);
 }
