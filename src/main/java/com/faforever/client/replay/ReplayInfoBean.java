@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Random;
 
 import static com.faforever.client.util.TimeUtil.fromPythonTime;
 
@@ -51,8 +50,8 @@ public class ReplayInfoBean {
     downloads = new SimpleIntegerProperty();
     playerCount = new SimpleIntegerProperty();
 
-    Random r = new Random();
-    likes.set(r.nextInt(100));
+
+    likes.set((int) (Math.random() * 1000));
   }
 
   public ReplayInfoBean(LocalReplayInfo replayInfo, Path replayFile) {
