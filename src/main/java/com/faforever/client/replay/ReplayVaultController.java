@@ -93,11 +93,8 @@ public class ReplayVaultController {
   private boolean ladderRatingSelected = true;
   private boolean initialized = false;
   private SelectedPane selectedPane = SelectedPane.LOCAL;
-  private ReplaySortingOption replay = ReplaySortingOption.MOST_LIKED;
+  private ReplaySortingOption replaySortingOption = ReplaySortingOption.MOST_LIKED;
 
-  public ReplaySortingOption getReplaySortingOption() {
-    return replay;
-  }
 
   @FXML
   void initialize() {
@@ -141,10 +138,12 @@ public class ReplayVaultController {
 
   private void setPane() {
     CompletableFuture<Void> voidCompletableFuture = null;
+    LocalReplayVaultController localReplayVaultController = applicationContext.getBean(LocalReplayVaultController.class);
+    localReplayVaultController.setReplaySortingOption(replaySortingOption);
+
     switch (selectedPane) {
       case LOCAL:
         replayVaultSelectorMenu.setText(i18n.get("replayVault.localReplays"));
-        LocalReplayVaultController localReplayVaultController = applicationContext.getBean(LocalReplayVaultController.class);
         contentPane.getChildren().add(localReplayVaultController.getRoot());
         voidCompletableFuture = localReplayVaultController.loadLocalReplaysInBackground();
         break;
