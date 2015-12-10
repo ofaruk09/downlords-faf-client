@@ -30,11 +30,13 @@ public class Preferences {
   private final IntegerProperty lastGameMaxRating;
   private final BooleanProperty tilePaneSelected;
   private Ranked1v1Prefs ranked1v1;
+  private ReplayVaultPrefs replayVault;
 
   public Preferences() {
     chat = new ChatPrefs();
     login = new LoginPrefs();
     mainWindow = new WindowPrefs();
+    replayVault = new ReplayVaultPrefs();
     forgedAlliance = new ForgedAlliancePrefs();
     theme = new SimpleStringProperty("default");
     lastGameType = new SimpleStringProperty(GameType.DEFAULT.getString());
@@ -47,6 +49,14 @@ public class Preferences {
     lastGameMaxRating = new SimpleIntegerProperty(1300);
     ranked1v1 = new Ranked1v1Prefs();
     tilePaneSelected = new SimpleBooleanProperty(true);
+  }
+
+  public ReplayVaultPrefs getReplayVault() {
+    return replayVault;
+  }
+
+  public void setReplayVault(ReplayVaultPrefs replayVault) {
+    this.replayVault = replayVault;
   }
 
   public boolean getTilePaneSelected() {

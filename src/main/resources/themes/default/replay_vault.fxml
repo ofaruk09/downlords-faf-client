@@ -8,9 +8,9 @@
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import java.lang.String?>
@@ -30,21 +30,9 @@
                             mnemonicParsing="false" text="%replayVault.gameType"/>
               </children>
             </VBox>
+            <TextArea fx:id="playersField" maxHeight="66.0" maxWidth="175.0" promptText="%replayVault.players"
+                      wrapText="true"/>
             <VBox styleClass="replay-vault-search-options-pair">
-              <children>
-                <TextField fx:id="playerOneField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"/>
-                <TextField fx:id="playerTwoField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"/>
-              </children>
-            </VBox>
-            <VBox layoutX="10.0" layoutY="10.0" styleClass="replay-vault-search-options-pair">
-              <children>
-                <TextField fx:id="playerOneFactionField" maxHeight="1.7976931348623157E308"
-                           maxWidth="1.7976931348623157E308"/>
-                <TextField fx:id="playerTwoFactionField" maxHeight="1.7976931348623157E308"
-                           maxWidth="1.7976931348623157E308"/>
-              </children>
-            </VBox>
-            <VBox layoutX="169.0" layoutY="10.0" styleClass="replay-vault-search-options-pair">
               <children>
                 <TextField fx:id="maxRatingField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"/>
                 <TextField fx:id="minRatingField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"/>
@@ -141,12 +129,8 @@
             </VBox>
           </children>
         </HBox>
-        <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxHeight="1.7976931348623157E308"
-                    maxWidth="1.7976931348623157E308">
-          <content>
-            <Pane fx:id="contentPane" maxHeight="1.7976931348623157E308" maxWidth="1470.0"/>
-          </content>
-        </ScrollPane>
+        <ScrollPane fx:id="contentPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER"
+                    maxWidth="1.7976931348623157E308"/>
         <VBox fx:id="loadingPane" alignment="CENTER">
           <children>
             <Label contentDisplay="TOP" text="%replayVault.loadingReplays">
