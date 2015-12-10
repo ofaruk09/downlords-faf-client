@@ -5,9 +5,11 @@ import com.faforever.client.notification.Action;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.notification.Severity;
+import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.task.TaskService;
 import com.faforever.client.util.TimeService;
+import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -17,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.lang.invoke.MethodHandles;
 import java.time.LocalDate;
@@ -25,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.faforever.client.replay.SortedReplaysController.MAX_PER_PANE;
@@ -48,11 +52,14 @@ public class LocalReplayVaultController {
   I18n i18n;
   @Resource
   ApplicationContext applicationContext;
+  @Resource
+  PreferencesService preferenceService;
   ObservableList<ReplayInfoBean> replayInfoBeans;
-  private ReplaySortingOption replaySortingOption;
+  private ObjectProperty<ReplaySortingOption> replaySortingOption;
 
-  public void setReplaySortingOption(ReplaySortingOption replaySortingOption) {
-    this.replaySortingOption = replaySortingOption;
+  @PostConstruct
+  void init() {
+    replaySortingOption = preferenceService.getPreferences().getReplayVault().replaySortingOptionProperty();
   }
 
   public CompletableFuture<Void> loadLocalReplaysInBackground() {
@@ -61,7 +68,7 @@ public class LocalReplayVaultController {
     return taskService.submitTask(task)
         .thenAccept(replayInfoBeans -> {
           this.replayInfoBeans = FXCollections.observableArrayList(replayInfoBeans);
-          addLocalReplays();
+          sortLocalReplays(replayInfoBean -> true);
         })
         .exceptionally(throwable -> {
               logger.warn("Error while loading local replays", throwable);
@@ -75,42 +82,44 @@ public class LocalReplayVaultController {
         );
   }
 
-  private void addLocalReplays() {
+  public void sortLocalReplays(Predicate<ReplayInfoBean> replayInfoBeanPredicate) {
+    localReplayVaultRoot.getChildren().clear();
     if (replayInfoBeans.isEmpty()) {
       return;
     }
 
-    switch (replaySortingOption) {
+    switch (replaySortingOption.get()) {
       case DATE:
-        sortByDate();
+        sortByDate(replayInfoBeanPredicate);
         break;
       case MOST_LIKED:
-        sortByMostLiked();
+        sortByMostLiked(replayInfoBeanPredicate);
         break;
       case MOST_DOWNLOADED:
-        sortByMostDownloaded();
+        sortByMostDownloaded(replayInfoBeanPredicate);
         break;
       case HIGHEST_AVG_GLOB_RATING:
-        sortByHighestAvgGlobRating();
+        sortByHighestAvgGlobRating(replayInfoBeanPredicate);
         break;
       case HIGHEST_AVG_LADDER_RATING:
-        sortByHighestAvgLadderRating();
+        sortByHighestAvgLadderRating(replayInfoBeanPredicate);
         break;
     }
   }
 
-  public void sortByDate() {
+  private void sortByDate(Predicate<ReplayInfoBean> replayInfoBeanPredicate) {
     Collections.sort(replayInfoBeans, (replayInfoBean1, replayInfoBean2) -> {
       LocalDate replayInfoBean1LocalDate = timeService.getLocalDateFromInstant(replayInfoBean1.getStartTime());
       LocalDate replayInfoBean2LocalDate = timeService.getLocalDateFromInstant(replayInfoBean2.getStartTime());
-      return replayInfoBean1LocalDate.compareTo(replayInfoBean2LocalDate);
+      return replayInfoBean2LocalDate.compareTo(replayInfoBean1LocalDate);
     });
 
     LocalDate currentDate;
     SortedReplaysController currentSortedReplaysController = null;
     LocalDate previousDate = null;
 
-    for (ReplayInfoBean replayInfoBean : replayInfoBeans) {
+    List<ReplayInfoBean> filteredReplayInfoBeans = replayInfoBeans.filtered(replayInfoBeanPredicate);
+    for (ReplayInfoBean replayInfoBean : filteredReplayInfoBeans) {
       currentDate = timeService.getLocalDateFromInstant(replayInfoBean.getStartTime());
 
       if (!currentDate.equals(previousDate)) {
@@ -123,29 +132,31 @@ public class LocalReplayVaultController {
 
   private SortedReplaysController createSortedReplayPane() {
     SortedReplaysController sortedReplaysController = applicationContext.getBean(SortedReplaysController.class);
-    sortedReplaysController.setReplaySortingOption(replaySortingOption);
+    sortedReplaysController.setReplaySortingOption(replaySortingOption.get());
     localReplayVaultRoot.getChildren().add(sortedReplaysController.getRoot());
     return sortedReplaysController;
   }
 
-  public void sortByMostLiked() {
-    Collections.sort(replayInfoBeans, (replayInfoBean1, replayInfoBean2) ->
+  private void sortByMostLiked(Predicate<ReplayInfoBean> replayInfoBeanPredicate) {
+    List<ReplayInfoBean> filteredReplayInfoBeans = replayInfoBeans.filtered(replayInfoBeanPredicate);
+    Collections.sort(filteredReplayInfoBeans, (replayInfoBean1, replayInfoBean2) ->
         Integer.compare(replayInfoBean1.getLikes(), replayInfoBean2.getLikes()));
 
     addNumericallySortedReplays(replayInfoBeans);
   }
 
-  public void sortByMostDownloaded() {
-    Collections.sort(replayInfoBeans, (replayInfoBean1, replayInfoBean2) ->
+  private void sortByMostDownloaded(Predicate<ReplayInfoBean> replayInfoBeanPredicate) {
+    List<ReplayInfoBean> filteredReplayInfoBeans = replayInfoBeans.filtered(replayInfoBeanPredicate);
+    Collections.sort(filteredReplayInfoBeans, (replayInfoBean1, replayInfoBean2) ->
         Integer.compare(replayInfoBean1.getDownloads(), replayInfoBean2.getDownloads()));
 
     addNumericallySortedReplays(replayInfoBeans);
   }
 
-  public void sortByHighestAvgGlobRating() {
+  private void sortByHighestAvgGlobRating(Predicate<ReplayInfoBean> replayInfoBeanPredicate) {
   }
 
-  public void sortByHighestAvgLadderRating() {
+  private void sortByHighestAvgLadderRating(Predicate<ReplayInfoBean> replayInfoBeanPredicate) {
   }
 
   private void addNumericallySortedReplays(List<ReplayInfoBean> replayInfoBeans) {
