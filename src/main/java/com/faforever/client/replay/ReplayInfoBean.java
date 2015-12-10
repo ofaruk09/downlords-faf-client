@@ -49,9 +49,6 @@ public class ReplayInfoBean {
     likes = new SimpleIntegerProperty();
     downloads = new SimpleIntegerProperty();
     playerCount = new SimpleIntegerProperty();
-
-
-    likes.set((int) (Math.random() * 1000));
   }
 
   public ReplayInfoBean(LocalReplayInfo replayInfo, Path replayFile) {

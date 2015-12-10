@@ -59,9 +59,8 @@ public class ReplayTileController {
     }
     playerCountLabel.setText(String.format("%d", playerCount));
 
-    //FIXME: update with api
-    likesLabel.setText("0");
-    downloadsLabel.setText("0");
+    likesLabel.setText(String.format("%d", replayInfoBean.getLikes()));
+    downloadsLabel.setText(String.format("%d", replayInfoBean.getDownloads()));
 
     Duration duration = Duration.between(replayInfoBean.getStartTime(), replayInfoBean.getEndTime());
     durationLabel.setText(timeService.shortDuration(duration));
