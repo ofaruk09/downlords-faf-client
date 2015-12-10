@@ -25,7 +25,12 @@ import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Resource;
 import java.lang.invoke.MethodHandles;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 import static com.faforever.client.replay.RatingType.GLOBAL;
 import static com.faforever.client.replay.RatingType.LADDER;
@@ -151,7 +156,6 @@ public class ReplayVaultController {
     JavaFxUtil.bindOnApplicationThread(replayVaultSelectorMenu.textProperty(), () -> i18n.get(preferencesService.getPreferences().getReplayVault().getSelectedReplayVault().getI18nKey()), replayVaultPrefs.selectedReplayVaultProperty());
 
     LocalReplayVaultController localReplayVaultController = applicationContext.getBean(LocalReplayVaultController.class);
-    localReplayVaultController.setReplaySortingOption(replayVaultPrefs.getReplaySortingOption());
     CompletableFuture<Void> voidCompletableFuture = localReplayVaultController.loadLocalReplaysInBackground();
 
     voidCompletableFuture.thenAccept(aVoid -> {
@@ -221,7 +225,43 @@ public class ReplayVaultController {
 
   @FXML
   void onSearchReplay(ActionEvent actionEvent) {
+    Map<String, String> playerFactionMap = parsePlayersField();
+    Predicate<ReplayInfoBean> replayInfoBeanPredicate = replayInfoBean -> {
+      for (String player : playerFactionMap.keySet()) {
+        for (List<String> team : replayInfoBean.getTeams().values()) {
+          if (!team.stream().filter(new Predicate<String>() {
+            @Override
+            public boolean test(String s) {
+              return s.equalsIgnoreCase(player);
+            }
+          }).findFirst().isPresent()) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+    LocalReplayVaultController localReplayVaultController = applicationContext.getBean(LocalReplayVaultController.class);
+    localReplayVaultController.sortLocalReplays(replayInfoBeanPredicate);
+  }
 
+  private Map<String, String> parsePlayersField() {
+    if (playersField.getText().isEmpty()) {
+      return Collections.emptyMap();
+    }
+    SelectedReplayVault selectedReplayVault = preferencesService.getPreferences().getReplayVault().getSelectedReplayVault();
+    Map<String, String> playerFactionMap = new HashMap<>();
+    String[] playersFactions = playersField.getText().trim().split(",");
+    for (String playerFaction : playersFactions) {
+      String[] playerFactionPair = playerFaction.split(":");
+      if (selectedReplayVault == ONLINE && playerFactionPair.length == 2) {
+        playerFactionMap.put(playerFactionPair[0], playerFactionPair[1]);
+      } else {
+        playerFactionMap.put(playerFactionPair[0], "");
+      }
+    }
+
+    return playerFactionMap;
   }
 
   @FXML
