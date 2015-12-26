@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface ReplayService {
 
-  Collection<ReplayInfoBean> getLocalReplays() throws IOException;
+ CompletableFuture<Collection<ReplayInfoBean>> getLocalReplays();
 
   CompletableFuture<List<ReplayInfoBean>> getOnlineReplays();
 

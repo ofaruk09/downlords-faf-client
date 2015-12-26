@@ -10,7 +10,6 @@ import com.faforever.client.mod.InstallModTask;
 import com.faforever.client.mod.UninstallModTask;
 import com.faforever.client.patch.GitCheckGameUpdateTask;
 import com.faforever.client.patch.UpdateGameFilesTask;
-import com.faforever.client.replay.LoadLocalReplaysTask;
 import com.faforever.client.replay.ReplayDownloadTask;
 import com.faforever.client.update.CheckForUpdateTask;
 import com.faforever.client.update.DownloadUpdateTask;
@@ -76,12 +75,6 @@ public class TaskConfig {
   @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
   ReplayDownloadTask replayDownloadTask() {
     return new ReplayDownloadTask();
-  }
-
-  @Bean
-  @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-  LoadLocalReplaysTask loadLocalReplaysTask() {
-    return new LoadLocalReplaysTask();
   }
 
   @Bean

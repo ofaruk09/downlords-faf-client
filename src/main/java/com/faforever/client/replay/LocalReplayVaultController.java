@@ -54,7 +54,10 @@ public class LocalReplayVaultController {
   ApplicationContext applicationContext;
   @Resource
   PreferencesService preferenceService;
-  ObservableList<ReplayInfoBean> replayInfoBeans;
+  @Resource
+  ReplayService replayService;
+
+  private ObservableList<ReplayInfoBean> replayInfoBeans;
   private ObjectProperty<ReplaySortingOption> replaySortingOption;
 
   @PostConstruct
@@ -63,9 +66,7 @@ public class LocalReplayVaultController {
   }
 
   public CompletableFuture<Void> loadLocalReplaysInBackground() {
-    LoadLocalReplaysTask task = applicationContext.getBean(LoadLocalReplaysTask.class);
-
-    return taskService.submitTask(task)
+    return replayService.getLocalReplays()
         .thenAccept(replayInfoBeans -> {
           this.replayInfoBeans = FXCollections.observableArrayList(replayInfoBeans);
           sortLocalReplays(replayInfoBean -> true);

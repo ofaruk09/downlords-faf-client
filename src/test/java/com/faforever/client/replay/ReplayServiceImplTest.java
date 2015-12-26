@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -135,7 +136,7 @@ public class ReplayServiceImplTest {
     doThrow(new IOException("Junit test exception")).when(replayFileReader).readReplayInfo(file1);
     doThrow(new IOException("Junit test exception")).when(replayFileReader).readReplayInfo(file2);
 
-    Collection<ReplayInfoBean> localReplays = instance.getLocalReplays();
+    Collection<ReplayInfoBean> localReplays = instance.getLocalReplays().get(3, TimeUnit.SECONDS);
 
     assertThat(localReplays, empty());
 
@@ -157,7 +158,7 @@ public class ReplayServiceImplTest {
 
     when(replayFileReader.readReplayInfo(file1)).thenReturn(localReplayInfo);
 
-    Collection<ReplayInfoBean> localReplays = instance.getLocalReplays();
+    Collection<ReplayInfoBean> localReplays = instance.getLocalReplays().get(3, TimeUnit.SECONDS);
 
     assertThat(localReplays, hasSize(1));
     assertThat(localReplays.iterator().next().getId(), is(123));

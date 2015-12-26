@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.Collections.emptyMap;
@@ -80,28 +81,34 @@ public class ReplayServiceImpl implements ReplayService {
   ReplayServerAccessor replayServerAccessor;
   @Resource
   ApplicationContext applicationContext;
+  @Resource
+  Executor executorService;
 
 
   @Override
-  public Collection<ReplayInfoBean> getLocalReplays() throws IOException {
-    Collection<ReplayInfoBean> replayInfos = new ArrayList<>();
+  public CompletableFuture<Collection<ReplayInfoBean>> getLocalReplays() {
+    return CompletableFuture.supplyAsync(() -> {
+      Collection<ReplayInfoBean> replayInfos = new ArrayList<>();
+      String replayFileGlob = environment.getProperty("replayFileGlob");
 
-    String replayFileGlob = environment.getProperty("replayFileGlob");
-
-    Path replaysDirectory = preferencesService.getReplaysDirectory();
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(replaysDirectory, replayFileGlob)) {
-      for (Path replayFile : directoryStream) {
-        try {
-          LocalReplayInfo replayInfo = replayFileReader.readReplayInfo(replayFile);
-          replayInfos.add(new ReplayInfoBean(replayInfo, replayFile));
-        } catch (Exception e) {
-          logger.warn("Could not read replay file {}", replayFile);
-          moveCorruptedReplayFile(replayFile);
+      Path replaysDirectory = preferencesService.getReplaysDirectory();
+      try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(replaysDirectory, replayFileGlob)) {
+        for (Path replayFile : directoryStream) {
+          try {
+            LocalReplayInfo replayInfo = replayFileReader.readReplayInfo(replayFile);
+            replayInfos.add(new ReplayInfoBean(replayInfo, replayFile));
+          } catch (Exception e) {
+            logger.warn("Could not read replay file {}", replayFile);
+            moveCorruptedReplayFile(replayFile);
+          }
         }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
-    }
 
-    return replayInfos;
+      return replayInfos;
+    }, executorService);
+
   }
 
   private void moveCorruptedReplayFile(Path replayFile) throws IOException {
