@@ -59,10 +59,6 @@ public class Preferences {
     this.replayVault = replayVault;
   }
 
-  public boolean getTilePaneSelected() {
-    return tilePaneSelected.get();
-  }
-
   public String getGamesViewMode() {
     return gamesViewMode.get();
   }

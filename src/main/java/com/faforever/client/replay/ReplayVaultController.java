@@ -1,12 +1,12 @@
 package com.faforever.client.replay;
 
+import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.preferences.ReplayVaultPrefs;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.task.TaskService;
-import com.faforever.client.util.JavaFxUtil;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
