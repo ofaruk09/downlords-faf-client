@@ -87,7 +87,7 @@ public class ReplayServiceImpl implements ReplayService {
   @Resource
   ApplicationContext applicationContext;
   @Resource
-  Executor executorService;
+  Executor executor;
 
 
   @Override
@@ -112,7 +112,7 @@ public class ReplayServiceImpl implements ReplayService {
       }
 
       return replayInfos;
-    }, executorService);
+    }, executor);
 
   }
 
@@ -208,16 +208,10 @@ public class ReplayServiceImpl implements ReplayService {
   }
 
   @Override
-  public Path download(int id) {
+  public CompletableFuture<Path> download(int id) {
     ReplayDownloadTask task = applicationContext.getBean(ReplayDownloadTask.class);
     task.setReplayId(id);
-    Path replayPath = null;
-    try {
-      replayPath = task.call();
-    } catch (Exception e) {
-      logger.warn("Error downloading replay: {}", id);
-    }
-    return replayPath;
+    return taskService.submitTask(task);
   }
 
   private void runReplayFile(Path path) {

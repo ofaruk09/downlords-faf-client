@@ -70,9 +70,8 @@ public class ReplayTileController {
   @FXML
   void onClick(MouseEvent event) {
     if (event.getClickCount() == 2) {
+      // TODO error handling, FIXME do something?
       replaceService.download(replayId);
-    } else {
-
     }
   }
 

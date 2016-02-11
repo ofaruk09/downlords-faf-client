@@ -19,5 +19,5 @@ public interface ReplayService {
 
   void runLiveReplay(URI uri) throws IOException;
 
-  Path download(int id);
+ CompletableFuture<Path> download(int id);
 }

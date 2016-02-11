@@ -312,6 +312,7 @@ public class UiConfig {
   PersistentNotificationsController notificationsController() {
     return loadController("persistent_notifications.fxml");
   }
+
   @Bean
   CreateGameController createGameController() {
     return loadController("create_game.fxml");
