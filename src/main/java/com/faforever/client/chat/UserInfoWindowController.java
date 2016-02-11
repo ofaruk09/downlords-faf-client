@@ -219,8 +219,8 @@ public class UserInfoWindowController {
     countryImageView.setImage(countryFlagService.loadCountryFlag(playerInfoBean.getCountry()));
     avatarImageView.setImage(IdenticonUtil.createIdenticon(playerInfoBean.getId()));
     gamesPlayedLabel.setText(String.format(locale, "%d", playerInfoBean.getNumberOfGames()));
-    ratingLabelGlobal.setText(String.format(locale, "%d", RatingUtil.getGlobalRating(playerInfoBean)));
-    ratingLabel1v1.setText(String.format(locale, "%d", RatingUtil.getGlobalRating(playerInfoBean)));
+    ratingLabelGlobal.setText(String.format(locale, "%d", RatingUtil.getRoundedGlobalRating(playerInfoBean)));
+    ratingLabel1v1.setText(String.format(locale, "%d", RatingUtil.getLeaderboardRating(playerInfoBean)));
 
     CountryCode countryCode = CountryCode.getByCode(playerInfoBean.getCountry());
     if (countryCode != null) {
@@ -230,8 +230,8 @@ public class UserInfoWindowController {
       countryLabel.setText(playerInfoBean.getCountry());
     }
 
-    ratingOver90DaysButton.setSelected(true);
     ratingOver90DaysButton.fire();
+    ratingOver90DaysButton.setSelected(true);
 
     loadAchievements();
     eventService.getPlayerEvents(playerInfoBean.getUsername()).thenAccept(events -> {
@@ -419,7 +419,7 @@ public class UserInfoWindowController {
   @SuppressWarnings("unchecked")
   private void plotPlayerRatingGraph(PlayerStatisticsMessage result) {
     XYChart.Series<Long, Integer> series = new XYChart.Series<>();
-    series.setName(i18n.get("Player rating"));
+    series.setName(i18n.get("userInfo.ratingOverTime"));
 
     List<XYChart.Data<Long, Integer>> values = new ArrayList<>();
 

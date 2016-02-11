@@ -4,8 +4,10 @@ import com.faforever.client.ThemeService;
 import com.faforever.client.audio.AudioController;
 import com.faforever.client.chat.UrlPreviewResolver.Preview;
 import com.faforever.client.fx.HostService;
+import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.game.PlayerCardTooltipController;
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.io.ByteCopier;
 import com.faforever.client.main.MainController;
 import com.faforever.client.notification.Action;
 import com.faforever.client.notification.DismissAction;
@@ -20,9 +22,7 @@ import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.uploader.ImageUploadService;
 import com.faforever.client.user.UserService;
-import com.faforever.client.util.ByteCopier;
 import com.faforever.client.util.IdenticonUtil;
-import com.faforever.client.util.JavaFxUtil;
 import com.faforever.client.util.TimeService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
@@ -67,12 +67,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.faforever.client.chat.ChatColorMode.CUSTOM;
-import static com.faforever.client.chat.ChatColorMode.RANDOM;
+import static com.faforever.client.chat.SocialStatus.FOE;
 import static com.google.common.html.HtmlEscapers.htmlEscaper;
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 /**
  * A chat tab displays messages in a {@link WebView}. The WebView is used since text on a JavaFX canvas isn't
@@ -98,6 +99,7 @@ public abstract class AbstractChatTabController {
   private static final String CHAT_TAB_REFERENCE_IN_JAVASCRIPT = "chatTab";
   private static final String ACTION_PREFIX = "/me ";
   private static final String JOIN_PREFIX = "/join ";
+  private static final String WHOIS_PREFIX = "/whois ";
   /**
    * Added if a message is what IRC calls an "action".
    */
@@ -175,7 +177,7 @@ public abstract class AbstractChatTabController {
 
   @PostConstruct
   void postConstruct() {
-    mentionPattern = Pattern.compile("\\b" + Pattern.quote(userService.getUsername()) + "\\b");
+    mentionPattern = Pattern.compile("\\b" + Pattern.quote(userService.getUsername()) + "\\b", CASE_INSENSITIVE);
 
     Platform.runLater(this::initChatView);
 
@@ -395,6 +397,9 @@ public abstract class AbstractChatTabController {
     } else if (text.startsWith(JOIN_PREFIX)) {
       chatService.joinChannel(text.replaceFirst(Pattern.quote(JOIN_PREFIX), ""));
       messageTextField.clear();
+    } else if (text.startsWith(WHOIS_PREFIX)) {
+      chatService.whois(text.replaceFirst(Pattern.quote(JOIN_PREFIX), ""));
+      messageTextField.clear();
     } else {
       sendMessage();
     }
@@ -580,8 +585,9 @@ public abstract class AbstractChatTabController {
       String text = htmlEscaper().escape(chatMessage.getMessage()).replace("\\", "\\\\");
       text = convertUrlsToHyperlinks(text);
 
-      if (mentionPattern.matcher(text).find()) {
-        text = highlightOwnUsername(text);
+      Matcher matcher = mentionPattern.matcher(text);
+      if (matcher.find()) {
+        text = matcher.replaceAll("<span class='self'>" + matcher.group(1) + "</span>");
         if (!hasFocus()) {
           audioController.playChatMentionSound();
           showNotificationIfNecessary(chatMessage);
@@ -611,7 +617,7 @@ public abstract class AbstractChatTabController {
       }
 
       html = html.replace("{css-classes}", Joiner.on(' ').join(cssClasses));
-      html = html.replace("{inline-style}", getInlineStyle(login, messageColorClass));
+      html = html.replace("{inline-style}", getInlineStyle(login));
 
       addToMessageContainer(html);
 
@@ -651,36 +657,32 @@ public abstract class AbstractChatTabController {
   }
 
   @VisibleForTesting
-  String getInlineStyle(String username, String messageColorClass) {
+  String getInlineStyle(String username) {
     ChatUser chatUser = chatService.createOrGetChatUser(username);
+    PlayerInfoBean player = playerService.getPlayerForUsername(username);
     ChatPrefs chatPrefs = preferencesService.getPreferences().getChat();
-    String inlineStyle = "style=\"%s%s\"";
     String color = "";
     String display = "";
 
-    if ((chatPrefs.getChatColorMode().equals(RANDOM) && (messageColorClass == null || messageColorClass.equals(CSS_CLASS_CHAT_ONLY)))) {
-      color = createInlineStyleFromHexColor(chatUser.getColor());
-    } else if (chatPrefs.getChatColorMode().equals(CUSTOM) && chatUser.getColor() != null) {
-      color = createInlineStyleFromHexColor(chatUser.getColor());
+    if (chatPrefs.getHideFoeMessages() && player != null && player.getSocialStatus() == FOE) {
+      display = "display: none;";
+    } else {
+      switch (chatPrefs.getChatColorMode()) {
+        case CUSTOM:
+        case RANDOM:
+          if (chatUser.getColor() != null) {
+            color = createInlineStyleFromColor(chatUser.getColor());
+          }
+          break;
+      }
     }
 
-    if (chatPrefs.getHideFoeMessages() && messageColorClass != null && messageColorClass.equals(SocialStatus.FOE.getCssClass())) {
-      display = "display: none;";
-    }
-    return String.format(inlineStyle, color, display);
+    return String.format("style=\"%s%s\"", color, display);
   }
 
   @VisibleForTesting
-  String createInlineStyleFromHexColor(Color messageColor) {
+  String createInlineStyleFromColor(Color messageColor) {
     return String.format("color: %s;", JavaFxUtil.toRgbCode(messageColor));
-  }
-
-  private String highlightOwnUsername(String text) {
-    // TODO outsource in html file
-    return text.replaceAll(
-        mentionPattern.pattern(),
-        "<span class='self'>" + userService.getUsername() + "</span>"
-    );
   }
 
   private String convertUrlsToHyperlinks(String text) {

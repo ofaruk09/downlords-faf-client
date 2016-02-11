@@ -1,12 +1,14 @@
 package com.faforever.client.remote;
 
+import com.faforever.client.api.Ranked1v1Stats;
+import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.game.Faction;
 import com.faforever.client.game.NewGameInfo;
-import com.faforever.client.leaderboard.LeaderboardEntryBean;
-import com.faforever.client.legacy.ConnectionState;
+import com.faforever.client.leaderboard.Ranked1v1EntryBean;
 import com.faforever.client.legacy.domain.GameLaunchMessage;
 import com.faforever.client.legacy.domain.LoginMessage;
 import com.faforever.client.legacy.domain.ServerMessage;
+import com.faforever.client.net.ConnectionState;
 import com.faforever.client.relay.GpgClientMessage;
 import javafx.beans.property.ReadOnlyObjectProperty;
 
@@ -38,15 +40,29 @@ public interface FafService {
 
   void expand1v1Search(float radius);
 
-  CompletableFuture<List<LeaderboardEntryBean>> requestLeaderboardEntries();
-
   CompletableFuture<LoginMessage> connectAndLogIn(String username, String password);
 
   void disconnect();
 
-  void setFriends(List<String> friendList);
+  void addFriend(PlayerInfoBean friendId);
 
-  void setFoes(List<String> foeList);
+  void addFoe(PlayerInfoBean foeId);
+
+  void removeFriend(PlayerInfoBean friendId);
+
+  void removeFoe(PlayerInfoBean foeId);
 
   Long getSessionId();
+
+  CompletableFuture<List<Ranked1v1EntryBean>> getRanked1v1Entries();
+
+  CompletableFuture<Ranked1v1Stats> getRanked1v1Stats();
+
+  CompletableFuture<Ranked1v1EntryBean> getRanked1v1EntryForPlayer(int playerId);
+
+  void notifyGameEnded();
+
+  CompletableFuture<GameLaunchMessage> expectRehostCommand();
+
+  void reconnect();
 }

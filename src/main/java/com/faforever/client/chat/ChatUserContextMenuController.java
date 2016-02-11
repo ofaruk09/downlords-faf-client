@@ -33,91 +33,66 @@ import java.lang.invoke.MethodHandles;
 import static com.faforever.client.chat.ChatColorMode.CUSTOM;
 import static com.faforever.client.chat.SocialStatus.FOE;
 import static com.faforever.client.chat.SocialStatus.FRIEND;
-import static com.faforever.client.chat.SocialStatus.OTHER;
 import static com.faforever.client.chat.SocialStatus.SELF;
 import static com.faforever.client.fx.WindowDecorator.WindowButtonType.CLOSE;
 
 public class ChatUserContextMenuController {
 
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   @FXML
   MenuItem sendPrivateMessageItem;
-
   @FXML
   SeparatorMenuItem socialSeperator;
-
   @FXML
   MenuItem removeCustomColorItem;
-
   @FXML
   CustomMenuItem colorPickerMenuItem;
-
   @FXML
   ColorPicker colorPicker;
-
   @FXML
   MenuItem joinGameItem;
-
   @FXML
   MenuItem addFriendItem;
-
   @FXML
   MenuItem removeFriendItem;
-
   @FXML
   MenuItem addFoeItem;
-
   @FXML
   MenuItem removeFoeItem;
-
   @FXML
   MenuItem watchGameItem;
-
   @FXML
   MenuItem viewReplaysItem;
-
   @FXML
   MenuItem inviteItem;
-
   @FXML
   SeparatorMenuItem moderatorActionSeparator;
-
   @FXML
   MenuItem kickItem;
-
   @FXML
   MenuItem banItem;
-
   @FXML
   ContextMenu contextMenu;
 
   @Resource
   UserService userService;
-
   @Resource
   ChatService chatService;
-
   @Resource
   PreferencesService preferencesService;
-
   @Resource
   ApplicationContext applicationContext;
-
   @Resource
   StageConfigurator stageConfigurator;
-
   @Resource
   PlayerService playerService;
-
   @Resource
   GameService gameService;
-
   @Resource
   ReplayService replayService;
-
   @Resource
   NotificationService notificationService;
-
   @Resource
   I18n i18n;
 
@@ -153,11 +128,17 @@ public class ChatUserContextMenuController {
         .and(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF)));
     colorPickerMenuItem.visibleProperty().bind(chatPrefs.chatColorModeProperty()
         .isEqualTo(CUSTOM)
-        .and(playerInfoBean.socialStatusProperty().isEqualTo(OTHER)));
+        .and(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF)));
+
+    kickItem.visibleProperty().bind(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF));
+    banItem.visibleProperty().bind(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF));
+    moderatorActionSeparator.visibleProperty().bind(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF));
 
     sendPrivateMessageItem.visibleProperty().bind(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF));
 
-    addFriendItem.visibleProperty().bind(playerInfoBean.socialStatusProperty().isNotEqualTo(FRIEND).and(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF)));
+    addFriendItem.visibleProperty().bind(
+        playerInfoBean.socialStatusProperty().isNotEqualTo(FRIEND).and(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF))
+    );
     removeFriendItem.visibleProperty().bind(playerInfoBean.socialStatusProperty().isEqualTo(FRIEND));
     addFoeItem.visibleProperty().bind(playerInfoBean.socialStatusProperty().isNotEqualTo(FOE).and(playerInfoBean.socialStatusProperty().isNotEqualTo(SELF)));
     removeFoeItem.visibleProperty().bind(playerInfoBean.socialStatusProperty().isEqualTo(FOE));
@@ -196,33 +177,33 @@ public class ChatUserContextMenuController {
   @FXML
   void onAddFriend() {
     if (playerInfoBean.getSocialStatus() == FOE) {
-      playerService.removeFoe(playerInfoBean.getUsername());
+      playerService.removeFoe(playerInfoBean);
     }
-    playerService.addFriend(playerInfoBean.getUsername());
+    playerService.addFriend(playerInfoBean);
   }
 
   @FXML
   void onRemoveFriend() {
-    playerService.removeFriend(playerInfoBean.getUsername());
+    playerService.removeFriend(playerInfoBean);
   }
 
   @FXML
   void onAddFoe() {
     if (playerInfoBean.getSocialStatus() == FRIEND) {
-      playerService.removeFriend(playerInfoBean.getUsername());
+      playerService.removeFriend(playerInfoBean);
     }
-    playerService.addFoe(playerInfoBean.getUsername());
+    playerService.addFoe(playerInfoBean);
   }
 
   @FXML
   void onRemoveFoe() {
-    playerService.removeFoe(playerInfoBean.getUsername());
+    playerService.removeFoe(playerInfoBean);
   }
 
   @FXML
   void onWatchGame() {
     try {
-      replayService.runLiveReplay(playerInfoBean.getGameUid(), playerInfoBean.getUsername());
+      replayService.runLiveReplay(playerInfoBean.getGameUid(), playerInfoBean.getId());
     } catch (IOException e) {
       logger.error("Cannot load live replay {}", e.getCause());
       String title = i18n.get("replays.live.loadFailure.title");

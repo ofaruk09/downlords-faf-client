@@ -14,10 +14,10 @@ import com.faforever.client.gravatar.GravatarService;
 import com.faforever.client.hub.CommunityHubController;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.leaderboard.LeaderboardController;
-import com.faforever.client.legacy.ConnectionState;
 import com.faforever.client.login.LoginController;
 import com.faforever.client.map.MapVaultController;
 import com.faforever.client.mod.ModVaultController;
+import com.faforever.client.net.ConnectionState;
 import com.faforever.client.news.NewsController;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotificationsController;
@@ -37,7 +37,9 @@ import com.faforever.client.task.TaskService;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
 import com.faforever.client.update.ClientUpdateService;
 import com.faforever.client.user.UserService;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.scene.layout.Pane;
@@ -45,14 +47,13 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.springframework.context.ApplicationContext;
 import org.testfx.util.WaitForAsyncUtils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -133,16 +134,17 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
   private NotificationsPrefs notificationPrefs;
   @Mock
   private LoginController loginController;
-  @Captor
-  private ArgumentCaptor<Runnable> onLoginListenerCaptor;
   @Mock
   private ChatService chatService;
+  @Mock
+  private ExecutorService executorService;
 
   private MainController instance;
   private CountDownLatch mainControllerInitializedLatch;
   private SimpleObjectProperty<ConnectionState> connectionStateProperty;
   private SimpleObjectProperty<ConnectivityState> connectivityStateProperty;
   private ObjectProperty<ConnectionState> chatConnectionStateProperty;
+  private BooleanProperty loggedInProperty;
 
   @Before
   public void setUp() throws Exception {
@@ -177,10 +179,12 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
     instance.transientNotificationsController = transientNotificationsController;
     instance.loginController = loginController;
     instance.chatService = chatService;
+    instance.executorService = executorService;
 
     connectionStateProperty = new SimpleObjectProperty<>();
     connectivityStateProperty = new SimpleObjectProperty<>(ConnectivityState.UNKNOWN);
     chatConnectionStateProperty = new SimpleObjectProperty<>();
+    loggedInProperty = new SimpleBooleanProperty();
 
     when(chatController.getRoot()).thenReturn(new Pane());
     when(persistentNotificationsController.getRoot()).thenReturn(new Pane());
@@ -192,7 +196,6 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
     when(userMenuController.getRoot()).thenReturn(new Pane());
     when(transientNotificationsController.getRoot()).thenReturn(new Pane());
     when(taskService.getActiveTasks()).thenReturn(FXCollections.emptyObservableList());
-    when(connectivityService.checkConnectivity()).thenReturn(CompletableFuture.completedFuture(null));
     when(preferencesService.getPreferences()).thenReturn(preferences);
     when(applicationContext.getBean(UserInfoWindowController.class)).thenReturn(userInfoWindowController);
     when(preferences.getMainWindow()).thenReturn(mainWindowPrefs);
@@ -202,12 +205,14 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
     when(notificationPrefs.toastPositionProperty()).thenReturn(new SimpleObjectProperty<>(ToastPosition.BOTTOM_RIGHT));
     when(notificationPrefs.getToastPosition()).thenReturn(ToastPosition.BOTTOM_RIGHT);
     when(fafService.connectionStateProperty()).thenReturn(connectionStateProperty);
+    when(connectivityService.checkConnectivity()).thenReturn(CompletableFuture.completedFuture(null));
     when(connectivityService.connectivityStateProperty()).thenReturn(connectivityStateProperty);
     when(chatService.connectionStateProperty()).thenReturn(chatConnectionStateProperty);
+    when(userService.loggedInProperty()).thenReturn(loggedInProperty);
 
     instance.postConstruct();
 
-    verify(userService).addOnLoginListener(onLoginListenerCaptor.capture());
+    verify(userService).loggedInProperty();
 
     mainControllerInitializedLatch = new CountDownLatch(1);
     // As the login check is executed AFTER the main controller has been switched to logged in state, we hook to it
@@ -227,7 +232,6 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
     WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.display());
     when(mainWindowPrefs.getLastView()).thenReturn(instance.communityButton.getId());
 
-    verify(connectivityService).checkConnectivity();
     verify(gameUpdateService).checkForUpdateInBackground();
     assertTrue(getStage().isShowing());
   }
@@ -242,7 +246,7 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
   }
 
   private void fakeLogin() throws InterruptedException {
-    onLoginListenerCaptor.getValue().run();
+    loggedInProperty.set(true);
     assertTrue(mainControllerInitializedLatch.await(3000, TimeUnit.SECONDS));
   }
 
@@ -304,12 +308,6 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
   }
 
   @Test
-  @Ignore("Not yet implemented")
-  public void testOnEnableUpnpClicked() throws Exception {
-    instance.onEnableUpnpClicked();
-  }
-
-  @Test
   public void testOnPortCheckRetryClicked() throws Exception {
     instance.onPortCheckRetryClicked();
 
@@ -317,15 +315,15 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
   }
 
   @Test
-  @Ignore("Not yet implemented")
   public void testOnFafReconnectClicked() throws Exception {
     instance.onFafReconnectClicked();
+    verify(fafService).reconnect();
   }
 
   @Test
-  @Ignore("Not yet implemented")
   public void testOnIrcReconnectClicked() throws Exception {
     instance.onChatReconnectClicked();
+    verify(chatService).reconnect();
   }
 
   @Test
@@ -338,54 +336,38 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
 
   @Test
   public void testOnGamePortCheckFailed() throws Exception {
-    String disconnected = "foobar";
+    testChangeConnectivity(ConnectivityState.PUBLIC, ConnectivityState.UNKNOWN);
+  }
 
-    WaitForAsyncUtils.waitForAsyncFx(5000, () -> instance.portCheckStatusButton.setText(disconnected));
+  private void testChangeConnectivity(ConnectivityState initialState, ConnectivityState newState) throws Exception {
+    connectivityStateProperty.setValue(initialState);
 
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    future.completeExceptionally(new Exception("test exception"));
-    when(connectivityService.checkConnectivity()).thenReturn(future);
+    String unknown = "Unknown";
+    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.portCheckStatusButton.setText(unknown));
 
-    attachToRoot();
-    fakeLogin();
+    CompletableFuture<String> textFuture = new CompletableFuture<>();
+    instance.portCheckStatusButton.textProperty().addListener((observable, oldValue, newValue) -> {
+      textFuture.complete(newValue);
+    });
 
-    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.display());
+    connectivityStateProperty.setValue(newState);
 
-    String textAfterConnection = instance.portCheckStatusButton.getText();
-    assertThat(textAfterConnection, not(disconnected));
+    assertThat(textFuture.get(1, TimeUnit.SECONDS), not(unknown));
   }
 
   @Test
-  public void testOnGamePortCheckResultReachable() throws Exception {
-    String disconnected = "foobar";
-    WaitForAsyncUtils.waitForAsyncFx(5000, () -> instance.portCheckStatusButton.setText(disconnected));
-
-    attachToRoot();
-    fakeLogin();
-
-    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.display());
-
-    String textAfterConnection = instance.portCheckStatusButton.getText();
-    assertThat(textAfterConnection, not(disconnected));
+  public void testOnGamePortCheckResultProxy() throws Exception {
+    testChangeConnectivity(ConnectivityState.UNKNOWN, ConnectivityState.STUN);
   }
 
   @Test
   public void testOnGamePortCheckResultUnreachable() throws Exception {
-    String disconnected = "foobar";
-    WaitForAsyncUtils.waitForAsyncFx(2000, () -> instance.portCheckStatusButton.setText(disconnected));
+    testChangeConnectivity(ConnectivityState.UNKNOWN, ConnectivityState.BLOCKED);
+  }
 
-    when(connectivityService.checkConnectivity()).thenReturn(CompletableFuture.completedFuture(null));
-    when(connectivityService.getConnectivityState()).thenReturn(ConnectivityState.BLOCKED);
-
-    CompletableFuture<String> completableFuture = new CompletableFuture<>();
-    instance.portCheckStatusButton.textProperty().addListener((observable, oldValue, newValue) -> {
-      completableFuture.complete(newValue);
-    });
-
-    WaitForAsyncUtils.waitForAsyncFx(2000, () -> instance.display());
-    onLoginListenerCaptor.getValue().run();
-
-    assertThat(completableFuture.get(3, TimeUnit.SECONDS), not(disconnected));
+  @Test
+  public void testOnGamePortCheckResultReachable() throws Exception {
+    testChangeConnectivity(ConnectivityState.UNKNOWN, ConnectivityState.PUBLIC);
   }
 
   @Test
@@ -427,7 +409,7 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
   @Test
   public void testOnVaultSelected() throws Exception {
     attachToRoot();
-    when(mapMapVaultController.getRoot()).thenReturn(new Pane());
+    when(modVaultController.getRoot()).thenReturn(new Pane());
     WaitForAsyncUtils.waitForAsyncFx(1000, instance.vaultButton::fire);
   }
 
@@ -487,24 +469,17 @@ public class MainControllerTest extends AbstractPlainJavaFxTest {
   }
 
   @Test
-  public void testOnMapsSelected() throws Exception {
-    attachToRoot();
-    when(mapMapVaultController.getRoot()).thenReturn(new Pane());
-    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.vaultButton.getItems().get(0).fire());
-  }
-
-  @Test
   public void testOnModsSelected() throws Exception {
     attachToRoot();
     when(modVaultController.getRoot()).thenReturn(new Pane());
-    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.vaultButton.getItems().get(1).fire());
+    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.vaultButton.getItems().get(0).fire());
   }
 
   @Test
   public void testOnReplaysSelected() throws Exception {
     attachToRoot();
-    //when(replayVaultController.getRoot()).thenReturn(new Pane());
-    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.vaultButton.getItems().get(2).fire());
+    when(replayVaultController.getRoot()).thenReturn(new Pane());
+    WaitForAsyncUtils.waitForAsyncFx(1000, () -> instance.vaultButton.getItems().get(1).fire());
   }
 
   @Test

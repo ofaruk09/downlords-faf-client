@@ -8,8 +8,7 @@ public class GameTypeMessage extends FafServerMessage {
 
   private boolean join;
   private String name;
-  private boolean live;
-  private boolean host;
+  private int publish;
   private String fullname;
   private String desc;
   private Boolean[] options;
@@ -35,20 +34,12 @@ public class GameTypeMessage extends FafServerMessage {
     this.name = name;
   }
 
-  public boolean isLive() {
-    return live;
+  public boolean isPublish() {
+    return publish == 1;
   }
 
-  public void setLive(boolean live) {
-    this.live = live;
-  }
-
-  public boolean isHost() {
-    return host;
-  }
-
-  public void setHost(boolean host) {
-    this.host = host;
+  public void setPublish(boolean publish) {
+    this.publish = publish ? 1 : 0;
   }
 
   public String getFullname() {

@@ -1,6 +1,6 @@
 package com.faforever.client.mod;
 
-import com.faforever.client.util.JavaFxUtil;
+import com.faforever.client.fx.JavaFxUtil;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -28,8 +28,6 @@ public class ModVaultController {
   private static final int TOP_ELEMENT_COUNT = 7;
   private static final int MAX_SUGGESTIONS = 10;
 
-  @FXML
-  Pane contentPane;
   @FXML
   Pane searchResultGroup;
   @FXML
@@ -73,7 +71,7 @@ public class ModVaultController {
   @PostConstruct
   void postConstruct() {
     Node modDetailRoot = modDetailController.getRoot();
-    contentPane.getChildren().add(modDetailRoot);
+    modVaultRoot.getChildren().add(modDetailRoot);
     AnchorPane.setTopAnchor(modDetailRoot, 0d);
     AnchorPane.setRightAnchor(modDetailRoot, 0d);
     AnchorPane.setBottomAnchor(modDetailRoot, 0d);

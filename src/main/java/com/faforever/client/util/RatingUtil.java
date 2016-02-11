@@ -27,12 +27,8 @@ public final class RatingUtil {
     return getRating(playerInfo.getGlobalRatingMean(), playerInfo.getGlobalRatingDeviation());
   }
 
-  private static int getRating(float ratingMean, float ratingDeviation) {
+  public static int getRating(float ratingMean, float ratingDeviation) {
     return (int) (ratingMean - 3 * ratingDeviation);
-  }
-
-  public static int getRoundedLeaderboardRating(PlayerInfoBean player) {
-    return getRoundedRating(getLeaderboardRating(player));
   }
 
   public static int getLeaderboardRating(PlayerInfoBean playerInfoBean) {
@@ -40,11 +36,11 @@ public final class RatingUtil {
   }
 
   public static int getGlobalRating(Player player) {
-    return getRating(player.getRatingMean(), player.getRatingDeviation());
+    return getRating(player.getGlobalRating()[0], player.getGlobalRating()[1]);
   }
 
   public static int getLeaderboardRating(Player player) {
-    return getRating(player.getLadderRatingMean(), player.getLadderRatingDeviation());
+    return getRating(player.getLadderRating()[0], player.getLadderRating()[1]);
   }
 
   public static int getRating(RatingInfo ratingInfo) {

@@ -1,6 +1,6 @@
 package com.faforever.client.chat;
 
-import com.faforever.client.legacy.ConnectionState;
+import com.faforever.client.net.ConnectionState;
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
@@ -59,4 +59,8 @@ public interface ChatService {
   void addUserToColorListener();
 
   ObjectProperty<ConnectionState> connectionStateProperty();
+
+  void reconnect();
+
+  void whois(String username);
 }

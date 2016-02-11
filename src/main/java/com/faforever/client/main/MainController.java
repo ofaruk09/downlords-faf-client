@@ -4,6 +4,7 @@ import com.faforever.client.cast.CastsController;
 import com.faforever.client.chat.ChatController;
 import com.faforever.client.chat.ChatService;
 import com.faforever.client.connectivity.ConnectivityService;
+import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.fx.StageConfigurator;
 import com.faforever.client.fx.WindowDecorator;
 import com.faforever.client.game.Faction;
@@ -39,7 +40,6 @@ import com.faforever.client.task.TaskService;
 import com.faforever.client.update.ClientUpdateService;
 import com.faforever.client.user.UserService;
 import com.faforever.client.util.IdenticonUtil;
-import com.faforever.client.util.JavaFxUtil;
 import com.google.common.annotations.VisibleForTesting;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
@@ -63,6 +63,7 @@ import javafx.scene.control.Labeled;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SplitMenuButton;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
@@ -76,6 +77,11 @@ import javafx.stage.PopupWindow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.bridj.Pointer;
+import org.bridj.PointerIO;
+import org.bridj.cpp.com.COMRuntime;
+import org.bridj.cpp.com.shell.ITaskbarList3;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 
@@ -86,6 +92,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 import static com.faforever.client.fx.WindowDecorator.WindowButtonType.CLOSE;
 import static com.faforever.client.fx.WindowDecorator.WindowButtonType.MAXIMIZE_RESTORE;
@@ -213,16 +220,20 @@ public class MainController implements OnChoseGameDirectoryListener {
   FafService fafService;
   @Resource
   ChatService chatService;
+  @Resource
+  ExecutorService executorService;
 
   @Value("${mainWindowTitle}")
   String mainWindowTitle;
 
   @VisibleForTesting
   Popup persistentNotificationsPopup;
+
   private Popup userMenuPopup;
   private ChangeListener<Boolean> windowFocusListener;
   private Popup transientNotificationsPopup;
-
+  private ITaskbarList3 taskBarList;
+  private Pointer taskBarRelatedPointer;
 
   @FXML
   void initialize() {
@@ -264,6 +275,8 @@ public class MainController implements OnChoseGameDirectoryListener {
       if (task == null) {
         taskProgressBar.setVisible(false);
         taskProgressLabel.setVisible(false);
+
+        updateTaskbarProgress(null);
         return;
       }
 
@@ -272,6 +285,11 @@ public class MainController implements OnChoseGameDirectoryListener {
 
       taskProgressLabel.setVisible(true);
       taskProgressLabel.textProperty().bind(task.titleProperty());
+
+      updateTaskbarProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+      task.progressProperty().addListener((observable, oldValue, newValue) -> {
+        updateTaskbarProgress(newValue.doubleValue());
+      });
     });
   }
 
@@ -284,6 +302,25 @@ public class MainController implements OnChoseGameDirectoryListener {
         .filter(item -> item instanceof SplitMenuButton && item != button)
         .forEach(item -> ((SplitMenuButton) item).hide());
     button.show();
+  }
+
+  /**
+   * Updates the progress in the Windows 7+ task bar, if available.
+   */
+  private void updateTaskbarProgress(@Nullable Double progress) {
+    if (taskBarRelatedPointer == null) {
+      return;
+    }
+    executorService.execute(() -> {
+      if (progress == null) {
+        taskBarList.SetProgressState(taskBarRelatedPointer, ITaskbarList3.TbpFlag.TBPF_NOPROGRESS);
+      } else if (progress == ProgressIndicator.INDETERMINATE_PROGRESS) {
+        taskBarList.SetProgressState(taskBarRelatedPointer, ITaskbarList3.TbpFlag.TBPF_INDETERMINATE);
+      } else {
+        taskBarList.SetProgressState(taskBarRelatedPointer, ITaskbarList3.TbpFlag.TBPF_NORMAL);
+        taskBarList.SetProgressValue(taskBarRelatedPointer, (int) (progress * 100), 100);
+      }
+    });
   }
 
   @PostConstruct
@@ -334,34 +371,41 @@ public class MainController implements OnChoseGameDirectoryListener {
     });
 
     connectivityService.connectivityStateProperty().addListener((observable, oldValue, newValue) -> {
-      portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_PUBLIC_PSEUDO_CLASS, false);
-      portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_STUN_PSEUDO_CLASS, false);
-      portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_BLOCKED_PSEUDO_CLASS, false);
-      portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_UNKNOWN_PSEUDO_CLASS, false);
-      switch (newValue) {
-        case PUBLIC:
-          portCheckStatusIcon.setText("\uF111");
-          portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_PUBLIC_PSEUDO_CLASS, true);
-          portCheckStatusButton.setText(i18n.get("statusBar.connectivityPublic"));
-          break;
-        case STUN:
-          portCheckStatusIcon.setText("\uF06A");
-          portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_STUN_PSEUDO_CLASS, true);
-          portCheckStatusButton.setText(i18n.get("statusBar.connectivityStun"));
-          break;
-        case BLOCKED:
-          portCheckStatusIcon.setText("\uF056");
-          portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_BLOCKED_PSEUDO_CLASS, true);
-          portCheckStatusButton.setText(i18n.get("statusBar.portUnreachable"));
-          break;
-        case UNKNOWN:
-          portCheckStatusIcon.setText("\uF059");
-          portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_UNKNOWN_PSEUDO_CLASS, true);
-          portCheckStatusButton.setText(i18n.get("statusBar.connectivityUnknown"));
-          break;
-        default:
-          throw new AssertionError("Uncovered value: " + newValue);
-      }
+      Platform.runLater(() -> {
+        portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_PUBLIC_PSEUDO_CLASS, false);
+        portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_STUN_PSEUDO_CLASS, false);
+        portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_BLOCKED_PSEUDO_CLASS, false);
+        portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_UNKNOWN_PSEUDO_CLASS, false);
+        switch (newValue) {
+          case PUBLIC:
+            portCheckStatusIcon.setText("\uF111");
+            portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_PUBLIC_PSEUDO_CLASS, true);
+            portCheckStatusButton.setText(i18n.get("statusBar.connectivityPublic"));
+            break;
+          case STUN:
+            portCheckStatusIcon.setText("\uF06A");
+            portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_STUN_PSEUDO_CLASS, true);
+            portCheckStatusButton.setText(i18n.get("statusBar.connectivityStun"));
+            break;
+          case BLOCKED:
+            portCheckStatusIcon.setText("\uF056");
+            portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_BLOCKED_PSEUDO_CLASS, true);
+            portCheckStatusButton.setText(i18n.get("statusBar.portUnreachable"));
+            break;
+          case RUNNING:
+            portCheckStatusIcon.setText("\uF059");
+            portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_UNKNOWN_PSEUDO_CLASS, true);
+            portCheckStatusButton.setText(i18n.get("statusBar.checkingPort"));
+            break;
+          case UNKNOWN:
+            portCheckStatusIcon.setText("\uF059");
+            portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_UNKNOWN_PSEUDO_CLASS, true);
+            portCheckStatusButton.setText(i18n.get("statusBar.connectivityUnknown"));
+            break;
+          default:
+            throw new AssertionError("Uncovered value: " + newValue);
+        }
+      });
     });
 
     persistentNotificationsPopup = new Popup();
@@ -426,8 +470,14 @@ public class MainController implements OnChoseGameDirectoryListener {
 
     preferencesService.setOnChoseGameDirectoryListener(this);
     gameService.addOnRankedMatchNotificationListener(this::onRankedMatchInfo);
-    userService.addOnLoginListener(this::onLoggedIn);
-    userService.addOnLogoutListener(this::onLoggedOut);
+
+    userService.loggedInProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue) {
+        onLoggedIn();
+      } else {
+        onLoggedOut();
+      }
+    });
   }
 
   private void setContent(Node node) {
@@ -490,7 +540,7 @@ public class MainController implements OnChoseGameDirectoryListener {
     userInfoWindow.initModality(Modality.NONE);
     userInfoWindow.initOwner(mainRoot.getScene().getWindow());
 
-    stageConfigurator.configureScene(userInfoWindow, controller.getRoot(), false, CLOSE);
+    stageConfigurator.configureScene(userInfoWindow, controller.getRoot(), true, CLOSE, MAXIMIZE_RESTORE);
 
     userInfoWindow.show();
   }
@@ -509,6 +559,7 @@ public class MainController implements OnChoseGameDirectoryListener {
     stage.setHeight(mainWindowPrefs.getHeight());
     stage.show();
 
+    initWindowsTaskBar();
     enterLoggedOutState();
 
     if (mainWindowPrefs.getX() < 0 && mainWindowPrefs.getY() < 0) {
@@ -521,6 +572,28 @@ public class MainController implements OnChoseGameDirectoryListener {
       WindowDecorator.maximize(stage);
     }
     registerWindowListeners();
+  }
+
+  /**
+   * Initializes the Windows 7+ task bar.
+   */
+  private void initWindowsTaskBar() {
+    try {
+      executorService.execute(() -> {
+        try {
+          taskBarList = COMRuntime.newInstance(ITaskbarList3.class);
+
+        } catch (ClassNotFoundException e) {
+          throw new RuntimeException(e);
+        }
+      });
+
+      long hwndVal = com.sun.glass.ui.Window.getWindows().get(0).getNativeWindow();
+      taskBarRelatedPointer = Pointer.pointerToAddress(hwndVal, (PointerIO) null);
+
+    } catch (NoClassDefFoundError e) {
+      taskBarRelatedPointer = null;
+    }
   }
 
   private void enterLoggedOutState() {
@@ -574,7 +647,6 @@ public class MainController implements OnChoseGameDirectoryListener {
     stageConfigurator.configureScene(stage, mainRoot, true, MINIMIZE, MAXIMIZE_RESTORE, CLOSE);
     stage.setTitle(mainWindowTitle);
 
-    runConnectivityCheck();
     gameUpdateService.checkForUpdateInBackground();
     clientUpdateService.checkForUpdateInBackground();
 
@@ -585,14 +657,6 @@ public class MainController implements OnChoseGameDirectoryListener {
     // TODO no more e-mail address :(
 //    userImageView.setImage(gravatarService.getGravatar(userService.getEmail()));
     userImageView.setImage(IdenticonUtil.createIdenticon(userService.getUid()));
-  }
-
-  private void runConnectivityCheck() {
-    // TODO bind to a property in connectivity service
-    portCheckStatusIcon.setText("\uF059");
-    portCheckStatusIcon.pseudoClassStateChanged(CONNECTIVITY_UNKNOWN_PSEUDO_CLASS, true);
-    portCheckStatusButton.setText(i18n.get("statusBar.checkingPort"));
-    connectivityService.checkConnectivity();
   }
 
   private void restoreLastView(WindowPrefs mainWindowPrefs) {
@@ -618,23 +682,18 @@ public class MainController implements OnChoseGameDirectoryListener {
   }
 
   @FXML
-  void onEnableUpnpClicked() {
-    // FIXME implement
-  }
-
-  @FXML
   void onPortCheckRetryClicked() {
-    runConnectivityCheck();
+    connectivityService.checkConnectivity();
   }
 
   @FXML
   void onFafReconnectClicked() {
-    // FIXME implement
+    fafService.reconnect();
   }
 
   @FXML
   void onChatReconnectClicked() {
-    // FIXME implement
+    chatService.reconnect();
   }
 
   @FXML

@@ -28,7 +28,7 @@ public class Preferences {
   private final ListProperty<String> ignoredNotifications;
   private final IntegerProperty lastGameMinRating;
   private final IntegerProperty lastGameMaxRating;
-  private final BooleanProperty tilePaneSelected;
+  private final StringProperty gamesViewMode;
   private Ranked1v1Prefs ranked1v1;
   private ReplayVaultPrefs replayVault;
 
@@ -48,7 +48,7 @@ public class Preferences {
     lastGameMinRating = new SimpleIntegerProperty(800);
     lastGameMaxRating = new SimpleIntegerProperty(1300);
     ranked1v1 = new Ranked1v1Prefs();
-    tilePaneSelected = new SimpleBooleanProperty(true);
+    gamesViewMode = new SimpleStringProperty();
   }
 
   public ReplayVaultPrefs getReplayVault() {
@@ -63,12 +63,16 @@ public class Preferences {
     return tilePaneSelected.get();
   }
 
-  public void setTilePaneSelected(boolean tilePaneSelected) {
-    this.tilePaneSelected.set(tilePaneSelected);
+  public String getGamesViewMode() {
+    return gamesViewMode.get();
   }
 
-  public BooleanProperty tilePaneSelectedProperty() {
-    return tilePaneSelected;
+  public void setGamesViewMode(String gamesViewMode) {
+    this.gamesViewMode.set(gamesViewMode);
+  }
+
+  public StringProperty gamesViewModeProperty() {
+    return gamesViewMode;
   }
 
   public WindowPrefs getMainWindow() {

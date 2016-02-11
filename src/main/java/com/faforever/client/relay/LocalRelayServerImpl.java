@@ -1,20 +1,18 @@
 package com.faforever.client.relay;
 
-import com.faforever.client.connectivity.ConnectivityService;
-import com.faforever.client.connectivity.ConnectivityState;
-import com.faforever.client.connectivity.TurnClient;
+import com.faforever.client.connectivity.DatagramGateway;
+import com.faforever.client.game.GameService;
 import com.faforever.client.game.GameType;
+import com.faforever.client.i18n.I18n;
 import com.faforever.client.legacy.domain.GameLaunchMessage;
-import com.faforever.client.legacy.domain.MessageTarget;
-import com.faforever.client.legacy.gson.GpgServerMessageTypeTypeAdapter;
-import com.faforever.client.legacy.gson.MessageTargetTypeAdapter;
+import com.faforever.client.notification.ImmediateNotification;
+import com.faforever.client.notification.NotificationService;
+import com.faforever.client.notification.ReportAction;
+import com.faforever.client.notification.Severity;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.remote.FafService;
+import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.user.UserService;
-import com.faforever.client.util.SocketAddressUtil;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.apache.commons.compress.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +33,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
+import static com.faforever.client.net.NetUtil.readSocket;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -54,10 +53,10 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class LocalRelayServerImpl implements LocalRelayServer {
 
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-  private final Gson gson;
   private final Collection<Runnable> onConnectionAcceptedListeners;
-  private final Collection<Consumer<DatagramPacket>> onPacketFromOutsideListeners;
+  private final Consumer<DatagramPacket> datagramPacketConsumer;
+  private final Map<SocketAddress, DatagramSocket> proxySocketsByOriginalAddress;
+  private final Map<Integer, SocketAddress> originalAddressByUid;
   @Resource
   UserService userService;
   @Resource
@@ -67,47 +66,34 @@ public class LocalRelayServerImpl implements LocalRelayServer {
   @Resource
   ExecutorService executorService;
   @Resource
-  ConnectivityService connectivityService;
+  GameService gameService;
   @Resource
-  TurnClient turnClient;
+  NotificationService notificationService;
+  @Resource
+  I18n i18n;
+  @Resource
+  ReportingService reportingService;
+
   private FaDataOutputStream gameOutputStream;
   private FaDataInputStream gameInputStream;
   private LobbyMode lobbyMode;
   private ServerSocket serverSocket;
-  private boolean stopped;
   private Socket gameSocket;
-  /**
-   * Maps peer UIDs to relay sockets.
-   */
-  private Map<Integer, DatagramSocket> peerSocketsByUid;
   private CompletableFuture<Integer> gpgPortFuture;
   private int faGamePort;
   /**
    * A consumer that forwards game packets to the "outside world".
    */
-  private Consumer<DatagramPacket> gameDataForwarder;
-  /**
-   * The socket to the "outside", receives and sends game data.
-   */
-  private DatagramSocket publicSocket;
+  private DatagramGateway gateway;
+  private CompletableFuture<InetSocketAddress> gameUdpSocketFuture;
+  private boolean started;
 
   public LocalRelayServerImpl() {
-    gson = new GsonBuilder()
-        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-        .registerTypeAdapter(GpgServerMessageType.class, GpgServerMessageTypeTypeAdapter.INSTANCE)
-        .registerTypeAdapter(MessageTarget.class, MessageTargetTypeAdapter.INSTANCE)
-        .create();
-    peerSocketsByUid = new HashMap<>();
+    proxySocketsByOriginalAddress = new HashMap<>();
+    originalAddressByUid = new HashMap<>();
     onConnectionAcceptedListeners = new ArrayList<>();
-    onPacketFromOutsideListeners = new ArrayList<>();
     lobbyMode = LobbyMode.DEFAULT_LOBBY;
-  }
-
-  @Override
-  public void addOnPacketFromOutsideListener(Consumer<DatagramPacket> listener) {
-    synchronized (onPacketFromOutsideListeners) {
-      onPacketFromOutsideListeners.add(listener);
-    }
+    datagramPacketConsumer = this::onPacketFromOutside;
   }
 
   @Override
@@ -116,7 +102,7 @@ public class LocalRelayServerImpl implements LocalRelayServer {
   }
 
   @Override
-  public Integer getGpgRelayPort() {
+  public Integer getPort() {
     try {
       return gpgPortFuture.get();
     } catch (InterruptedException | ExecutionException e) {
@@ -125,43 +111,120 @@ public class LocalRelayServerImpl implements LocalRelayServer {
   }
 
   @Override
-  public Integer getPublicPort() {
-    return publicSocket.getLocalPort();
+  public CompletableFuture<Integer> start(DatagramGateway gateway) {
+    if (started) {
+      logger.warn("Local relay server was already running");
+      return gpgPortFuture;
+    }
+    logger.debug("Starting relay server");
+    started = true;
+    this.gateway = gateway;
+
+    gateway.addOnPacketListener(datagramPacketConsumer);
+
+    gameUdpSocketFuture = new CompletableFuture<>();
+    gpgPortFuture = new CompletableFuture<>();
+    CompletableFuture.runAsync(this::innerStart, executorService);
+    return gpgPortFuture;
   }
 
   @Override
-  public InetSocketAddress getRelayAddress() {
-    return turnClient.getRelayAddress();
-  }
-
-  @Override
-  public void removeOnPackedFromOutsideListener(Consumer<DatagramPacket> listener) {
-    synchronized (onPacketFromOutsideListeners) {
-      onPacketFromOutsideListeners.remove(listener);
+  public InetSocketAddress getGameSocketAddress() {
+    try {
+      return gameUdpSocketFuture.get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  private void start() {
+  @PreDestroy
+  public void close() {
+    if (!started) {
+      return;
+    }
+
+    started = false;
+    logger.info("Closing relay server");
+
+    proxySocketsByOriginalAddress.values().forEach(IOUtils::closeQuietly);
+    proxySocketsByOriginalAddress.clear();
+    originalAddressByUid.clear();
+
+    if (gateway != null) {
+      gateway.removeOnPacketListener(datagramPacketConsumer);
+    }
+    IOUtils.closeQuietly(serverSocket);
+    IOUtils.closeQuietly(gameSocket);
+  }
+
+  private void onPacketFromOutside(DatagramPacket packet) {
+    DatagramSocket proxySocket = createOrGetProxySocket(packet.getSocketAddress());
+    try {
+      if (logger.isTraceEnabled()) {
+        logger.trace("Forwarding {} bytes from peer {}' to FA: {}", packet.getLength(),
+            proxySocket.getLocalSocketAddress(), new String(packet.getData(), 0, packet.getLength(), US_ASCII));
+      }
+      packet.setSocketAddress(getGameSocketAddress());
+      proxySocket.send(packet);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Opens a local UDP socket that serves as a proxy for a peer to FA. In other words, instead of connecting to peer X
+   * directly, a local port is opened which represents that peer. FA will then data to this port, thinking it's peer X.
+   * All data received on that port is then forwarded to the original peer and any data received on the public UDP
+   * socket is forwarded through its peer socket.
+   *
+   * @param originalSocketAddress the original address of the peer, to receive data from and send data to
+   *
+   * @return the UDP socket the peer has been bound to
+   */
+  private DatagramSocket createOrGetProxySocket(SocketAddress originalSocketAddress) {
+    if (!proxySocketsByOriginalAddress.containsKey(originalSocketAddress)) {
+      try {
+        DatagramSocket proxySocket = new DatagramSocket(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        logger.debug("Mapping peer {} to proxy socket {}", originalSocketAddress);
+
+        proxySocket.connect(getGameSocketAddress());
+        proxySocketsByOriginalAddress.put(originalSocketAddress, proxySocket);
+
+        readSocket(executorService, proxySocket, packet -> {
+          packet.setSocketAddress(originalSocketAddress);
+          if (logger.isTraceEnabled()) {
+            logger.trace("Forwarding {} bytes from FA to peer {}: {}", packet.getLength(),
+                originalSocketAddress, new String(packet.getData(), 0, packet.getLength(), US_ASCII));
+          }
+
+          gateway.send(packet);
+        });
+      } catch (SocketException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    return proxySocketsByOriginalAddress.get(originalSocketAddress);
+  }
+
+  private void innerStart() {
     try (ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
-      this.serverSocket = serverSocket;
+      LocalRelayServerImpl.this.serverSocket = serverSocket;
 
       int localPort = serverSocket.getLocalPort();
       gpgPortFuture.complete(localPort);
 
       logger.info("GPG relay server listening on port {}", localPort);
 
-      while (!stopped) {
-        try (Socket faSocket = serverSocket.accept()) {
-          this.gameSocket = faSocket;
-          logger.debug("Forged Alliance connected to relay server from {}:{}", faSocket.getInetAddress(), faSocket.getPort());
+      try (Socket faSocket = serverSocket.accept()) {
+        LocalRelayServerImpl.this.gameSocket = faSocket;
+        logger.debug("Forged Alliance connected to relay server from {}:{}", faSocket.getInetAddress(), faSocket.getPort());
 
-          onConnectionAcceptedListeners.forEach(Runnable::run);
+        onConnectionAcceptedListeners.forEach(Runnable::run);
 
-          this.gameInputStream = createFaInputStream(faSocket.getInputStream());
-          this.gameOutputStream = createFaOutputStream(faSocket.getOutputStream());
-
-          redirectGpgConnection();
-        }
+        LocalRelayServerImpl.this.gameInputStream = createFaInputStream(faSocket.getInputStream());
+        LocalRelayServerImpl.this.gameOutputStream = createFaOutputStream(faSocket.getOutputStream());
+        redirectGpgConnection();
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -191,24 +254,40 @@ public class LocalRelayServerImpl implements LocalRelayServer {
       }
     } catch (IOException e) {
       logger.info("Forged Alliance disconnected from local relay server (" + e.getMessage() + ")");
+      close();
     }
   }
 
   private void handleDataFromFa(GpgClientMessage gpgClientMessage) throws IOException {
-    if (isHostGameMessage(gpgClientMessage)) {
+    if (isIdleLobbyMessage(gpgClientMessage)) {
       String username = userService.getUsername();
       if (lobbyMode == null) {
         throw new IllegalStateException("lobbyMode has not been set");
       }
 
       faGamePort = SocketUtils.findAvailableUdpPort();
+      logger.debug("Picked port for FA to listen: {}", faGamePort);
+
       handleCreateLobby(new CreateLobbyServerMessage(lobbyMode, faGamePort, username, userService.getUid(), 1));
+      gameUdpSocketFuture.complete(new InetSocketAddress(InetAddress.getLoopbackAddress(), faGamePort));
+    } else if (gpgClientMessage.getCommand() == GpgClientCommand.REHOST) {
+      gameService.prepareForRehost().exceptionally(throwable -> {
+        logger.warn("Game could not be rehosted", throwable);
+        notificationService.addNotification(
+            new ImmediateNotification(
+                i18n.get("errorTitle"),
+                i18n.get("game.create.failed"),
+                Severity.ERROR,
+                throwable,
+                Collections.singletonList(new ReportAction(i18n, reportingService, throwable))));
+        return null;
+      });
     }
 
     fafService.sendGpgMessage(gpgClientMessage);
   }
 
-  private boolean isHostGameMessage(GpgClientMessage gpgClientMessage) {
+  private boolean isIdleLobbyMessage(GpgClientMessage gpgClientMessage) {
     return gpgClientMessage.getCommand() == GpgClientCommand.GAME_STATE
         && gpgClientMessage.getArgs().get(0).equals("Idle");
   }
@@ -217,10 +296,14 @@ public class LocalRelayServerImpl implements LocalRelayServer {
     writeToFa(createLobbyServerMessage);
   }
 
-  private void writeToFa(GpgServerMessage gpgServerMessage) throws IOException {
-    writeHeader(gpgServerMessage);
-    gameOutputStream.writeArgs(gpgServerMessage.getArgs());
-    gameOutputStream.flush();
+  private void writeToFa(GpgServerMessage gpgServerMessage) {
+    try {
+      writeHeader(gpgServerMessage);
+      gameOutputStream.writeArgs(gpgServerMessage.getArgs());
+      gameOutputStream.flush();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void writeHeader(GpgServerMessage gpgServerMessage) throws IOException {
@@ -235,140 +318,13 @@ public class LocalRelayServerImpl implements LocalRelayServer {
     gameOutputStream.writeString(headerField);
   }
 
-  @PreDestroy
-  void close() {
-    logger.info("Closing relay server");
-    stopped = true;
-    IOUtils.closeQuietly(publicSocket);
-    IOUtils.closeQuietly(serverSocket);
-    IOUtils.closeQuietly(gameSocket);
-  }
-
-  private void onSendNatPacket(SendNatPacketMessage sendNatPacketMessage) {
-    if (sendNatPacketMessage.getTarget() != MessageTarget.CONNECTIVITY) {
-      return;
-    }
-
-    InetSocketAddress received = sendNatPacketMessage.getPublicAddress();
-    String message = sendNatPacketMessage.getMessage();
-
-    logger.debug("Sending NAT packet to {}: {}", received, message);
-
-    byte[] bytes = ('\u0008' + message).getBytes(US_ASCII);
-    DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length);
-    datagramPacket.setSocketAddress(received);
-    try {
-      publicSocket.send(datagramPacket);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   @PostConstruct
   void postConstruct() {
-    connectivityService.connectivityStateProperty().addListener((observable, oldValue, newValue) -> {
-      onConnectivityStateChanged(newValue);
-    });
-    onConnectivityStateChanged(connectivityService.getConnectivityState());
-
     fafService.addOnMessageListener(GameLaunchMessage.class, this::updateLobbyModeFromGameInfo);
-    fafService.addOnMessageListener(SendNatPacketMessage.class, this::onSendNatPacket);
-    fafService.addOnMessageListener(GpgServerMessage.class, this::onGpgServerMessage);
-
-    preferencesService.getPreferences().getForgedAlliance().portProperty().addListener((observable, oldValue, newValue) -> {
-      initPublicSocket(newValue.intValue());
-    });
-    initPublicSocket(preferencesService.getPreferences().getForgedAlliance().getPort());
-
-    gpgPortFuture = new CompletableFuture<>();
-    CompletableFuture.runAsync(this::start, executorService);
-  }
-
-  private void onConnectivityStateChanged(ConnectivityState newValue) {
-    switch (newValue) {
-      case UNKNOWN:
-      case PUBLIC:
-        gameDataForwarder = publicForwarder();
-        break;
-      case STUN:
-        gameDataForwarder = turnForwarder();
-        turnClient.connect();
-        break;
-      case BLOCKED:
-        throw new IllegalStateException("Can't connect");
-      default:
-        throw new AssertionError("Uncovered connectivity state: " + newValue);
-    }
-  }
-
-  /**
-   * Opens the "public" UDP socket. This is a proxy for the game socket; all data send from the game is sent through
-   * this socket, and all data received on this socket is forwarded to the game.
-   */
-  private void initPublicSocket(int port) {
-    IOUtils.closeQuietly(publicSocket);
-
-    try {
-      publicSocket = new DatagramSocket(new InetSocketAddress(InetAddress.getLocalHost(), port));
-      listenForPublicGameData();
-      logger.info("Opened public UDP socket: {}", SocketAddressUtil.toString((InetSocketAddress) publicSocket.getLocalSocketAddress()));
-    } catch (SocketException | UnknownHostException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Creates a forwarder that sends datagrams directly from a public UDP socket.
-   */
-  private Consumer<DatagramPacket> publicForwarder() {
-    logger.info("Using direct connection");
-    return datagramPacket -> {
-      try {
-        publicSocket.send(datagramPacket);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    };
-  }
-
-  /**
-   * Creates a forwarder that forwards datagrams through to a TURN server.
-   */
-  private Consumer<DatagramPacket> turnForwarder() {
-    logger.info("Using TURN server");
-    return datagramPacket -> turnClient.send(datagramPacket);
-  }
-
-  private void listenForPublicGameData() {
-    forwardSocket(publicSocket, datagramPacket -> {
-      synchronized (onPacketFromOutsideListeners) {
-        onPacketFromOutsideListeners.forEach(datagramPacketConsumer -> datagramPacketConsumer.accept(datagramPacket));
-      }
-    });
-  }
-
-  private void forwardSocket(final DatagramSocket socket, Consumer<DatagramPacket> forwarder) {
-    CompletableFuture.runAsync(() -> {
-      byte[] buffer = new byte[8092];
-      DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
-
-      try {
-        while (!socket.isClosed()) {
-          socket.receive(datagramPacket);
-          logger.trace("Received {} bytes on {} for {}", datagramPacket.getLength(), socket.getLocalSocketAddress(), datagramPacket.getAddress());
-          forwarder.accept(datagramPacket);
-        }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      } finally {
-        logger.info("Closing socket: {}", socket.getLocalSocketAddress());
-        IOUtils.closeQuietly(socket);
-      }
-    }, executorService).whenComplete((aVoid, throwable) -> {
-      if (throwable != null) {
-        logger.warn("Exception while forwarding socket " + socket.getLocalSocketAddress(), throwable);
-      }
-    });
+    fafService.addOnMessageListener(HostGameMessage.class, this::handleHostGame);
+    fafService.addOnMessageListener(JoinGameMessage.class, this::handleJoinGame);
+    fafService.addOnMessageListener(ConnectToPeerMessage.class, this::handleConnectToPeer);
+    fafService.addOnMessageListener(DisconnectFromPeerMessage.class, this::handleDisconnectFromPeer);
   }
 
   private void updateLobbyModeFromGameInfo(GameLaunchMessage gameLaunchMessage) {
@@ -379,129 +335,35 @@ public class LocalRelayServerImpl implements LocalRelayServer {
     }
   }
 
-  private void onGpgServerMessage(GpgServerMessage message) {
-    if (message.getTarget() != MessageTarget.GAME) {
-      return;
-    }
-    try {
-      dispatchServerCommand(message.getMessageType(), message.getJsonString());
-    } catch (IOException e) {
-      logger.warn("Error while handling message: " + message, e);
-    }
-  }
-
-  private void dispatchServerCommand(GpgServerMessageType messageType, String jsonString) throws IOException {
-    switch (messageType) {
-      case HOST_GAME:
-        HostGameMessage hostGameMessage = gson.fromJson(jsonString, HostGameMessage.class);
-        handleHostGame(hostGameMessage);
-        break;
-      case SEND_NAT_PACKET:
-        SendNatPacketMessage sendNatPacketMessage = gson.fromJson(jsonString, SendNatPacketMessage.class);
-        handleSendNatPacket(sendNatPacketMessage);
-        break;
-      case P2P_RECONNECT:
-        logger.warn("P2P Reconnect has not been implemented");
-        break;
-      case JOIN_GAME:
-        JoinGameMessage joinGameMessage = gson.fromJson(jsonString, JoinGameMessage.class);
-        handleJoinGame(joinGameMessage);
-        break;
-      case CONNECT_TO_PEER:
-        ConnectToPeerMessage connectToPeerMessage = gson.fromJson(jsonString, ConnectToPeerMessage.class);
-        handleConnectToPeer(connectToPeerMessage);
-        break;
-      case CREATE_LOBBY:
-        // CreateLobby was already sent to FAF by this relayer, so the server message is discarded
-        logger.debug("Discarding message from server: {}", jsonString);
-        break;
-      case DISCONNECT_FROM_PEER:
-        DisconnectFromPeerMessage disconnectFromPeerMessage = gson.fromJson(jsonString, DisconnectFromPeerMessage.class);
-        handleDisconnectFromPeer(disconnectFromPeerMessage);
-        break;
-      case JOIN_PROXY:
-        logger.warn("Server unexpectedly asked to join proxy");
-        break;
-
-      default:
-        throw new IllegalStateException("Unhandled server message type: " + messageType);
-    }
-  }
-
-  private void handleDisconnectFromPeer(DisconnectFromPeerMessage disconnectFromPeerMessage) throws IOException {
-    IOUtils.closeQuietly(peerSocketsByUid.remove(disconnectFromPeerMessage.getUid()));
+  private void handleDisconnectFromPeer(DisconnectFromPeerMessage disconnectFromPeerMessage) {
+    SocketAddress originalAddress = originalAddressByUid.remove(disconnectFromPeerMessage.getUid());
+    DatagramSocket proxySocket = proxySocketsByOriginalAddress.remove(originalAddress);
+    IOUtils.closeQuietly(proxySocket);
     writeToFa(disconnectFromPeerMessage);
   }
 
-  private void handleHostGame(HostGameMessage hostGameMessage) throws IOException {
+  private void handleHostGame(HostGameMessage hostGameMessage) {
     writeToFa(hostGameMessage);
   }
 
-  private void handleSendNatPacket(SendNatPacketMessage sendNatPacketMessage) throws IOException {
-    writeToFaUdp(sendNatPacketMessage);
-  }
-
-  private void handleConnectToPeer(ConnectToPeerMessage connectToPeerMessage) throws IOException {
+  private void handleConnectToPeer(ConnectToPeerMessage connectToPeerMessage) {
     InetSocketAddress peerAddress = connectToPeerMessage.getPeerAddress();
 
-    DatagramSocket peerSocket = createOrGetPeerSocket(peerAddress, connectToPeerMessage.getPeerUid());
+    DatagramSocket peerSocket = createOrGetProxySocket(peerAddress);
     SocketAddress peerSocketAddress = peerSocket.getLocalSocketAddress();
     connectToPeerMessage.setPeerAddress((InetSocketAddress) peerSocketAddress);
 
     writeToFa(connectToPeerMessage);
   }
 
-  /**
-   * Opens a local UDP socket that serves as a proxy for a peer to FA. In other words, instead of connecting to peer X
-   * directly, a local port is opened which represents that peer. FA will then data to this port, thinking it's peer X.
-   * All data received on that port is then forwarded to the original peer and any data received on the public UDP
-   * socket is forwarded through its peer socket.
-   *
-   * @return the UDP socket the peer has been bound to
-   */
-  private DatagramSocket createOrGetPeerSocket(SocketAddress originalSocketAddress, int peerUid) throws SocketException {
-    if (!peerSocketsByUid.containsKey(peerUid)) {
-      InetSocketAddress gameSocketAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), faGamePort);
+  private void handleJoinGame(JoinGameMessage joinGameMessage) {
+    InetSocketAddress originalAddress = joinGameMessage.getPeerAddress();
+    originalAddressByUid.put(joinGameMessage.getPeerUid(), originalAddress);
 
-      DatagramSocket peerSocket = new DatagramSocket(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-      peerSocket.connect(gameSocketAddress);
-      peerSocketsByUid.put(peerUid, peerSocket);
-
-      logger.debug("Mapped peer {} to {}", peerUid, peerSocket.getLocalSocketAddress());
-      forwardSocket(peerSocket, datagramPacket -> {
-        datagramPacket.setSocketAddress(originalSocketAddress);
-        gameDataForwarder.accept(datagramPacket);
-      });
-
-      synchronized (onPacketFromOutsideListeners) {
-        onPacketFromOutsideListeners.add(datagramPacket -> {
-          try {
-            logger.trace("Forwarding {} bytes from {} to {}", datagramPacket.getLength(), datagramPacket.getSocketAddress(), gameSocketAddress);
-            datagramPacket.setSocketAddress(gameSocketAddress);
-            peerSocket.send(datagramPacket);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        });
-      }
-    }
-
-    return peerSocketsByUid.get(peerUid);
-  }
-
-  private void handleJoinGame(JoinGameMessage joinGameMessage) throws IOException {
-    InetSocketAddress socketAddress = joinGameMessage.getPeerAddress();
-
-    DatagramSocket peerSocket = createOrGetPeerSocket(socketAddress, joinGameMessage.getPeerUid());
-    SocketAddress peerSocketAddress = peerSocket.getLocalSocketAddress();
+    DatagramSocket proxySocket = createOrGetProxySocket(originalAddress);
+    SocketAddress peerSocketAddress = proxySocket.getLocalSocketAddress();
     joinGameMessage.setPeerAddress((InetSocketAddress) peerSocketAddress);
 
     writeToFa(joinGameMessage);
-  }
-
-  private void writeToFaUdp(GpgServerMessage gpgServerMessage) throws IOException {
-    writeHeader(gpgServerMessage);
-    gameOutputStream.writeUdpArgs(gpgServerMessage.getArgs());
-    gameOutputStream.flush();
   }
 }

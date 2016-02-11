@@ -4,17 +4,14 @@ import com.faforever.client.i18n.I18n;
 import com.faforever.client.legacy.domain.MessageTarget;
 import com.faforever.client.relay.ConnectivityStateMessage;
 import com.faforever.client.relay.GpgServerMessage;
-import com.faforever.client.relay.LocalRelayServer;
 import com.faforever.client.relay.ProcessNatPacketMessage;
 import com.faforever.client.remote.FafService;
 import com.faforever.client.task.AbstractPrioritizedTask;
 import com.faforever.client.util.Assert;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
@@ -42,23 +39,35 @@ public class FafConnectivityCheckTask extends AbstractPrioritizedTask<Connectivi
   FafService fafService;
   @Resource
   ExecutorService executorService;
-  @Resource
-  LocalRelayServer localRelayServer;
 
+  private DatagramGateway datagramGateway;
   private CompletableFuture<DatagramPacket> gamePortPacketFuture;
   private CompletableFuture<ConnectivityStateMessage> connectivityStateFuture;
-  private int publicPort;
-
+  private Integer publicPort;
   public FafConnectivityCheckTask() {
     super(Priority.LOW);
   }
 
-  private void onConnectivityStateMessage(GpgServerMessage serverMessage) {
-    if (serverMessage.getTarget() != MessageTarget.CONNECTIVITY) {
+  @Override
+  public void setDatagramGateway(DatagramGateway datagramGateway) {
+    this.datagramGateway = datagramGateway;
+  }
+
+  public int getPublicPort() {
+    return publicPort;
+  }
+
+  @Override
+  public void setPublicPort(int publicPort) {
+    this.publicPort = publicPort;
+  }
+
+  private void onConnectivityStateMessage(GpgServerMessage message) {
+    if (message.getTarget() != MessageTarget.CONNECTIVITY) {
       return;
     }
 
-    switch (serverMessage.getMessageType()) {
+    switch (message.getMessageType()) {
       case SEND_NAT_PACKET:
         // The server did not receive the expected response and wants us to send a UDP packet in order hole punch the
         // NAT. This is done by connectivity service.
@@ -68,7 +77,7 @@ public class FafConnectivityCheckTask extends AbstractPrioritizedTask<Connectivi
       case CONNECTIVITY_STATE:
         // The server tells us what our connectivity state is, we're done
         gamePortPacketFuture.cancel(true);
-        connectivityStateFuture.complete((ConnectivityStateMessage) serverMessage);
+        connectivityStateFuture.complete((ConnectivityStateMessage) message);
         break;
     }
   }
@@ -76,11 +85,7 @@ public class FafConnectivityCheckTask extends AbstractPrioritizedTask<Connectivi
   @Override
   protected ConnectivityStateMessage call() throws Exception {
     Assert.checkNullIllegalState(publicPort, "publicPort has not been set");
-    return checkConnectivity();
-  }
 
-  @NotNull
-  private ConnectivityStateMessage checkConnectivity() throws IOException, ExecutionException, InterruptedException {
     updateTitle(i18n.get("portCheckTask.title"));
 
     connectivityStateFuture = new CompletableFuture<>();
@@ -105,10 +110,10 @@ public class FafConnectivityCheckTask extends AbstractPrioritizedTask<Connectivi
 
       fafService.initConnectivityTest(port);
       DatagramPacket udpPacket = gamePortPacketFuture.get(TIMEOUT, TimeUnit.MILLISECONDS);
-      logger.info("Received UDP package on port {}", port);
+      String message = new String(udpPacket.getData(), 1, udpPacket.getLength() - 1, US_ASCII);
 
-      byte[] data = udpPacket.getData();
-      String message = new String(data, 1, udpPacket.getLength() - 1, US_ASCII);
+      logger.info("Received UDP package on port {}: ", port, message);
+
       InetSocketAddress address = (InetSocketAddress) udpPacket.getSocketAddress();
 
       ProcessNatPacketMessage processNatPacketMessage = new ProcessNatPacketMessage(address, message);
@@ -116,7 +121,9 @@ public class FafConnectivityCheckTask extends AbstractPrioritizedTask<Connectivi
       fafService.sendGpgMessage(processNatPacketMessage);
     } catch (CancellationException e) {
       logger.debug("Waiting for UDP package on public game port has been cancelled");
-    } catch (InterruptedException | TimeoutException | ExecutionException e) {
+    } catch (TimeoutException e) {
+      logger.debug("Waiting for UDP package on public game port timed out");
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
   }
@@ -124,19 +131,11 @@ public class FafConnectivityCheckTask extends AbstractPrioritizedTask<Connectivi
   private CompletableFuture<DatagramPacket> listenForPackage() throws ExecutionException, InterruptedException {
     CompletableFuture<DatagramPacket> future = new CompletableFuture<>();
     Consumer<DatagramPacket> complete = future::complete;
-    localRelayServer.addOnPacketFromOutsideListener(complete);
+
+    datagramGateway.addOnPacketListener(complete);
     return future.thenComposeAsync(datagramPacket -> {
-      localRelayServer.removeOnPackedFromOutsideListener(complete);
+      datagramGateway.removeOnPacketListener(complete);
       return CompletableFuture.completedFuture(datagramPacket);
     });
-  }
-
-  public int getPublicPort() {
-    return publicPort;
-  }
-
-  @Override
-  public void setPublicPort(int publicPort) {
-    this.publicPort = publicPort;
   }
 }

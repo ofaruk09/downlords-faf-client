@@ -15,22 +15,23 @@ public interface PlayerService {
   /**
    * Returns the PlayerInfoBean for the specified username. Returns null if no such player is known.
    */
+  @Nullable
   PlayerInfoBean getPlayerForUsername(@Nullable String username);
 
   /**
    * Gets a player for the given username. A new user is created and registered if it does not yet exist.
    */
-  PlayerInfoBean registerAndGetPlayerForUsername(@NotNull String username);
+  PlayerInfoBean createAndGetPlayerForUsername(@NotNull String username);
 
   Set<String> getPlayerNames();
 
-  void addFriend(String username);
+  void addFriend(PlayerInfoBean player);
 
-  void removeFriend(String username);
+  void removeFriend(PlayerInfoBean user);
 
-  void addFoe(String username);
+  void addFoe(PlayerInfoBean username);
 
-  void removeFoe(String username);
+  void removeFoe(PlayerInfoBean player);
 
   PlayerInfoBean getCurrentPlayer();
 

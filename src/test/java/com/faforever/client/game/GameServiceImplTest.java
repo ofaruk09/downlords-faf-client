@@ -166,7 +166,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     when(mapService.isAvailable("map")).thenReturn(true);
     when(connectivityService.getExternalSocketAddress()).thenReturn(externalSocketAddress);
     when(fafService.requestJoinGame(gameInfoBean.getUid(), null)).thenReturn(completedFuture(gameLaunchMessage));
-    when(localRelayServer.getGpgRelayPort()).thenReturn(111);
+    when(localRelayServer.getPort()).thenReturn(111);
     when(gameUpdateService.updateInBackground(any(), any(), any(), any())).thenReturn(completedFuture(null));
 
     CompletableFuture<Void> future = instance.joinGame(gameInfoBean, null);
@@ -223,16 +223,16 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
   @SuppressWarnings("unchecked")
   public void testAddOnGameStartedListener() throws Exception {
     Process process = mock(Process.class);
-    int gamePort = 51111;
+    int gpgPort = 111;
 
     NewGameInfo newGameInfo = NewGameInfoBuilder.create().defaultValues().get();
     GameLaunchMessage gameLaunchMessage = GameLaunchMessageBuilder.create().defaultValues().get();
     gameLaunchMessage.setArgs(Arrays.asList("/foo bar", "/bar foo"));
     InetSocketAddress externalSocketAddress = new InetSocketAddress(123);
 
-    when(localRelayServer.getGpgRelayPort()).thenReturn(111);
+    when(localRelayServer.getPort()).thenReturn(gpgPort);
     when(forgedAllianceService.startGame(
-        gameLaunchMessage.getUid(), gameLaunchMessage.getMod(), null, Arrays.asList("/foo", "bar", "/bar", "foo"), GLOBAL, gamePort)
+        gameLaunchMessage.getUid(), gameLaunchMessage.getMod(), null, Arrays.asList("/foo", "bar", "/bar", "foo"), GLOBAL, gpgPort)
     ).thenReturn(process);
     when(connectivityService.getExternalSocketAddress()).thenReturn(externalSocketAddress);
     when(gameUpdateService.updateInBackground(any(), any(), any(), any())).thenReturn(completedFuture(null));
@@ -263,7 +263,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     gameTerminatedLatch.await(TIMEOUT, TIME_UNIT);
     verify(forgedAllianceService).startGame(
         gameLaunchMessage.getUid(), gameLaunchMessage.getMod(), null, Arrays.asList("/foo", "bar", "/bar", "foo"), GLOBAL,
-        gamePort);
+        gpgPort);
   }
 
   @Test
@@ -288,6 +288,21 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
   }
 
   @Test
+  public void testOnGames() throws Exception {
+    assertThat(instance.getGameInfoBeans(), empty());
+
+    GameInfoMessage multiGameInfoMessage = new GameInfoMessage();
+    multiGameInfoMessage.setGames(Arrays.asList(
+        GameInfoMessageBuilder.create(1).defaultValues().get(),
+        GameInfoMessageBuilder.create(2).defaultValues().get()
+    ));
+
+    gameInfoMessageListenerCaptor.getValue().accept(multiGameInfoMessage);
+
+    assertThat(instance.getGameInfoBeans(), hasSize(2));
+  }
+
+  @Test
   public void testOnGameInfoAdd() {
     assertThat(instance.getGameInfoBeans(), empty());
 
@@ -295,12 +310,14 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     gameInfoMessage1.setUid(1);
     gameInfoMessage1.setTitle("Game 1");
     gameInfoMessage1.setState(GameState.OPEN);
+    gameInfoMessage1.setPasswordProtected(true);
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage1);
 
     GameInfoMessage gameInfoMessage2 = new GameInfoMessage();
     gameInfoMessage2.setUid(2);
     gameInfoMessage2.setTitle("Game 2");
     gameInfoMessage2.setState(GameState.OPEN);
+    gameInfoMessage2.setPasswordProtected(true);
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage2);
 
     GameInfoBean gameInfoBean1 = new GameInfoBean(gameInfoMessage1);
@@ -317,12 +334,14 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     gameInfoMessage.setUid(1);
     gameInfoMessage.setTitle("Game 1");
     gameInfoMessage.setState(GameState.OPEN);
+    gameInfoMessage.setPasswordProtected(true);
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
     gameInfoMessage = new GameInfoMessage();
     gameInfoMessage.setUid(1);
     gameInfoMessage.setTitle("Game 1 modified");
-    gameInfoMessage.setState(GameState.OPEN);
+    gameInfoMessage.setState(GameState.PLAYING);
+    gameInfoMessage.setPasswordProtected(true);
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
     assertEquals(gameInfoMessage.getTitle(), instance.getGameInfoBeans().iterator().next().getTitle());
@@ -336,12 +355,14 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     gameInfoMessage.setUid(1);
     gameInfoMessage.setTitle("Game 1");
     gameInfoMessage.setState(GameState.OPEN);
+    gameInfoMessage.setPasswordProtected(true);
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
     gameInfoMessage = new GameInfoMessage();
     gameInfoMessage.setUid(1);
     gameInfoMessage.setTitle("Game 1 modified");
     gameInfoMessage.setState(GameState.CLOSED);
+    gameInfoMessage.setPasswordProtected(true);
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 
     assertThat(instance.getGameInfoBeans(), empty());
@@ -356,7 +377,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     when(gameUpdateService.updateInBackground(GameType.LADDER_1V1.getString(), null, Collections.emptyMap(), Collections.emptySet())).thenReturn(CompletableFuture.completedFuture(null));
     when(applicationContext.getBean(SearchExpansionTask.class)).thenReturn(searchExpansionTask);
     when(scheduledExecutorService.scheduleWithFixedDelay(any(), anyLong(), anyLong(), any())).thenReturn(mock(ScheduledFuture.class));
-    when(localRelayServer.getGpgRelayPort()).thenReturn(111);
+    when(localRelayServer.getPort()).thenReturn(111);
 
     CompletableFuture<Void> future = instance.startSearchRanked1v1(Faction.CYBRAN);
 
@@ -380,7 +401,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     when(forgedAllianceService.startGame(anyInt(), any(), any(), any(), any(), anyInt())).thenReturn(process);
     when(gameUpdateService.updateInBackground(any(), any(), any(), any())).thenReturn(completedFuture(null));
     when(fafService.requestHostGame(newGameInfo)).thenReturn(completedFuture(gameLaunchMessage));
-    when(localRelayServer.getGpgRelayPort()).thenReturn(111);
+    when(localRelayServer.getPort()).thenReturn(111);
     when(applicationContext.getBean(SearchExpansionTask.class)).thenReturn(searchExpansionTask);
 
 
@@ -431,6 +452,7 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     gameInfoMessage.setMaxPlayers(4);
     gameInfoMessage.setGameType(VictoryCondition.DOMINATION);
     gameInfoMessage.setState(GameState.PLAYING);
+    gameInfoMessage.setPasswordProtected(false);
 
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage);
 

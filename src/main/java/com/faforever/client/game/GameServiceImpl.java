@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -142,8 +143,10 @@ public class GameServiceImpl implements GameService {
         newGameInfo.getVersion(), emptyMap(),
         newGameInfo.getSimModUidsToVersions()
     )
+        .thenRun(() -> connectivityService.connect())
+        .thenRun(() -> localRelayServer.start(connectivityService))
         .thenCompose(aVoid -> fafService.requestHostGame(newGameInfo))
-        .thenAccept(gameLaunchInfo -> startGame(gameLaunchInfo, null, RatingMode.GLOBAL, localRelayServer.getGpgRelayPort()));
+        .thenAccept(gameLaunchInfo -> startGame(gameLaunchInfo, null, RatingMode.GLOBAL, localRelayServer.getPort()));
   }
 
   @Override
@@ -162,8 +165,10 @@ public class GameServiceImpl implements GameService {
 
     return updateGameIfNecessary(gameInfoBean.getFeaturedMod(), null, simModVersions, simModUIds)
         .thenCompose(aVoid -> downloadMapIfNecessary(gameInfoBean.getMapTechnicalName()))
+        .thenRun(() -> connectivityService.connect())
+        .thenRun(() -> localRelayServer.start(connectivityService))
         .thenCompose(aVoid -> fafService.requestJoinGame(gameInfoBean.getUid(), password))
-        .thenAccept(gameLaunchInfo -> startGame(gameLaunchInfo, null, RatingMode.GLOBAL, localRelayServer.getGpgRelayPort()));
+        .thenAccept(gameLaunchInfo -> startGame(gameLaunchInfo, null, RatingMode.GLOBAL, localRelayServer.getPort()));
   }
 
   private CompletableFuture<Void> downloadMapIfNecessary(String mapName) {
@@ -193,7 +198,7 @@ public class GameServiceImpl implements GameService {
     updateGameIfNecessary(gameType, version, modVersions, simMods)
         .thenRun(() -> {
           try {
-            Process process = forgedAllianceService.startReplay(path, replayId, gameType);
+            process = forgedAllianceService.startReplay(path, replayId, gameType);
             gameRunning.set(true);
             this.ratingMode = RatingMode.NONE;
             spawnTerminationListener(process);
@@ -209,22 +214,32 @@ public class GameServiceImpl implements GameService {
 
   private void notifyCantPlayReplay(@Nullable Integer replayId, Throwable throwable) {
     notificationService.addNotification(new ImmediateNotification(
-        i18n.get("replayCouldNotBeStarted.title"),
-        i18n.get("replayCouldNotBeStarted.text", replayId),
+        i18n.get("errorTitle"),
+        i18n.get("replayCouldNotBeStarted", replayId),
         Severity.ERROR, throwable,
         singletonList(new Action(i18n.get("report"))))
     );
   }
 
   @Override
-  public void runWithReplay(URI replayUrl, Integer replayId) throws IOException {
-    //FIXME needs to update
-    //downloadMapIfNecessary(map);
-    Process process = forgedAllianceService.startReplay(replayUrl, replayId);
-    gameRunning.set(true);
+  public CompletableFuture<Void> runWithLiveReplay(URI replayUrl, Integer gameId, String gameType, String mapName) throws IOException {
+    GameInfoBean gameBean = getByUid(gameId);
 
-    this.ratingMode = RatingMode.NONE;
-    spawnTerminationListener(process);
+    Map<String, Integer> modVersions = gameBean.getFeaturedModVersions();
+    Set<String> simModUids = gameBean.getSimMods().keySet();
+
+    return updateGameIfNecessary(gameType, null, modVersions, simModUids)
+        .thenCompose(aVoid -> downloadMapIfNecessary(mapName))
+        .thenRun(() -> {
+          try {
+            process = forgedAllianceService.startReplay(replayUrl, gameId, gameType);
+            gameRunning.set(true);
+            this.ratingMode = RatingMode.NONE;
+            spawnTerminationListener(process);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   @Override
@@ -265,13 +280,18 @@ public class GameServiceImpl implements GameService {
     int port = preferencesService.getPreferences().getForgedAlliance().getPort();
 
     return updateGameIfNecessary(GameType.LADDER_1V1.getString(), null, emptyMap(), emptySet())
+        .thenRun(() -> localRelayServer.start(connectivityService))
         .thenCompose(aVoid -> fafService.startSearchRanked1v1(faction, port))
         .thenAccept((gameLaunchInfo) -> {
           searchExpansionFuture.cancel(true);
-          startGame(gameLaunchInfo, faction, RatingMode.RANKED_1V1, localRelayServer.getGpgRelayPort());
+          startGame(gameLaunchInfo, faction, RatingMode.RANKED_1V1, localRelayServer.getPort());
         })
         .exceptionally(throwable -> {
-          logger.warn("Ranked1v1 could not be started", throwable);
+          if (throwable instanceof CancellationException) {
+            logger.info("Ranked1v1 search has been cancelled");
+          } else {
+            logger.warn("Ranked1v1 could not be started", throwable);
+          }
           searchExpansionFuture.cancel(true);
           return null;
         });
@@ -303,12 +323,29 @@ public class GameServiceImpl implements GameService {
     return searching1v1;
   }
 
+  @Override
+  public CompletableFuture<Void> prepareForRehost() {
+    return fafService.expectRehostCommand().thenAccept(gameLaunchMessage -> {
+      logger.debug("Received game launch command, waiting for FA to terminate");
+      try {
+        process.waitFor();
+        localRelayServer.close();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+
+      localRelayServer.start(connectivityService);
+      connectivityService.connect();
+      startGame(gameLaunchMessage, null, RatingMode.GLOBAL, localRelayServer.getPort());
+    });
+  }
+
   private boolean isRunning() {
     return process != null && process.isAlive();
   }
 
-  private CompletableFuture<Void> updateGameIfNecessary(@NotNull String gameType, @Nullable Integer version, @NotNull Map<String, Integer> modVersions, @NotNull Set<String> simModUIds) {
-    return gameUpdateService.updateInBackground(gameType, version, modVersions, simModUIds);
+  private CompletableFuture<Void> updateGameIfNecessary(@NotNull String gameType, @Nullable Integer version, @NotNull Map<String, Integer> modVersions, @NotNull Set<String> simModUids) {
+    return gameUpdateService.updateInBackground(gameType, version, modVersions, simModUids);
   }
 
   /**
@@ -319,7 +356,7 @@ public class GameServiceImpl implements GameService {
     stopSearchRanked1v1();
     List<String> args = fixMalformedArgs(gameLaunchMessage.getArgs());
     try {
-      localRelayServer.getGpgRelayPort();
+      localRelayServer.getPort();
       process = forgedAllianceService.startGame(gameLaunchMessage.getUid(), gameLaunchMessage.getMod(), faction, args, ratingMode, localRelayPort);
       gameRunning.set(true);
 
@@ -354,6 +391,8 @@ public class GameServiceImpl implements GameService {
       try {
         int exitCode = process.waitFor();
         gameRunning.set(false);
+        localRelayServer.close();
+        fafService.notifyGameEnded();
         logger.info("Forged Alliance terminated with exit code {}", exitCode);
       } catch (InterruptedException e) {
         logger.warn("Error during post-game processing", e);
@@ -368,15 +407,19 @@ public class GameServiceImpl implements GameService {
   }
 
   private void onGameTypeInfo(GameTypeMessage gameTypeMessage) {
-    // TODO only removed while on dev
-//    if (!gameTypeMessage.isHost() || !gameTypeMessage.isLive() || gameTypeBeans.containsKey(gameTypeMessage.getName())) {
-//      return;
-//    }
+    if (!gameTypeMessage.isPublish() || gameTypeBeans.containsKey(gameTypeMessage.getName())) {
+      return;
+    }
 
     gameTypeBeans.put(gameTypeMessage.getName(), new GameTypeBean(gameTypeMessage));
   }
 
   private void onGameInfo(GameInfoMessage gameInfoMessage) {
+    if (gameInfoMessage.getGames() != null) {
+      gameInfoMessage.getGames().forEach(this::onGameInfo);
+      return;
+    }
+
     if (GameState.CLOSED.equals(gameInfoMessage.getState())) {
       gameInfoBeans.remove(uidToGameInfoBean.remove(gameInfoMessage.getUid()));
       return;

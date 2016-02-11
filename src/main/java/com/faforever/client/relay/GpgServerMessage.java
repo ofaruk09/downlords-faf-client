@@ -3,6 +3,7 @@ package com.faforever.client.relay;
 import com.faforever.client.legacy.domain.MessageTarget;
 import com.faforever.client.legacy.domain.SerializableMessage;
 import com.faforever.client.legacy.domain.ServerMessage;
+import com.faforever.client.net.SocketAddressUtil;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.net.InetSocketAddress;
@@ -19,7 +20,6 @@ public class GpgServerMessage implements SerializableMessage, ServerMessage {
   private GpgServerMessageType command;
   private MessageTarget target;
   private List<Object> args;
-  private String jsonString;
 
   public GpgServerMessage() {
   }
@@ -59,9 +59,22 @@ public class GpgServerMessage implements SerializableMessage, ServerMessage {
   }
 
   protected InetSocketAddress getSocketAddress(int index) {
+    // TODO remove this when the representation of addresses is finally unified on server side
+    Object arg = args.get(index);
+    if (arg instanceof String) {
+      return SocketAddressUtil.fromString((String) arg);
+    }
+
     @SuppressWarnings("unchecked")
-    List<Object> addressArray = (List<Object>) args.get(index);
-    return new InetSocketAddress((String) addressArray.get(0), ((Number) addressArray.get(1)).intValue());
+    List<Object> addressArray = (List<Object>) arg;
+    // TODO remove this when fixed on server side
+    int port;
+    if (addressArray.get(1) instanceof String) {
+      port = Integer.parseInt((String) addressArray.get(1));
+    } else {
+      port = ((Number) addressArray.get(1)).intValue();
+    }
+    return new InetSocketAddress((String) addressArray.get(0), port);
   }
 
   @Override
@@ -77,16 +90,6 @@ public class GpgServerMessage implements SerializableMessage, ServerMessage {
   @Override
   public MessageTarget getTarget() {
     return target;
-  }
-
-  @Override
-  public String getJsonString() {
-    return jsonString;
-  }
-
-  @Override
-  public void setJsonString(String jsonString) {
-    this.jsonString = jsonString;
   }
 
   public void setTarget(MessageTarget target) {

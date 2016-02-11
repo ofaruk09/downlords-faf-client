@@ -1,7 +1,7 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.legacy.ConnectionState;
+import com.faforever.client.net.ConnectionState;
 import com.faforever.client.task.AbstractPrioritizedTask;
 import com.faforever.client.task.TaskService;
 import com.faforever.client.user.UserService;
@@ -68,7 +68,16 @@ public class MockChatService implements ChatService {
 
   @PostConstruct
   void postConstruct() {
-    userService.addOnLoginListener(this::connect);
+    userService.loggedInProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue) {
+        connect();
+      }
+    });
+  }
+
+  private void simulateConnectionEstablished() {
+    connectionState.set(ConnectionState.CONNECTED);
+    joinChannel("#mockChannel");
   }
 
   @Override
@@ -114,11 +123,6 @@ public class MockChatService implements ChatService {
         simulateConnectionEstablished();
       }
     }, CONNECTION_DELAY);
-  }
-
-  private void simulateConnectionEstablished() {
-    connectionState.set(ConnectionState.CONNECTED);
-    joinChannel("#mockChannel");
   }
 
   @Override
@@ -245,5 +249,15 @@ public class MockChatService implements ChatService {
   @Override
   public ObjectProperty<ConnectionState> connectionStateProperty() {
     return connectionState;
+  }
+
+  @Override
+  public void reconnect() {
+
+  }
+
+  @Override
+  public void whois(String username) {
+
   }
 }

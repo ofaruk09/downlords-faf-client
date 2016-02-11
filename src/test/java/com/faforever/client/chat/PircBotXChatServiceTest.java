@@ -1,8 +1,8 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.legacy.ConnectionState;
 import com.faforever.client.legacy.domain.SocialMessage;
+import com.faforever.client.net.ConnectionState;
 import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
@@ -11,10 +11,13 @@ import com.faforever.client.task.PrioritizedTask;
 import com.faforever.client.task.TaskService;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
 import com.faforever.client.user.UserService;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.hash.Hashing;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.MapProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleMapProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -35,6 +38,7 @@ import org.pircbotx.Configuration;
 import org.pircbotx.PircBotX;
 import org.pircbotx.User;
 import org.pircbotx.UserChannelDao;
+import org.pircbotx.UserHostmask;
 import org.pircbotx.UserLevel;
 import org.pircbotx.hooks.events.ActionEvent;
 import org.pircbotx.hooks.events.ConnectEvent;
@@ -107,11 +111,11 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
   @Mock
   private Channel defaultChannel;
   @Mock
-  private ShutdownablePircBotX pircBotX;
+  private PircBotX pircBotX;
   @Mock
-  private Configuration<PircBotX> configuration;
+  private Configuration configuration;
   @Mock
-  private ListenerManager<PircBotX> listenerManager;
+  private ListenerManager listenerManager;
   @Mock
   private UserChannelDaoSnapshot daoSnapshot;
   @Mock
@@ -144,9 +148,12 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
   private FafService fafService;
   @Mock
   private ExecutorService executorService;
+  @Mock
+  private UserHostmask userHostMask;
 
   private CountDownLatch botShutdownLatch;
   private CompletableFuture<Object> botStartedFuture;
+  private BooleanProperty loggedInProperty;
 
   @Before
   public void setUp() throws Exception {
@@ -161,6 +168,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
 
     chatUser1 = new ChatUser("chatUser1", null);
     chatUser2 = new ChatUser("chatUser2", null);
+    loggedInProperty = new SimpleBooleanProperty();
 
     botShutdownLatch = new CountDownLatch(1);
 
@@ -169,6 +177,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
 
     when(userService.getUsername()).thenReturn(CHAT_USER_NAME);
     when(userService.getPassword()).thenReturn(CHAT_PASSWORD);
+    when(userService.loggedInProperty()).thenReturn(loggedInProperty);
 
     when(user1.getNick()).thenReturn(chatUser1.getUsername());
     when(user1.getChannels()).thenReturn(ImmutableSortedSet.of(defaultChannel));
@@ -200,7 +209,6 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     }).when(pircBotX).startBot();
 
     when(pircBotXFactory.createPircBotX(any())).thenReturn(pircBotX);
-
     when(configuration.getListenerManager()).thenReturn(listenerManager);
 
     instance.ircHost = LOOPBACK_ADDRESS.getHostAddress();
@@ -295,7 +303,9 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     Channel channel = mock(Channel.class);
     when(channel.getName()).thenReturn(DEFAULT_CHANNEL_NAME);
 
-    instance.onEvent(new MessageEvent<>(pircBotX, channel, user, message));
+    UserHostmask userHostMask = mock(UserHostmask.class);
+    ImmutableMap<String, String> tags = new ImmutableMap.Builder<String, String>().build();
+    instance.onEvent(new MessageEvent(pircBotX, channel, DEFAULT_CHANNEL_NAME, userHostMask, user, message, tags));
 
     assertThat(channelNameFuture.get(), is(DEFAULT_CHANNEL_NAME));
     assertThat(chatMessageFuture.get().getMessage(), is(message));
@@ -321,7 +331,8 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     Channel channel = mock(Channel.class);
     when(channel.getName()).thenReturn(DEFAULT_CHANNEL_NAME);
 
-    instance.onEvent(new ActionEvent<>(pircBotX, user, channel, action));
+    UserHostmask userHostMask = mock(UserHostmask.class);
+    instance.onEvent(new ActionEvent(pircBotX, userHostMask, user, channel, DEFAULT_CHANNEL_NAME, action));
 
     assertThat(channelNameFuture.get(), is(DEFAULT_CHANNEL_NAME));
     assertThat(chatMessageFuture.get().getMessage(), is(action));
@@ -347,7 +358,8 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     Channel channel = mock(Channel.class);
     when(channel.getName()).thenReturn(DEFAULT_CHANNEL_NAME);
 
-    instance.onEvent(new PrivateMessageEvent<>(pircBotX, user, message));
+    UserHostmask userHostMask = mock(UserHostmask.class);
+    instance.onEvent(new PrivateMessageEvent(pircBotX, userHostMask, user, message));
 
     assertThat(chatMessageFuture.get().getMessage(), is(message));
     assertThat(chatMessageFuture.get().getUsername(), is(chatUser1.getUsername()));
@@ -372,7 +384,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
 
     mockTaskService();
 
-    instance.onEvent(new ConnectEvent<>(pircBotX));
+    instance.onEvent(new ConnectEvent(pircBotX));
 
     assertThat(onChatConnectedFuture.get(TIMEOUT, TIMEOUT_UNIT), is(nullValue()));
   }
@@ -399,13 +411,16 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     when(chatPrefs.getChatColorMode()).thenReturn(chatColorMode.get());
     when(chatPrefs.getUserToColor()).thenReturn(userToColorProperty);
 
+    when(user2.compareTo(user1)).thenReturn(1);
     ImmutableSortedSet<User> users = ImmutableSortedSet.of(user1, user2);
-    instance.onEvent(new UserListEvent<>(pircBotX, defaultChannel, users));
+    instance.onEvent(new UserListEvent(pircBotX, defaultChannel, users, true));
 
     assertThat(channelNameFuture.get(TIMEOUT, TIMEOUT_UNIT), is(DEFAULT_CHANNEL_NAME));
-    assertThat(usersFuture.get(TIMEOUT, TIMEOUT_UNIT).values(), hasSize(2));
-    assertThat(usersFuture.get(TIMEOUT, TIMEOUT_UNIT).get(chatUser1.getUsername()), is(chatUser1));
-    assertThat(usersFuture.get(TIMEOUT, TIMEOUT_UNIT).get(chatUser2.getUsername()), is(chatUser2));
+
+    Map<String, ChatUser> userMap = usersFuture.get(TIMEOUT, TIMEOUT_UNIT);
+    assertThat(userMap.values(), hasSize(2));
+    assertThat(userMap.get(chatUser1.getUsername()), is(chatUser1));
+    assertThat(userMap.get(chatUser2.getUsername()), is(chatUser2));
   }
 
   @Test
@@ -419,7 +434,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
       }
     });
 
-    instance.onEvent(new DisconnectEvent<>(pircBotX, daoSnapshot, null));
+    instance.onEvent(new DisconnectEvent(pircBotX, daoSnapshot, null));
 
     onChatDisconnectedFuture.get(TIMEOUT, TIMEOUT_UNIT);
   }
@@ -436,7 +451,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
       userFuture.complete(chatUser);
     });
 
-    instance.onEvent(new JoinEvent<>(pircBotX, defaultChannel, user1));
+    instance.onEvent(new JoinEvent(pircBotX, defaultChannel, userHostMask, user1));
 
     assertThat(channelNameFuture.get(TIMEOUT, TIMEOUT_UNIT), is(DEFAULT_CHANNEL_NAME));
     assertThat(userFuture.get(TIMEOUT, TIMEOUT_UNIT), is(chatUser1));
@@ -455,7 +470,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     when(userSnapshot.getNick()).thenReturn(chatUser1.getUsername());
 
     String reason = "Part reason";
-    instance.onEvent(new PartEvent<>(pircBotX, daoSnapshot, channelSnapshot, userSnapshot, reason));
+    instance.onEvent(new PartEvent(pircBotX, daoSnapshot, channelSnapshot, userHostMask, userSnapshot, reason));
 
     assertThat(channelNameFuture.get(TIMEOUT, TIMEOUT_UNIT), is(DEFAULT_CHANNEL_NAME));
     assertThat(usernameFuture.get(TIMEOUT, TIMEOUT_UNIT), is(chatUser1.getUsername()));
@@ -481,7 +496,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     CompletableFuture<Boolean> quitFuture = new CompletableFuture<>();
     instance.addOnChatUserQuitListener((username) -> quitFuture.complete(true));
 
-    instance.onEvent(new QuitEvent<>(pircBotX, daoSnapshot, userSnapshot, "reason"));
+    instance.onEvent(new QuitEvent(pircBotX, daoSnapshot, userHostMask, userSnapshot, "reason"));
 
     assertThat(quitFuture.get(TIMEOUT, TIMEOUT_UNIT), is(true));
   }
@@ -490,6 +505,7 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
   @SuppressWarnings("unchecked")
   public void testConnect() throws Exception {
     ArgumentCaptor<Configuration> captor = ArgumentCaptor.forClass(Configuration.class);
+    when(userService.getUid()).thenReturn(681);
 
     instance.connect();
     botStartedFuture.get(TIMEOUT, TIMEOUT_UNIT);
@@ -499,10 +515,10 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     Configuration configuration = captor.getValue();
 
     assertThat(configuration.getName(), is(CHAT_USER_NAME));
-    assertThat(configuration.getLogin(), is(CHAT_USER_NAME));
+    assertThat(configuration.getLogin(), is("681"));
     assertThat(configuration.getRealName(), is(CHAT_USER_NAME));
-    assertThat(configuration.getServerHostname(), is(LOOPBACK_ADDRESS.getHostAddress()));
-    assertThat(configuration.getServerPort(), is(IRC_SERVER_PORT));
+    assertThat(configuration.getServers().get(0).getHostname(), is(LOOPBACK_ADDRESS.getHostAddress()));
+    assertThat(configuration.getServers().get(0).getPort(), is(IRC_SERVER_PORT));
   }
 
   @Test

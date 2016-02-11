@@ -7,6 +7,7 @@ import com.faforever.client.legacy.map.Comment;
 import com.faforever.client.legacy.map.MapVaultParser;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.task.TaskService;
+import com.google.common.net.UrlEscapers;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
@@ -181,11 +182,14 @@ public class MapServiceImpl implements MapService {
         mapInfoBean.setDisplayName(stripQuotes(properties.getProperty("name")));
         mapInfoBean.setDescription(stripQuotes(properties.getProperty("description")));
 
-        Matcher matcher = MAP_SIZE_PATTERN.matcher(properties.getProperty("size"));
-        if (matcher.find()) {
-          int width = Integer.parseInt(matcher.group(1));
-          int height = Integer.parseInt(matcher.group(2));
-          mapInfoBean.setSize(new MapSize(width, height));
+        String size = properties.getProperty("size");
+        if (size != null) {
+          Matcher matcher = MAP_SIZE_PATTERN.matcher(size);
+          if (matcher.find()) {
+            int width = Integer.parseInt(matcher.group(1));
+            int height = Integer.parseInt(matcher.group(2));
+            mapInfoBean.setSize(new MapSize(width, height));
+          }
         }
         return mapInfoBean;
       }
@@ -246,13 +250,13 @@ public class MapServiceImpl implements MapService {
     try {
       return mapVaultParser.parseComments(mapId);
     } catch (IOException e) {
-      logger.error("Error in parsing comment for {}", mapId);
+      logger.warn("Error in parsing comment for {}", mapId);
     }
-    return null;
+    return Collections.emptyList();
   }
 
   private static String getMapUrl(String mapName, String baseUrl) {
-    return String.format(baseUrl, mapName.toLowerCase(Locale.US));
+    return String.format(baseUrl, UrlEscapers.urlFragmentEscaper().escape(mapName.toLowerCase(Locale.US)));
   }
 
   @Nullable

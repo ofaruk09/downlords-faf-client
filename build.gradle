@@ -28,7 +28,7 @@ apply plugin: 'install4j'
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
-version = '0.5.0.1-alpha'
+version = '0.6.4-alpha'
 
 mainClassName = "com.faforever.client.Main"
 applicationDefaultJvmArgs = ["-Djava.library.path=../lib"]
@@ -62,7 +62,8 @@ idea {
 jar {
   manifest {
     attributes "Implementation-Title": "Downlord's FAF Client",
-        "Implementation-Version": version
+        "Implementation-Version": version,
+        "Implementation-Vendor": "Downlord"
   }
 }
 
@@ -87,6 +88,7 @@ task buildInstaller(type: Install4jTask) {
   projectFile = file('downlords-faf-client.install4j')
   release = version
 }
+
 task wrapper(type: Wrapper) {
   gradleVersion = '2.5'
 }
@@ -115,9 +117,8 @@ dependencies {
   compile 'org.springframework:spring-context:4.2.2.RELEASE'
   compile 'org.springframework:spring-context-support:4.2.2.RELEASE'
   compile 'org.springframework:spring-core:4.2.2.RELEASE'
-  compile 'org.springframework:spring-oxm:4.2.2.RELEASE'
   compile 'org.springframework:spring-web:4.2.2.RELEASE'
-  compile('org.pircbotx:pircbotx:2.0.1') {
+  compile('org.pircbotx:pircbotx:2.1') {
     exclude module: 'guava'
   }
   compile 'com.google.guava:guava:18.0'
@@ -143,4 +144,5 @@ dependencies {
   compile 'org.apache.lucene:lucene-analyzers-common:5.3.1'
   compile 'org.apache.lucene:lucene-suggest:5.3.1'
   compile 'org.opentelecoms.ice:ice4j-fork:1.0+f.4'
+  compile 'com.nativelibs4java:bridj:0.7.0'
 }

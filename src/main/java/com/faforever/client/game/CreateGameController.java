@@ -3,6 +3,7 @@ package com.faforever.client.game;
 import com.faforever.client.ThemeService;
 import com.faforever.client.connectivity.ConnectivityService;
 import com.faforever.client.connectivity.ConnectivityState;
+import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.map.MapService;
 import com.faforever.client.mod.ModInfoBean;
@@ -13,7 +14,6 @@ import com.faforever.client.notification.ReportAction;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.reporting.ReportingService;
-import com.faforever.client.util.JavaFxUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import javafx.application.Platform;
@@ -197,13 +197,15 @@ public class CreateGameController {
       if (Strings.isNullOrEmpty(titleTextField.getText())) {
         return i18n.get("game.create.titleMissing");
       }
-      if (connectivityService.getConnectivityState() == ConnectivityState.BLOCKED) {
-        return i18n.get("game.create.portUnreachable");
+      switch (connectivityService.getConnectivityState()) {
+        case BLOCKED:
+          return i18n.get("game.create.portUnreachable");
+        case RUNNING:
+        case UNKNOWN:
+          return i18n.get("game.create.connectivityCheckPending");
+        default:
+          return i18n.get("game.create.create");
       }
-      if (connectivityService.getConnectivityState() == ConnectivityState.UNKNOWN) {
-        return i18n.get("game.create.connectivityCheckPending");
-      }
-      return i18n.get("game.create.create");
     }, titleTextField.textProperty(), connectivityService.connectivityStateProperty()));
 
     createGameButton.disableProperty().bind(

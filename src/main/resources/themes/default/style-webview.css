@@ -28,22 +28,21 @@ a {
 }
 
 /***************** Chat Colors (WebView) *****************/
-/*!important indicates that randomColors cannot override*/
 
 .self {
-  color: #FFA500 !important;
+  color: #FFA500;
 }
 
 .friend {
-  color: #16B7EB !important;
+  color: #16B7EB;
 }
 
 .foe {
-  color: #FF0000 !important;
+  color: #FF0000;
 }
 
 .moderator {
-  color: #FFFFFF !important;
+  color: #FFFFFF;
 }
 
 .chat_only {
@@ -84,11 +83,8 @@ a {
   vertical-align: top;
 }
 
-.chat-message .time {
-}
-
 .chat-message > .avatar {
-  width: 40;
+  width: 40px;
   height: 20px;
   padding: 0 2px;
 }
@@ -99,6 +95,7 @@ a {
 
 .chat-message .text {
   width: 100%;
+  word-break: break-word;
 }
 
 .chat-message .username {

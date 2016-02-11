@@ -147,7 +147,7 @@ public class UiConfig {
 
   @Bean
   LeaderboardController leaderboardController() {
-    return loadController("ladder.fxml");
+    return loadController("leaderboard.fxml");
   }
 
   @Bean

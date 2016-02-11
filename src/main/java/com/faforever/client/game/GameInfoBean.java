@@ -87,6 +87,7 @@ public class GameInfoBean {
     maxPlayers.setValue(gameInfoMessage.getMaxPlayers());
     victoryCondition.set(gameInfoMessage.getGameType());
     status.set(gameInfoMessage.getState());
+    passwordProtected.set(gameInfoMessage.getPasswordProtected());
 
     simMods.clear();
     if (gameInfoMessage.getSimMods() != null) {
@@ -283,6 +284,9 @@ public class GameInfoBean {
     return victoryCondition;
   }
 
+  /**
+   * Returns a map of simulation mod UIDs to the mod's name.
+   */
   public ObservableMap<String, String> getSimMods() {
     return simMods.get();
   }

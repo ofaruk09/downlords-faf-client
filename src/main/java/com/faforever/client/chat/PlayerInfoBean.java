@@ -24,6 +24,7 @@ import static com.faforever.client.chat.SocialStatus.OTHER;
  * Represents a player with username, clan, country, friend/foe flag and so on. Can also be a chat-only user. This
  * represents the combination of a PlayersInfo (from the FAF server) and a ChatUser (from IRC).
  */
+// TODO rename to Player
 public class PlayerInfoBean {
 
   private final IntegerProperty id;
@@ -42,6 +43,7 @@ public class PlayerInfoBean {
   private final IntegerProperty gameUid;
   private final SimpleObjectProperty<GameStatus> gameStatus;
   private final IntegerProperty numberOfGames;
+
   public PlayerInfoBean(Player player) {
     this();
 
@@ -54,6 +56,7 @@ public class PlayerInfoBean {
       avatarUrl.set(player.getAvatar().getUrl());
     }
   }
+
   private PlayerInfoBean() {
     id = new SimpleIntegerProperty();
     username = new SimpleStringProperty();
@@ -72,6 +75,7 @@ public class PlayerInfoBean {
     numberOfGames = new SimpleIntegerProperty();
     socialStatus = new SimpleObjectProperty<>(OTHER);
   }
+
   public PlayerInfoBean(String username) {
     this();
     this.gameStatus.set(GameStatus.NONE);
@@ -248,7 +252,7 @@ public class PlayerInfoBean {
     return gameStatus;
   }
 
-  public void setGameStatusFromGameState(GameState gameState){
+  public void setGameStatusFromGameState(GameState gameState) {
     gameStatus.set(GameStatus.getFromGameState(gameState));
   }
 
@@ -293,10 +297,15 @@ public class PlayerInfoBean {
     setChatOnly(false);
     setClan(player.getClan());
     setCountry(player.getCountry());
-    setGlobalRatingMean(player.getRatingMean());
-    setGlobalRatingDeviation(player.getRatingDeviation());
-    setLeaderboardRatingDeviation(player.getLadderRatingDeviation());
-    setLeaderboardRatingMean(player.getLadderRatingMean());
+
+    if (player.getGlobalRating() != null) {
+      setGlobalRatingMean(player.getGlobalRating()[0]);
+      setGlobalRatingDeviation(player.getGlobalRating()[1]);
+    }
+    if (player.getLadderRating() != null) {
+      setLeaderboardRatingMean(player.getLadderRating()[0]);
+      setLeaderboardRatingDeviation(player.getLadderRating()[1]);
+    }
     setNumberOfGames(player.getNumberOfGames());
     if (player.getAvatar() != null) {
       setAvatarUrl(player.getAvatar().getUrl());

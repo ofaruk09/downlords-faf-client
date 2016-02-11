@@ -1,8 +1,8 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.legacy.ConnectionState;
 import com.faforever.client.legacy.domain.SocialMessage;
+import com.faforever.client.net.ConnectionState;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.notification.Severity;
@@ -22,6 +22,7 @@ import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 import javafx.scene.paint.Color;
 import org.pircbotx.Configuration;
+import org.pircbotx.PircBotX;
 import org.pircbotx.User;
 import org.pircbotx.UtilSSLSocketFactory;
 import org.pircbotx.exception.IrcException;
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -108,7 +110,7 @@ public class PircBotXChatService implements ChatService, Listener,
   int reconnectDelay;
 
   private Configuration configuration;
-  private ShutdownablePircBotX pircBotX;
+  private PircBotX pircBotX;
   private CountDownLatch chatConnectedLatch;
   private Map<String, ChatUser> chatUsersByName;
   private Task<Void> connectionTask;
@@ -178,24 +180,34 @@ public class PircBotXChatService implements ChatService, Listener,
     addOnModeratorSetListener(this);
     addUserToColorListener();
 
-    userService.addOnLogoutListener(this::disconnect);
-    userService.addOnLoginListener(this::connect);
+    userService.loggedInProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue) {
+        connect();
+      } else {
+        disconnect();
+      }
+    });
 
     ChatPrefs chatPrefs = preferencesService.getPreferences().getChat();
 
     chatPrefs.chatColorModeProperty().addListener((observable, oldValue, newValue) -> {
-      if (newValue.equals(CUSTOM)) {
-        chatUsersByName.values().stream().filter(chatUser -> chatPrefs.getUserToColor().containsKey(chatUser.getUsername())).forEach(chatUser -> {
-          chatUser.setColor(chatPrefs.getUserToColor().get(chatUser.getUsername()));
-        });
-      } else if (newValue.equals(RANDOM)) {
-        for (ChatUser chatUser : chatUsersByName.values()) {
-          chatUser.setColor(ColorGeneratorUtil.generateRandomHexColor());
-        }
-      } else {
-        for (ChatUser chatUser : chatUsersByName.values()) {
-          chatUser.setColor(null);
-        }
+      switch (newValue) {
+        case CUSTOM:
+          chatUsersByName.values().stream()
+              .filter(chatUser -> chatPrefs.getUserToColor().containsKey(chatUser.getUsername()))
+              .forEach(chatUser -> chatUser.setColor(chatPrefs.getUserToColor().get(chatUser.getUsername())));
+          break;
+
+        case RANDOM:
+          for (ChatUser chatUser : chatUsersByName.values()) {
+            chatUser.setColor(ColorGeneratorUtil.generateRandomColor(chatUser.getUsername().hashCode()));
+          }
+          break;
+
+        default:
+          for (ChatUser chatUser : chatUsersByName.values()) {
+            chatUser.setColor(null);
+          }
       }
     });
   }
@@ -210,7 +222,6 @@ public class PircBotXChatService implements ChatService, Listener,
   private void onDisconnected() {
     synchronized (chatUserLists) {
       chatUserLists.values().forEach(ObservableMap::clear);
-      chatUserLists.clear();
     }
   }
 
@@ -218,7 +229,7 @@ public class PircBotXChatService implements ChatService, Listener,
     sendMessageInBackground("NICKSERV", "IDENTIFY " + Hashing.md5().hashString(userService.getPassword(), UTF_8))
         .thenAccept(s1 -> {
           chatConnectedLatch.countDown();
-          pircBotX.sendIRC().joinChannel(defaultChannelName);
+          joinChannel(defaultChannelName);
         })
         .exceptionally(throwable -> {
           notificationService.addNotification(
@@ -235,6 +246,26 @@ public class PircBotXChatService implements ChatService, Listener,
       chatUsers.put(chatUser.getUsername(), chatUser);
     }
     return chatUsers;
+  }
+
+  @SuppressWarnings("unchecked")
+  private void init() {
+    String username = userService.getUsername();
+
+    configuration = new Configuration.Builder()
+        .setName(username)
+        .setLogin(String.valueOf(userService.getUid()))
+        .setRealName(username)
+        .addServer(ircHost, ircPort)
+        .setSocketFactory(new UtilSSLSocketFactory().trustAllCertificates())
+        .setAutoSplitMessage(true)
+        .setEncoding(UTF_8)
+        .setAutoReconnect(false)
+        .addListener(this)
+        .setSocketTimeout(SOCKET_TIMEOUT)
+        .buildConfiguration();
+
+    pircBotX = pircBotXFactory.createPircBotX(configuration);
   }
 
   @Override
@@ -274,7 +305,13 @@ public class PircBotXChatService implements ChatService, Listener,
   @SuppressWarnings("unchecked")
   public void addOnUserListListener(final OnChatUserListListener listener) {
     addEventListener(UserListEvent.class,
-        event -> listener.onChatUserList(event.getChannel().getName(), chatUsers(event.getUsers())));
+        event -> {
+          try {
+            listener.onChatUserList(event.getChannel().getName(), chatUsers(event.getUsers()));
+          } catch (Exception e) {
+            logger.warn("Error while handling chat user list", e);
+          }
+        });
   }
 
   @Override
@@ -331,9 +368,11 @@ public class PircBotXChatService implements ChatService, Listener,
           try {
             connectionState.set(ConnectionState.CONNECTING);
             chatConnectedLatch = new CountDownLatch(1);
-            logger.info("Connecting to IRC at {}:{}", configuration.getServerHostname(), configuration.getServerPort());
+            Configuration.ServerEntry server = configuration.getServers().get(0);
+            logger.info("Connecting to IRC at {}:{}", server.getHostname(), server.getPort());
             pircBotX.startBot();
-          } catch (IOException | IrcException e) {
+          } catch (IOException | IrcException | RuntimeException e) {
+            // TODO PircBotX 2.1 supports reconnect delay
             logger.warn("Lost connection to IRC server, trying to reconnect in " + reconnectDelay / 1000 + "s");
             connectionState.set(ConnectionState.DISCONNECTED);
             Thread.sleep(reconnectDelay);
@@ -351,7 +390,9 @@ public class PircBotXChatService implements ChatService, Listener,
     if (connectionTask != null) {
       connectionTask.cancel();
     }
-    pircBotX.shutdown();
+    if (pircBotX.isConnected()) {
+      pircBotX.sendIRC().quitServer();
+    }
   }
 
   @Override
@@ -387,7 +428,7 @@ public class PircBotXChatService implements ChatService, Listener,
         if (chatPrefs.getChatColorMode().equals(CUSTOM) && chatPrefs.getUserToColor().containsKey(username)) {
           color = chatPrefs.getUserToColor().get(username);
         } else if (chatPrefs.getChatColorMode().equals(RANDOM)) {
-          color = ColorGeneratorUtil.generateRandomHexColor();
+          color = ColorGeneratorUtil.generateRandomColor(username.hashCode());
         }
 
         chatUsersByName.put(username, new ChatUser(username, color));
@@ -443,9 +484,14 @@ public class PircBotXChatService implements ChatService, Listener,
   }
 
   @Override
+  @PreDestroy
   public void close() {
+    // TODO clean up disconnect() and close()
     if (connectionTask != null) {
       Platform.runLater(connectionTask::cancel);
+    }
+    if (pircBotX != null) {
+      pircBotX.sendIRC().quitServer();
     }
   }
 
@@ -460,10 +506,10 @@ public class PircBotXChatService implements ChatService, Listener,
         if (chatPrefs.getChatColorMode().equals(CUSTOM) && chatPrefs.getUserToColor().containsKey(username)) {
           color = chatPrefs.getUserToColor().get(username);
         } else if (chatPrefs.getChatColorMode().equals(RANDOM)) {
-          color = ColorGeneratorUtil.generateRandomHexColor();
+          color = ColorGeneratorUtil.generateRandomColor(username.hashCode());
         }
 
-        chatUsersByName.put(username, ChatUser.fromChatUser(user, color));
+        chatUsersByName.put(username, ChatUser.fromIrcUser(user, color));
       }
       return chatUsersByName.get(username);
     }
@@ -482,24 +528,15 @@ public class PircBotXChatService implements ChatService, Listener,
     return connectionState;
   }
 
-  @SuppressWarnings("unchecked")
-  private void init() {
-    String username = userService.getUsername();
+  @Override
+  public void reconnect() {
+    disconnect();
+    connect();
+  }
 
-    configuration = new Configuration.Builder()
-        .setName(username)
-        .setLogin(username)
-        .setRealName(username)
-        .setServer(ircHost, ircPort)
-        .setSocketFactory(new UtilSSLSocketFactory().trustAllCertificates())
-        .setAutoSplitMessage(true)
-        .setEncoding(UTF_8)
-        .setAutoReconnect(false)
-        .addListener(this)
-        .setSocketTimeout(SOCKET_TIMEOUT)
-        .buildConfiguration();
-
-    pircBotX = pircBotXFactory.createPircBotX(configuration);
+  @Override
+  public void whois(String username) {
+    pircBotX.sendIRC().whois(username);
   }
 
   @Override
