@@ -71,6 +71,7 @@ public class PreferencesService {
   static {
     switch (OperatingSystem.current()) {
       case WINDOWS:
+        // TODO this should be %LOCALAPPDATA%, but stay compatible with the current client
         FAF_DATA_DIRECTORY = Paths.get(Shell32Util.getFolderPath(ShlObj.CSIDL_COMMON_APPDATA), "FAForever");
         break;
 

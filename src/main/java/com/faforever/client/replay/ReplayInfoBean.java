@@ -63,7 +63,9 @@ public class ReplayInfoBean {
     if (replayInfo.getTeams() != null) {
       teams.putAll(replayInfo.getTeams());
     }
-    playerCount.set(replayInfo.getNumPlayers());
+    if (replayInfo.getNumPlayers() != null) {
+      playerCount.set(replayInfo.getNumPlayers());
+    }
   }
 
   public ReplayInfoBean(ServerReplayInfo replayInfo) {

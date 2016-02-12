@@ -1,14 +1,18 @@
 package com.faforever.client.replay;
 
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.util.Assert;
 import com.faforever.client.util.TimeService;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.FlowPane;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Resource;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import static com.faforever.client.replay.ReplaySortingOption.DATE;
@@ -27,36 +31,62 @@ public class SortedReplaysController {
   @Resource
   TimeService timeService;
 
-  String headOfTitle;
-  ReplaySortingOption replaySortingOption;
-  private boolean first = true;
+  private ReplaySortingOption replaySortingOption;
+  private int minValue;
+  private int maxValue;
+  private Collection<ReplayInfoBean> replays;
+
+  public SortedReplaysController() {
+    replays = new LinkedList<>();
+  }
+
+  @FXML
+  void initialize() {
+    sortedReplaysRoot.expandedProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue) {
+        replays.forEach(SortedReplaysController.this::addTileForReplay);
+      } else {
+        replayContentPane.getChildren().clear();
+      }
+    });
+  }
 
   public void setReplaySortingOption(ReplaySortingOption replaySortingOption) {
     this.replaySortingOption = replaySortingOption;
   }
 
-  //TODO: title is redundantly being set
   public void addReplay(ReplayInfoBean replayInfoBean) {
-    setTitle(replayInfoBean);
+    updateTitle(replayInfoBean);
+    replays.add(replayInfoBean);
+
+    if (sortedReplaysRoot.isExpanded()) {
+      addTileForReplay(replayInfoBean);
+    }
+  }
+
+  private void updateTitle(ReplayInfoBean replayInfoBean) {
+    Assert.checkNullIllegalState(replaySortingOption, "Replay sorting option must be set before title is set");
+    if (StringUtils.isNotEmpty(sortedReplaysRoot.getText())) {
+      return;
+    }
+
+    String title;
+    if (replaySortingOption == DATE) {
+      title = timeService.timeAgo(replayInfoBean.getStartTime());
+    } else {
+      if (replayContentPane.getChildren().isEmpty()) {
+        this.minValue = getSortingValueForReplayInfoBean(replayInfoBean);
+      }
+      this.maxValue = getSortingValueForReplayInfoBean(replayInfoBean);
+      title = i18n.get("replayVault.titlePane.range", minValue, maxValue, i18n.get(replaySortingOption.getI18nKey()));
+    }
+    sortedReplaysRoot.setText(title);
+  }
+
+  private void addTileForReplay(ReplayInfoBean replayInfoBean) {
     ReplayTileController replayTileController = applicationContext.getBean(ReplayTileController.class);
     replayTileController.setReplay(replayInfoBean);
     replayContentPane.getChildren().add(replayTileController.getRoot());
-
-  }
-
-  private void setTitle(ReplayInfoBean replayInfoBean) {
-    String title;
-    if (replaySortingOption == DATE) {
-      title = timeService.getLocalDateFromInstant(replayInfoBean.getStartTime()).toString();
-    } else {
-      if (first) {
-        headOfTitle = i18n.get("replayVault.titlePane.range.front", getSortingValueForReplayInfoBean(replayInfoBean));
-        first = false;
-      }
-      String endOfTitle = i18n.get("replayVault.titlePane.range.end", getSortingValueForReplayInfoBean(replayInfoBean), i18n.get(replaySortingOption.getI18nKey()));
-      title = String.format("%s %s", headOfTitle, endOfTitle);
-    }
-    sortedReplaysRoot.setText(title);
   }
 
   private int getSortingValueForReplayInfoBean(ReplayInfoBean replayInfoBean) {
@@ -67,6 +97,7 @@ public class SortedReplaysController {
         return replayInfoBean.getDownloads();
       case HIGHEST_AVG_GLOB_RATING:
       case HIGHEST_AVG_LADDER_RATING:
+        // FIXME @Aulex I guess this should not be empty?
     }
     throw new IllegalArgumentException(String.format("Unsupported ReplaySortingOption enum: %s", replaySortingOption.toString()));
   }

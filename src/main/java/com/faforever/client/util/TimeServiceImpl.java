@@ -29,20 +29,41 @@ public class TimeServiceImpl implements TimeService {
 
     Duration ago = Duration.between(instant, Instant.now());
 
-    if (Duration.ofMinutes(1).compareTo(ago) > 0) {
+    if (ago.toMinutes() < 1) {
       return i18n.get("secondsAgo", ago.getSeconds());
     }
-    if (Duration.ofHours(1).compareTo(ago) > 0) {
+    if (ago.toMinutes() == 1) {
+      return i18n.get("minuteAgo");
+    }
+    if (ago.toHours() < 1) {
       return i18n.get("minutesAgo", ago.toMinutes());
     }
-    if (Duration.ofDays(1).compareTo(ago) > 0) {
+    if (ago.toHours() == 1) {
+      return i18n.get("hourAgo");
+    }
+    if (ago.toDays() < 1) {
       return i18n.get("hoursAgo", ago.toHours());
     }
-    if (Duration.ofDays(30).compareTo(ago) > 0) {
+    if (ago.toDays() == 1) {
+      return i18n.get("dayAgo");
+    }
+    if (ago.toDays() / 7 < 1) {
       return i18n.get("daysAgo", ago.toDays());
     }
-    if (Duration.ofDays(365).compareTo(ago) > 0) {
+    if (ago.toDays() / 7 == 1) {
+      return i18n.get("weekAgo");
+    }
+    if (ago.toDays() / 30 < 1) {
+      return i18n.get("weeksAgo", ago.toDays() / 7);
+    }
+    if (ago.toDays() / 30 == 1) {
+      return i18n.get("monthAgo");
+    }
+    if (ago.toDays() / 365 < 1) {
       return i18n.get("monthsAgo", ago.toDays() / 30);
+    }
+    if (ago.toDays() / 365 == 1) {
+      return i18n.get("yearAgo");
     }
 
     return i18n.get("yearsAgo", ago.toDays() / 365);

@@ -101,10 +101,16 @@ public class ReplayServiceImpl implements ReplayService {
         for (Path replayFile : directoryStream) {
           try {
             LocalReplayInfo replayInfo = replayFileReader.readReplayInfo(replayFile);
+
+            if (isInvalid(replayInfo)) {
+              moveCorruptReplayFile(replayFile);
+              continue;
+            }
+
             replayInfos.add(new ReplayInfoBean(replayInfo, replayFile));
           } catch (Exception e) {
-            logger.warn("Could not read replay file {}", replayFile);
-            moveCorruptedReplayFile(replayFile);
+            logger.warn("Could not read replay file: " + replayFile, e);
+            moveCorruptReplayFile(replayFile);
           }
         }
       } catch (IOException e) {
@@ -116,9 +122,19 @@ public class ReplayServiceImpl implements ReplayService {
 
   }
 
-  private void moveCorruptedReplayFile(Path replayFile) throws IOException {
+  private boolean isInvalid(LocalReplayInfo replayInfo) {
+    return replayInfo.getTitle() == null
+        || replayInfo.getMapname() == null;
+  }
+
+  private void moveCorruptReplayFile(Path replayFile) throws IOException {
     Path corruptedReplaysDirectory = preferencesService.getCorruptedReplaysDirectory();
     Files.createDirectories(corruptedReplaysDirectory);
+
+    if (Files.isWritable(corruptedReplaysDirectory)) {
+      logger.warn("Not moving corrupted replay since directory is not writable");
+      return;
+    }
 
     Path target = corruptedReplaysDirectory.resolve(replayFile.getFileName());
 
@@ -198,7 +214,7 @@ public class ReplayServiceImpl implements ReplayService {
                 i18n.get("errorTitle"),
                 i18n.get("liveReplayCouldNotBeStarted"),
                 Severity.ERROR, throwable,
-                asList(new DismissAction(i18n), new ReportAction(i18n, reportingService, throwable))
+                asList(new ReportAction(i18n, reportingService, throwable), new DismissAction(i18n))
             ));
             return null;
           });

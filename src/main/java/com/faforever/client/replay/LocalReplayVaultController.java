@@ -1,14 +1,16 @@
 package com.faforever.client.replay;
 
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.notification.Action;
+import com.faforever.client.notification.DismissAction;
+import com.faforever.client.notification.ImmediateNotification;
 import com.faforever.client.notification.NotificationService;
-import com.faforever.client.notification.PersistentNotification;
+import com.faforever.client.notification.ReportAction;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.task.TaskService;
 import com.faforever.client.util.TimeService;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,6 +25,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.lang.invoke.MethodHandles;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.faforever.client.replay.SortedReplaysController.MAX_PER_PANE;
+import static java.util.Arrays.asList;
 
 public class LocalReplayVaultController {
 
@@ -69,14 +73,15 @@ public class LocalReplayVaultController {
     return replayService.getLocalReplays()
         .thenAccept(replayInfoBeans -> {
           this.replayInfoBeans = FXCollections.observableArrayList(replayInfoBeans);
-          sortLocalReplays(replayInfoBean -> true);
+          Platform.runLater(() -> sortLocalReplays(replayInfoBean -> true));
         })
         .exceptionally(throwable -> {
               logger.warn("Error while loading local replays", throwable);
-              notificationService.addNotification(new PersistentNotification(
+          notificationService.addNotification(new ImmediateNotification(
+              i18n.get("errorTitle"),
                   i18n.get("replayVault.loadingLocalTask.failed"),
-                  Severity.ERROR,
-                  Collections.singletonList(new Action(i18n.get("report"), event -> reportingService.reportError(throwable)))
+              Severity.ERROR, throwable,
+              asList(new ReportAction(i18n, reportingService, throwable), new DismissAction(i18n))
               ));
               return null;
             }
@@ -109,25 +114,27 @@ public class LocalReplayVaultController {
   }
 
   private void sortByDate(Predicate<ReplayInfoBean> replayInfoBeanPredicate) {
-    Collections.sort(replayInfoBeans, (replayInfoBean1, replayInfoBean2) -> {
-      LocalDate replayInfoBean1LocalDate = timeService.getLocalDateFromInstant(replayInfoBean1.getStartTime());
-      LocalDate replayInfoBean2LocalDate = timeService.getLocalDateFromInstant(replayInfoBean2.getStartTime());
-      return replayInfoBean2LocalDate.compareTo(replayInfoBean1LocalDate);
-    });
+    Collections.sort(replayInfoBeans, (replayInfoBean1, replayInfoBean2)
+        -> replayInfoBean2.getStartTime().compareTo(replayInfoBean1.getStartTime())
+    );
 
-    LocalDate currentDate;
+    Month currentMonth = null;
+    int currentYear = 0;
     SortedReplaysController currentSortedReplaysController = null;
-    LocalDate previousDate = null;
 
     List<ReplayInfoBean> filteredReplayInfoBeans = replayInfoBeans.filtered(replayInfoBeanPredicate);
     for (ReplayInfoBean replayInfoBean : filteredReplayInfoBeans) {
-      currentDate = timeService.getLocalDateFromInstant(replayInfoBean.getStartTime());
+      LocalDate date = timeService.getLocalDateFromInstant(replayInfoBean.getStartTime());
+      Month month = date.getMonth();
+      int year = date.getYear();
 
-      if (!currentDate.equals(previousDate)) {
+      if (currentSortedReplaysController == null || month != currentMonth || year != currentYear) {
+        currentMonth = month;
+        currentYear = year;
         currentSortedReplaysController = createSortedReplayPane();
       }
+
       currentSortedReplaysController.addReplay(replayInfoBean);
-      previousDate = currentDate;
     }
   }
 
