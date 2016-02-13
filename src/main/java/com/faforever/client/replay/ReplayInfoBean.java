@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import static com.faforever.client.util.TimeUtil.fromPythonTime;
 
@@ -220,5 +221,22 @@ public class ReplayInfoBean {
 
   public void setVictoryCondition(VictoryCondition victoryCondition) {
     this.victoryCondition.set(victoryCondition);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id.get());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ReplayInfoBean that = (ReplayInfoBean) o;
+    return Objects.equals(id.get(), that.id.get());
   }
 }

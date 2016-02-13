@@ -1,12 +1,14 @@
 package com.faforever.client.leaderboard;
 
-import com.faforever.client.api.LeaderboardEntry;
+import com.faforever.client.api.Ranked1v1Entry;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+
+import java.util.Objects;
 
 public class Ranked1v1EntryBean {
 
@@ -86,7 +88,7 @@ public class Ranked1v1EntryBean {
 
   @Override
   public int hashCode() {
-    return username.get() != null ? username.get().hashCode() : 0;
+    return Objects.hash(username);
   }
 
   @Override
@@ -97,11 +99,8 @@ public class Ranked1v1EntryBean {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-
     Ranked1v1EntryBean that = (Ranked1v1EntryBean) o;
-
-    return !(username.get() != null ? !username.get().equals(that.username.get()) : that.username.get() != null);
-
+    return Objects.equals(username.get(), that.username.get());
   }
 
   @Override
@@ -111,13 +110,14 @@ public class Ranked1v1EntryBean {
         '}';
   }
 
-  public static Ranked1v1EntryBean fromLeaderboardEntry(LeaderboardEntry leaderboardEntry) {
+  public static Ranked1v1EntryBean fromLeaderboardEntry(Ranked1v1Entry ranked1v1Entry) {
+    // TODO create Ranked1v1Entry.toRanked1v1EntryBean() instead
     Ranked1v1EntryBean ranked1v1EntryBean = new Ranked1v1EntryBean();
-    ranked1v1EntryBean.setUsername(leaderboardEntry.getLogin());
-    ranked1v1EntryBean.setGamesPlayed(leaderboardEntry.getNumGames());
-    ranked1v1EntryBean.setRank(leaderboardEntry.getRanking());
-    ranked1v1EntryBean.setRating(leaderboardEntry.getRating());
-    ranked1v1EntryBean.setWinLossRatio(leaderboardEntry.getWonGames() / (float) leaderboardEntry.getNumGames());
+    ranked1v1EntryBean.setUsername(ranked1v1Entry.getLogin());
+    ranked1v1EntryBean.setGamesPlayed(ranked1v1Entry.getNumGames());
+    ranked1v1EntryBean.setRank(ranked1v1Entry.getRanking());
+    ranked1v1EntryBean.setRating(ranked1v1Entry.getRating());
+    ranked1v1EntryBean.setWinLossRatio(ranked1v1Entry.getWonGames() / (float) ranked1v1Entry.getNumGames());
     return ranked1v1EntryBean;
   }
 }

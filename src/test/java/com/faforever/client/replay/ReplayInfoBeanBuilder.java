@@ -4,15 +4,16 @@ public class ReplayInfoBeanBuilder {
 
   private final ReplayInfoBean replayInfoBean;
 
-  private ReplayInfoBeanBuilder() {
+  private ReplayInfoBeanBuilder(int id) {
     replayInfoBean = new ReplayInfoBean();
+    replayInfoBean.setId(id);
   }
 
   public ReplayInfoBean get() {
     return replayInfoBean;
   }
 
-  public static ReplayInfoBeanBuilder create() {
-    return new ReplayInfoBeanBuilder();
+  public static ReplayInfoBeanBuilder create(int id) {
+    return new ReplayInfoBeanBuilder(id);
   }
 }

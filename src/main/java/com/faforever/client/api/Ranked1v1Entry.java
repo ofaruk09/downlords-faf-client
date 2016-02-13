@@ -2,7 +2,7 @@ package com.faforever.client.api;
 
 import com.google.api.client.util.Key;
 
-public class LeaderboardEntry {
+public class Ranked1v1Entry {
 
   @Key
   private String id;

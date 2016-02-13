@@ -4,12 +4,15 @@ import com.faforever.client.leaderboard.Ranked1v1EntryBean;
 import com.faforever.client.mod.ModInfoBean;
 import com.faforever.client.mod.ModInfoBeanBuilder;
 import com.faforever.client.preferences.PreferencesService;
+import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.ReplayInfoBeanBuilder;
 import com.faforever.client.user.UserService;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.common.io.Resources;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -281,7 +284,6 @@ public class FafApiAccessorImplTest {
     instance.requestFactory = instance.httpTransport.createRequestFactory();
     instance.credential = mock(Credential.class);
 
-
     mockResponse("{'data': [" +
             " {" +
             "   'id': '1'," +
@@ -315,7 +317,6 @@ public class FafApiAccessorImplTest {
     instance.requestFactory = instance.httpTransport.createRequestFactory();
     instance.credential = mock(Credential.class);
 
-
     mockResponse("{'data': [" +
             " {" +
             "   'id': '/ranked1v1/stats'," +
@@ -340,7 +341,6 @@ public class FafApiAccessorImplTest {
     instance.requestFactory = instance.httpTransport.createRequestFactory();
     instance.credential = mock(Credential.class);
 
-
     mockResponse("{'data': [" +
             " {" +
             "   'id': '2'," +
@@ -356,5 +356,29 @@ public class FafApiAccessorImplTest {
 
     assertThat(instance.getRanked1v1EntryForPlayer(123), equalTo(entry));
     verify(httpTransport).buildRequest("GET", "http://api.example.com/ranked1v1/123");
+  }
+
+  @Test
+  public void testGetGames() throws Exception {
+    instance.requestFactory = instance.httpTransport.createRequestFactory();
+    instance.credential = mock(Credential.class);
+
+    mockResponse(
+        Resources.toString(Resources.getResource("api/games_response.json"), UTF_8),
+        "{'data': []}"
+    );
+
+    List<ReplayInfoBean> expected = Arrays.asList(
+        ReplayInfoBeanBuilder.create(4429209).get(),
+        ReplayInfoBeanBuilder.create(4429206).get()
+    );
+
+    List<ReplayInfoBean> result = instance.getGames();
+    assertThat(result, equalTo(expected));
+    assertThat(result.get(1).getTitle(), is("KeinPlan92 Vs ojemine"));
+    assertThat(result.get(1).getPlayerCount(), is(2));
+
+    verify(httpTransport).buildRequest("GET", "http://api.example.com/games?page%5Bnumber%5D=1");
+    verify(httpTransport).buildRequest("GET", "http://api.example.com/games?page%5Bnumber%5D=2");
   }
 }

@@ -1,0 +1,79 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "game_mod": "5",
+        "game_name": "Teclis's game",
+        "host": "170960",
+        "id": "4429209",
+        "map_name": "Ian's Cross",
+        "start_time": "2016-02-13T13:09:47+00:00",
+        "victory_condition": "DEMORALIZATION"
+      },
+      "id": "4429209",
+      "relationships": {
+        "players": {
+          "data": []
+        }
+      },
+      "type": "game_stats"
+    },
+    {
+      "attributes": {
+        "game_mod": "6",
+        "game_name": "KeinPlan92 Vs ojemine",
+        "host": "167906",
+        "id": "4429206",
+        "map_name": "Crossfire Canal",
+        "start_time": "2016-02-13T13:07:57+00:00",
+        "victory_condition": "DEMORALIZATION"
+      },
+      "id": "4429206",
+      "relationships": {
+        "players": {
+          "data": [
+            {
+              "attributes": {
+                "color": 2,
+                "deviation": 143.511,
+                "faction": 3,
+                "game_id": "4429206",
+                "has_ai": false,
+                "id": "8231000",
+                "login": "ojemine",
+                "mean": 1409.86,
+                "place": 2,
+                "player_id": "148972",
+                "score": -1,
+                "score_time": null,
+                "team": 1
+              },
+              "id": "8231000",
+              "type": "game_player_stats"
+            },
+            {
+              "attributes": {
+                "color": 1,
+                "deviation": 264.164,
+                "faction": 3,
+                "game_id": "4429206",
+                "has_ai": false,
+                "id": "8230999",
+                "login": "KeinPlan92",
+                "mean": 887.991,
+                "place": 1,
+                "player_id": "167906",
+                "score": -1,
+                "score_time": null,
+                "team": 1
+              },
+              "id": "8230999",
+              "type": "game_player_stats"
+            }
+          ]
+        }
+      },
+      "type": "game_stats"
+    }
+  ]
+}
