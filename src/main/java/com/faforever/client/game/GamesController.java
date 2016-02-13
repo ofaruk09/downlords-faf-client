@@ -1,6 +1,5 @@
 package com.faforever.client.game;
 
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.fx.StageConfigurator;
 import com.faforever.client.fx.WindowDecorator;
 import com.faforever.client.i18n.I18n;
@@ -11,6 +10,7 @@ import com.faforever.client.notification.Action;
 import com.faforever.client.notification.ImmediateNotification;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.Severity;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.util.RatingUtil;

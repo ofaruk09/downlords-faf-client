@@ -1,12 +1,12 @@
 package com.faforever.client.main;
 
 import com.faforever.client.chat.CountryFlagService;
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.chat.UserInfoWindowController;
 import com.faforever.client.fx.HostService;
 import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.fx.StageConfigurator;
 import com.faforever.client.gravatar.GravatarService;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.player.PlayerService;
 import com.faforever.client.user.UserService;
 import com.neovisionaries.i18n.CountryCode;

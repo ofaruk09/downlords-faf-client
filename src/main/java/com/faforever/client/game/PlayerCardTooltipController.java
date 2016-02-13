@@ -1,8 +1,8 @@
 package com.faforever.client.game;
 
 import com.faforever.client.chat.CountryFlagService;
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.util.RatingUtil;
 import javafx.fxml.FXML;
 import javafx.scene.Node;

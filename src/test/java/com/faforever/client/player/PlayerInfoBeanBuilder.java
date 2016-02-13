@@ -1,6 +1,5 @@
 package com.faforever.client.player;
 
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.chat.SocialStatus;
 
 public class PlayerInfoBeanBuilder {

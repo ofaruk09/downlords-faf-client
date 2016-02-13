@@ -5,6 +5,7 @@ import com.faforever.client.fx.HostService;
 import com.faforever.client.game.PlayerCardTooltipController;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.notification.NotificationService;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.player.PlayerInfoBeanBuilder;
 import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.ChatPrefs;
@@ -220,7 +221,7 @@ public class AbstractChatTabControllerTest extends AbstractPlainJavaFxTest {
     assertThat(instance.getMessageTextField().isDisable(), is(false));
   }
 
-  @Ignore("Wanted but not invoked: playerCardTooltipController.setPlayer(com.faforever.client.chat.PlayerInfoBean);")
+  @Ignore("Wanted but not invoked: playerCardTooltipController.setPlayer(com.faforever.client.player.PlayerInfoBean);")
   @Test
   public void testPlayerInfo() throws Exception {
     String playerName = "somePlayer";

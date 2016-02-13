@@ -2,12 +2,14 @@ package com.faforever.client.legacy;
 
 import com.faforever.client.api.AchievementDefinition;
 import com.faforever.client.api.FafApiAccessor;
+import com.faforever.client.api.GameSearchFields;
 import com.faforever.client.api.Mod;
 import com.faforever.client.api.PlayerAchievement;
 import com.faforever.client.api.PlayerEvent;
 import com.faforever.client.api.Ranked1v1Stats;
 import com.faforever.client.leaderboard.Ranked1v1EntryBean;
 import com.faforever.client.mod.ModInfoBean;
+import com.faforever.client.replay.ReplayInfoBean;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -53,6 +55,16 @@ public class MockFafApiAccessor implements FafApiAccessor {
         ModInfoBean.fromModInfo(new Mod("7-7-7", "Mod Number Seven", "Mod description Garlic", "Mock", LocalDateTime.now())),
         ModInfoBean.fromModInfo(new Mod("8-8-8", "Mod Number Eight", "Mod description Haricot bean", "Mock", LocalDateTime.now()))
     );
+  }
+
+  @Override
+  public List<ReplayInfoBean> getGames() {
+    return null;
+  }
+
+  @Override
+  public List<ReplayInfoBean> getGames(GameSearchFields gameSearchFields, int page, int size) {
+    return null;
   }
 
   @Override

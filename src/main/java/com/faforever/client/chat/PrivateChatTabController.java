@@ -1,6 +1,7 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.audio.AudioController;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.preferences.ChatPrefs;
 import com.sun.javafx.scene.control.skin.TabPaneSkin;
 import javafx.css.PseudoClass;

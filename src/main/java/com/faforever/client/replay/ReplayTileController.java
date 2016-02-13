@@ -1,5 +1,6 @@
 package com.faforever.client.replay;
 
+import com.faforever.client.i18n.I18n;
 import com.faforever.client.map.MapService;
 import com.faforever.client.util.TimeService;
 import javafx.fxml.FXML;
@@ -42,6 +43,8 @@ public class ReplayTileController {
   TimeService timeService;
   @Resource
   ReplayService replaceService;
+  @Resource
+  I18n i18n;
 
   private int replayId;
 
@@ -61,9 +64,12 @@ public class ReplayTileController {
 
     likesLabel.setText(String.format("%d", replayInfoBean.getLikes()));
     downloadsLabel.setText(String.format("%d", replayInfoBean.getDownloads()));
-
-    Duration duration = Duration.between(replayInfoBean.getStartTime(), replayInfoBean.getEndTime());
-    durationLabel.setText(timeService.shortDuration(duration));
+    if (replayInfoBean.getEndTime() == null || replayInfoBean.getStartTime() == null) {
+      durationLabel.setText(i18n.get("replayVault.unknownDuration"));
+    } else {
+      Duration duration = Duration.between(replayInfoBean.getStartTime(), replayInfoBean.getEndTime());
+      durationLabel.setText(timeService.shortDuration(duration));
+    }
     mapImageView.setImage(mapService.loadSmallPreview(replayInfoBean.getMap()));
   }
 

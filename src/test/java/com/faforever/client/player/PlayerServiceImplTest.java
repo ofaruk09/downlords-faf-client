@@ -1,6 +1,5 @@
 package com.faforever.client.player;
 
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.game.GameService;
 import com.faforever.client.legacy.domain.PlayersMessage;
 import com.faforever.client.legacy.domain.SocialMessage;

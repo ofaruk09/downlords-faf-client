@@ -1,11 +1,11 @@
 package com.faforever.client.rankedmatch;
 
 import com.faforever.client.api.Ranked1v1Stats;
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.game.Faction;
 import com.faforever.client.game.GameService;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.leaderboard.LeaderboardService;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.util.RatingUtil;

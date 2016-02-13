@@ -1,6 +1,7 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
 import org.junit.Before;
 import org.junit.Test;

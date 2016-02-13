@@ -1,7 +1,7 @@
 package com.faforever.client.fa;
 
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.game.Faction;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.PreferencesService;
 import org.jetbrains.annotations.NotNull;

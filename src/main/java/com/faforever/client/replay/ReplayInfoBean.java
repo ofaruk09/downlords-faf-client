@@ -1,5 +1,6 @@
 package com.faforever.client.replay;
 
+import com.faforever.client.legacy.domain.VictoryCondition;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.MapProperty;
 import javafx.beans.property.ObjectProperty;
@@ -31,6 +32,8 @@ public class ReplayInfoBean {
   private final SimpleIntegerProperty likes;
   private final SimpleIntegerProperty downloads;
   private final SimpleIntegerProperty playerCount;
+  private final SimpleStringProperty host;
+  private final ObjectProperty<VictoryCondition> victoryCondition;
 
   public ReplayInfoBean(String title) {
     this();
@@ -49,6 +52,8 @@ public class ReplayInfoBean {
     likes = new SimpleIntegerProperty();
     downloads = new SimpleIntegerProperty();
     playerCount = new SimpleIntegerProperty();
+    host = new SimpleStringProperty();
+    victoryCondition = new SimpleObjectProperty<>();
   }
 
   public ReplayInfoBean(LocalReplayInfo replayInfo, Path replayFile) {
@@ -207,5 +212,13 @@ public class ReplayInfoBean {
 
   public StringProperty mapProperty() {
     return map;
+  }
+
+  public void setHost(String host) {
+    this.host.set(host);
+  }
+
+  public void setVictoryCondition(VictoryCondition victoryCondition) {
+    this.victoryCondition.set(victoryCondition);
   }
 }

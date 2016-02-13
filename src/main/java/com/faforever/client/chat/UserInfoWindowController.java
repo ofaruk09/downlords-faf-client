@@ -8,6 +8,7 @@ import com.faforever.client.api.PlayerEvent;
 import com.faforever.client.events.EventService;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.legacy.domain.StatisticsType;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.stats.PlayerStatisticsMessage;
 import com.faforever.client.stats.RatingInfo;

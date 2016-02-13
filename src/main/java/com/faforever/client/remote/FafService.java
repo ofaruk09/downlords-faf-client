@@ -1,7 +1,6 @@
 package com.faforever.client.remote;
 
 import com.faforever.client.api.Ranked1v1Stats;
-import com.faforever.client.chat.PlayerInfoBean;
 import com.faforever.client.game.Faction;
 import com.faforever.client.game.NewGameInfo;
 import com.faforever.client.leaderboard.Ranked1v1EntryBean;
@@ -9,6 +8,7 @@ import com.faforever.client.legacy.domain.GameLaunchMessage;
 import com.faforever.client.legacy.domain.LoginMessage;
 import com.faforever.client.legacy.domain.ServerMessage;
 import com.faforever.client.net.ConnectionState;
+import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.relay.GpgClientMessage;
 import javafx.beans.property.ReadOnlyObjectProperty;
 

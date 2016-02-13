@@ -1,5 +1,7 @@
 package com.faforever.client.replay;
 
+import com.faforever.client.api.FafApiAccessor;
+import com.faforever.client.api.GameSearchFields;
 import com.faforever.client.game.GameInfoBean;
 import com.faforever.client.game.GameService;
 import com.faforever.client.game.GameType;
@@ -88,6 +90,8 @@ public class ReplayServiceImpl implements ReplayService {
   ApplicationContext applicationContext;
   @Resource
   Executor executor;
+  @Resource
+  FafApiAccessor fafApiAccessor;
 
 
   @Override
@@ -160,7 +164,12 @@ public class ReplayServiceImpl implements ReplayService {
 
   @Override
   public CompletableFuture<List<ReplayInfoBean>> getOnlineReplays() {
-    return replayServerAccessor.requestOnlineReplays();
+    return CompletableFuture.completedFuture(fafApiAccessor.getGames());
+  }
+
+  @Override
+  public CompletableFuture<List<ReplayInfoBean>> getOnlineReplays(GameSearchFields gameSearchFields, int page, int size) {
+    return CompletableFuture.completedFuture(fafApiAccessor.getGames(gameSearchFields, page, size));
   }
 
   @Override

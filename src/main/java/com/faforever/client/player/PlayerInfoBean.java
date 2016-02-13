@@ -1,5 +1,6 @@
-package com.faforever.client.chat;
+package com.faforever.client.player;
 
+import com.faforever.client.chat.SocialStatus;
 import com.faforever.client.legacy.GameStatus;
 import com.faforever.client.legacy.domain.GameState;
 import com.faforever.client.legacy.domain.Player;
