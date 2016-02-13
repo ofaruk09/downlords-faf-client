@@ -72,25 +72,7 @@ public class FafApiAccessorImpl implements FafApiAccessor {
   private static final String SCOPE_READ_ACHIEVEMENTS = "read_achievements";
   private static final String SCOPE_READ_EVENTS = "read_events";
   private static final int MAX_PAGE_SIZE = 1000;
-  private static Map<String, Class<?>> typeMap;
-
-  static {
-    typeMap = new HashMap<>();
-    typeMap.put("achievement", AchievementDefinition.class);
-    //TODO Implement
-    typeMap.put("event", null);
-    typeMap.put("game_stats", GameStats.class);
-    typeMap.put("game_player_stats", GamePlayerStats.class);
-    //TODO Implement
-    typeMap.put("map", null);
-    typeMap.put("mod", Mod.class);
-    typeMap.put("player_achievement", PlayerAchievement.class);
-    typeMap.put("player_event", PlayerEvent.class);
-    //TODO Implement
-    typeMap.put("player", null);
-    typeMap.put("ranked1v1", Ranked1v1Stats.class);
-    typeMap.put("ranked1v1_stats", Ranked1v1Stats.class);
-  }
+  private static final int DEFAULT_GAME_PAGE_SIZE = 100;
 
   @Resource
   JsonFactory jsonFactory;
@@ -191,7 +173,7 @@ public class FafApiAccessorImpl implements FafApiAccessor {
   @Override
   public List<ReplayInfoBean> getGames() {
     logger.debug("Loading unfiltered online replays");
-    return getMany("/games", GameStats.class).stream()
+    return getMany("/games", GameStats.class, 0, DEFAULT_GAME_PAGE_SIZE).stream()
         .map(GameStats::toReplayInfoBean)
         .collect(Collectors.toList());
   }

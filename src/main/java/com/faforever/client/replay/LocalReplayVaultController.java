@@ -140,7 +140,7 @@ public class LocalReplayVaultController {
 
   private SortedReplaysController createSortedReplayPane() {
     SortedReplaysController sortedReplaysController = applicationContext.getBean(SortedReplaysController.class);
-    sortedReplaysController.setReplaySortingOption(replaySortingOption.get());
+    sortedReplaysController.setup(replaySortingOption.get(), SelectedReplayVault.LOCAL);
     localReplayVaultRoot.getChildren().add(sortedReplaysController.getRoot());
     return sortedReplaysController;
   }

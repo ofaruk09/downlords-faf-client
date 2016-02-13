@@ -12,8 +12,6 @@ import javafx.scene.layout.Pane;
 
 import javax.annotation.Resource;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 
 public class ReplayTileController {
 
@@ -47,21 +45,18 @@ public class ReplayTileController {
   I18n i18n;
 
   private int replayId;
+  private SelectedReplayVault selectedReplayVault;
+  private ReplayInfoBean replayInfoBean;
 
-  public void setReplay(ReplayInfoBean replayInfoBean) {
+  public void setReplay(ReplayInfoBean replayInfoBean, SelectedReplayVault replayVault) {
+    this.replayInfoBean = replayInfoBean;
+    this.selectedReplayVault = replayVault;
     replayId = replayInfoBean.getId();
 
     gameTitleLabel.setText(replayInfoBean.getTitle());
     gameTypeLabel.setText(replayInfoBean.getGameType());
     gameMapLabel.setText(replayInfoBean.getMap());
-
-    int playerCount = 0;
-    double totalRating = 0;
-    for (Map.Entry<String, List<String>> team : replayInfoBean.getTeams().entrySet()) {
-      playerCount += team.getValue().size();
-    }
-    playerCountLabel.setText(String.format("%d", playerCount));
-
+    playerCountLabel.setText(String.format("%d", replayInfoBean.getPlayerCount()));
     likesLabel.setText(String.format("%d", replayInfoBean.getLikes()));
     downloadsLabel.setText(String.format("%d", replayInfoBean.getDownloads()));
     if (replayInfoBean.getEndTime() == null || replayInfoBean.getStartTime() == null) {
@@ -77,7 +72,17 @@ public class ReplayTileController {
   void onClick(MouseEvent event) {
     if (event.getClickCount() == 2) {
       // TODO error handling, FIXME do something?
-      replaceService.download(replayId);
+      // TODO automatically download replay if local is corrupted
+      switch (selectedReplayVault) {
+        case LOCAL:
+          replaceService.runReplay(replayInfoBean);
+          break;
+        case ONLINE:
+          replaceService.download(replayId);
+          break;
+        case LIVE:
+          break;
+      }
     }
   }
 

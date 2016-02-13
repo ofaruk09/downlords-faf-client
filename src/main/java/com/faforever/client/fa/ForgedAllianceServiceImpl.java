@@ -67,12 +67,14 @@ public class ForgedAllianceServiceImpl implements ForgedAllianceService {
   public Process startReplay(Path path, @Nullable Integer replayId, @NotNull String gameType) throws IOException {
     Path executable = getExecutable();
 
+    PlayerInfoBean currentPlayer = playerService.getCurrentPlayer();
     List<String> launchCommand = LaunchCommandBuilder.create()
         .executable(executable)
         .replayFile(path)
         .replayId(replayId)
         .logFile(preferencesService.getFafLogDirectory().resolve("game.log"))
         .gameType(gameType)
+        .username(currentPlayer.getUsername())
         .build();
 
     return launch(executable, launchCommand);

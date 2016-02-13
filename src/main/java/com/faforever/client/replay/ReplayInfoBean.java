@@ -25,6 +25,7 @@ public class ReplayInfoBean {
   private final IntegerProperty id;
   private final StringProperty title;
   private final MapProperty<String, List<String>> teams;
+  //  private final MapProperty<Integer,List<GamePlayerStats>> teams;
   private final ObjectProperty<Instant> startTime;
   private final ObjectProperty<Instant> endTime;
   private final StringProperty gameType;

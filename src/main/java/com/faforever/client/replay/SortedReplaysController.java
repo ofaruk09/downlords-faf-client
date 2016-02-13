@@ -35,6 +35,7 @@ public class SortedReplaysController {
   private int minValue;
   private int maxValue;
   private Collection<ReplayInfoBean> replays;
+  private SelectedReplayVault selectedReplayVault;
 
   public SortedReplaysController() {
     replays = new LinkedList<>();
@@ -51,7 +52,8 @@ public class SortedReplaysController {
     });
   }
 
-  public void setReplaySortingOption(ReplaySortingOption replaySortingOption) {
+  public void setup(ReplaySortingOption replaySortingOption, SelectedReplayVault selectedReplayVault) {
+    this.selectedReplayVault = selectedReplayVault;
     this.replaySortingOption = replaySortingOption;
   }
 
@@ -85,7 +87,7 @@ public class SortedReplaysController {
 
   private void addTileForReplay(ReplayInfoBean replayInfoBean) {
     ReplayTileController replayTileController = applicationContext.getBean(ReplayTileController.class);
-    replayTileController.setReplay(replayInfoBean);
+    replayTileController.setReplay(replayInfoBean, selectedReplayVault);
     replayContentPane.getChildren().add(replayTileController.getRoot());
   }
 
