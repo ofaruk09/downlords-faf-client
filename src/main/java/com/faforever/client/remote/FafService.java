@@ -1,5 +1,6 @@
 package com.faforever.client.remote;
 
+import com.faforever.client.api.GameSearchFields;
 import com.faforever.client.api.Ranked1v1Stats;
 import com.faforever.client.game.Faction;
 import com.faforever.client.game.NewGameInfo;
@@ -10,6 +11,7 @@ import com.faforever.client.legacy.domain.ServerMessage;
 import com.faforever.client.net.ConnectionState;
 import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.relay.GpgClientMessage;
+import com.faforever.client.replay.ReplayInfoBean;
 import javafx.beans.property.ReadOnlyObjectProperty;
 
 import java.util.List;
@@ -65,4 +67,9 @@ public interface FafService {
   CompletableFuture<GameLaunchMessage> expectRehostCommand();
 
   void reconnect();
+
+  // TODO work out a proper data type and API (game <-> replayInfo)
+  CompletableFuture<List<ReplayInfoBean>> getGames();
+
+  CompletableFuture<List<ReplayInfoBean>> getGames(GameSearchFields gameSearchFields, int page, int size);
 }

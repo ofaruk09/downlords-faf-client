@@ -1,6 +1,5 @@
 package com.faforever.client.replay;
 
-import com.faforever.client.api.FafApiAccessor;
 import com.faforever.client.api.GameSearchFields;
 import com.faforever.client.game.GameInfoBean;
 import com.faforever.client.game.GameService;
@@ -14,6 +13,7 @@ import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.notification.ReportAction;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.preferences.PreferencesService;
+import com.faforever.client.remote.FafService;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.task.TaskService;
 import com.google.common.annotations.VisibleForTesting;
@@ -85,14 +85,11 @@ public class ReplayServiceImpl implements ReplayService {
   @Resource
   ReportingService reportingService;
   @Resource
-  ReplayServerAccessor replayServerAccessor;
-  @Resource
   ApplicationContext applicationContext;
   @Resource
   Executor executor;
   @Resource
-  FafApiAccessor fafApiAccessor;
-
+  FafService fafService;
 
   @Override
   public CompletableFuture<Collection<ReplayInfoBean>> getLocalReplays() {
@@ -123,7 +120,6 @@ public class ReplayServiceImpl implements ReplayService {
 
       return replayInfos;
     }, executor);
-
   }
 
   private boolean isInvalid(LocalReplayInfo replayInfo) {
@@ -135,8 +131,8 @@ public class ReplayServiceImpl implements ReplayService {
     Path corruptedReplaysDirectory = preferencesService.getCorruptedReplaysDirectory();
     Files.createDirectories(corruptedReplaysDirectory);
 
-    if (Files.isWritable(corruptedReplaysDirectory)) {
-      logger.warn("Not moving corrupted replay since directory is not writable");
+    if (!Files.isWritable(corruptedReplaysDirectory)) {
+      logger.warn("Not moving corrupted replay since directory is not writable: {}", corruptedReplaysDirectory.toAbsolutePath());
       return;
     }
 
@@ -164,12 +160,12 @@ public class ReplayServiceImpl implements ReplayService {
 
   @Override
   public CompletableFuture<List<ReplayInfoBean>> getOnlineReplays() {
-    return CompletableFuture.completedFuture(fafApiAccessor.getGames());
+    return fafService.getGames();
   }
 
   @Override
   public CompletableFuture<List<ReplayInfoBean>> getOnlineReplays(GameSearchFields gameSearchFields, int page, int size) {
-    return CompletableFuture.completedFuture(fafApiAccessor.getGames(gameSearchFields, page, size));
+    return fafService.getGames(gameSearchFields, page, size);
   }
 
   @Override

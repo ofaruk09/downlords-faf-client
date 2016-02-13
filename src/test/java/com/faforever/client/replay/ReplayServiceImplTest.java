@@ -7,6 +7,7 @@ import com.faforever.client.notification.ImmediateNotification;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.preferences.PreferencesService;
+import com.faforever.client.remote.FafService;
 import com.faforever.client.task.TaskService;
 import org.junit.Before;
 import org.junit.Rule;
@@ -15,6 +16,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
 
@@ -25,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyMap;
@@ -37,6 +41,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -68,7 +73,9 @@ public class ReplayServiceImplTest {
   public TemporaryFolder replayDirectory = new TemporaryFolder();
   @Rule
   public TemporaryFolder cacheDirectory = new TemporaryFolder();
+
   private ReplayServiceImpl instance;
+
   @Mock
   private I18n i18n;
   @Mock
@@ -80,13 +87,15 @@ public class ReplayServiceImplTest {
   @Mock
   private NotificationService notificationService;
   @Mock
-  private ReplayServerAccessor replayServerAccessor;
-  @Mock
   private ApplicationContext applicationContext;
   @Mock
   private TaskService taskService;
   @Mock
   private GameService gameService;
+  @Mock
+  private FafService fafService;
+  @Mock
+  private Executor executor;
 
   @Before
   public void setUp() throws Exception {
@@ -98,15 +107,24 @@ public class ReplayServiceImplTest {
     instance.preferencesService = preferencesService;
     instance.replayFileReader = replayFileReader;
     instance.notificationService = notificationService;
-    instance.replayServerAccessor = replayServerAccessor;
+    instance.fafService = fafService;
     instance.applicationContext = applicationContext;
     instance.taskService = taskService;
     instance.gameService = gameService;
+    instance.executor = executor;
 
     when(preferencesService.getReplaysDirectory()).thenReturn(replayDirectory.getRoot().toPath());
     when(preferencesService.getCorruptedReplaysDirectory()).thenReturn(replayDirectory.getRoot().toPath().resolve("corrupt"));
     when(preferencesService.getCacheDirectory()).thenReturn(cacheDirectory.getRoot().toPath());
     when(environment.getProperty("replayFileGlob")).thenReturn("*.fafreplay");
+
+    doAnswer(new Answer() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        invocation.getArgumentAt(0, Runnable.class).run();
+        return null;
+      }
+    }).when(executor).execute(any());
   }
 
   @Test
@@ -157,6 +175,7 @@ public class ReplayServiceImplTest {
     LocalReplayInfo localReplayInfo = new LocalReplayInfo();
     localReplayInfo.setUid(123);
     localReplayInfo.setTitle("title");
+    localReplayInfo.setMapname("scmp_007");
 
     when(replayFileReader.readReplayInfo(file1)).thenReturn(localReplayInfo);
 
@@ -170,7 +189,7 @@ public class ReplayServiceImplTest {
   @Test
   public void testGetOnlineReplays() throws Exception {
     instance.getOnlineReplays();
-    verify(replayServerAccessor).requestOnlineReplays();
+    verify(fafService).getGames();
   }
 
   @Test

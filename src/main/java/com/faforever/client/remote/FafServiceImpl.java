@@ -1,6 +1,7 @@
 package com.faforever.client.remote;
 
 import com.faforever.client.api.FafApiAccessor;
+import com.faforever.client.api.GameSearchFields;
 import com.faforever.client.api.Ranked1v1Stats;
 import com.faforever.client.config.CacheNames;
 import com.faforever.client.connectivity.ConnectivityService;
@@ -14,6 +15,7 @@ import com.faforever.client.legacy.domain.ServerMessage;
 import com.faforever.client.net.ConnectionState;
 import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.relay.GpgClientMessage;
+import com.faforever.client.replay.ReplayInfoBean;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import org.springframework.cache.annotation.Cacheable;
 
@@ -156,5 +158,15 @@ public class FafServiceImpl implements FafService {
   @Override
   public void reconnect() {
     fafServerAccessor.reconnect();
+  }
+
+  @Override
+  public CompletableFuture<List<ReplayInfoBean>> getGames() {
+    return CompletableFuture.supplyAsync(() -> fafApiAccessor.getGames(), executor);
+  }
+
+  @Override
+  public CompletableFuture<List<ReplayInfoBean>> getGames(GameSearchFields gameSearchFields, int page, int size) {
+    return CompletableFuture.supplyAsync(() -> fafApiAccessor.getGames(gameSearchFields, page, size), executor);
   }
 }
