@@ -64,6 +64,10 @@ public class LocalReplayVaultController {
   private ObservableList<ReplayInfoBean> replayInfoBeans;
   private ObjectProperty<ReplaySortingOption> replaySortingOption;
 
+  public LocalReplayVaultController() {
+    replayInfoBeans = FXCollections.observableArrayList();
+  }
+
   @PostConstruct
   void init() {
     replaySortingOption = preferenceService.getPreferences().getReplayVault().replaySortingOptionProperty();
@@ -72,7 +76,7 @@ public class LocalReplayVaultController {
   public CompletableFuture<Void> loadLocalReplaysInBackground() {
     return replayService.getLocalReplays()
         .thenAccept(replayInfoBeans -> {
-          this.replayInfoBeans = FXCollections.observableArrayList(replayInfoBeans);
+          this.replayInfoBeans.setAll(replayInfoBeans);
           Platform.runLater(() -> sortLocalReplays(replayInfoBean -> true));
         })
         .exceptionally(throwable -> {
