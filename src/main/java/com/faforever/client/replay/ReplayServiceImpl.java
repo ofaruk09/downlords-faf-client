@@ -92,9 +92,9 @@ public class ReplayServiceImpl implements ReplayService {
   FafService fafService;
 
   @Override
-  public CompletableFuture<Collection<ReplayInfoBean>> getLocalReplays() {
+  public CompletableFuture<Collection<LocalReplayInfoBean>> getLocalReplays() {
     return CompletableFuture.supplyAsync(() -> {
-      Collection<ReplayInfoBean> replayInfos = new ArrayList<>();
+      Collection<LocalReplayInfoBean> replayInfos = new ArrayList<>();
       String replayFileGlob = environment.getProperty("replayFileGlob");
 
       Path replaysDirectory = preferencesService.getReplaysDirectory();
@@ -108,7 +108,7 @@ public class ReplayServiceImpl implements ReplayService {
               continue;
             }
 
-            replayInfos.add(new ReplayInfoBean(replayInfo, replayFile));
+            replayInfos.add(new LocalReplayInfoBean(replayInfo, replayFile));
           } catch (Exception e) {
             logger.warn("Could not read replay file: " + replayFile, e);
             moveCorruptReplayFile(replayFile);
@@ -159,17 +159,17 @@ public class ReplayServiceImpl implements ReplayService {
   }
 
   @Override
-  public CompletableFuture<List<ReplayInfoBean>> getOnlineReplays() {
+  public CompletableFuture<List<OnlineReplayInfoBean>> getOnlineReplays() {
     return fafService.getGames();
   }
 
   @Override
-  public CompletableFuture<List<ReplayInfoBean>> getOnlineReplays(GameSearchFields gameSearchFields, int page, int size) {
+  public CompletableFuture<List<OnlineReplayInfoBean>> getOnlineReplays(GameSearchFields gameSearchFields, int page, int size) {
     return fafService.getGames(gameSearchFields, page, size);
   }
 
   @Override
-  public void runReplay(ReplayInfoBean item) {
+  public void runReplay(LocalReplayInfoBean item) {
     if (item.getReplayFile() != null) {
       runReplayFile(item.getReplayFile());
     } else {

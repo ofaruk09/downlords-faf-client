@@ -15,7 +15,7 @@ import com.faforever.client.legacy.domain.ServerMessage;
 import com.faforever.client.net.ConnectionState;
 import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.relay.GpgClientMessage;
-import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.OnlineReplayInfoBean;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import org.springframework.cache.annotation.Cacheable;
 
@@ -161,12 +161,12 @@ public class FafServiceImpl implements FafService {
   }
 
   @Override
-  public CompletableFuture<List<ReplayInfoBean>> getGames() {
+  public CompletableFuture<List<OnlineReplayInfoBean>> getGames() {
     return CompletableFuture.supplyAsync(() -> fafApiAccessor.getGames(), executor);
   }
 
   @Override
-  public CompletableFuture<List<ReplayInfoBean>> getGames(GameSearchFields gameSearchFields, int page, int size) {
+  public CompletableFuture<List<OnlineReplayInfoBean>> getGames(GameSearchFields gameSearchFields, int page, int size) {
     return CompletableFuture.supplyAsync(() -> fafApiAccessor.getGames(gameSearchFields, page, size), executor);
   }
 }

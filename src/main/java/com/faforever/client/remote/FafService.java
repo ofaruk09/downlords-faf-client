@@ -11,7 +11,7 @@ import com.faforever.client.legacy.domain.ServerMessage;
 import com.faforever.client.net.ConnectionState;
 import com.faforever.client.player.PlayerInfoBean;
 import com.faforever.client.relay.GpgClientMessage;
-import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.OnlineReplayInfoBean;
 import javafx.beans.property.ReadOnlyObjectProperty;
 
 import java.util.List;
@@ -69,7 +69,7 @@ public interface FafService {
   void reconnect();
 
   // TODO work out a proper data type and API (game <-> replayInfo)
-  CompletableFuture<List<ReplayInfoBean>> getGames();
+  CompletableFuture<List<OnlineReplayInfoBean>> getGames();
 
-  CompletableFuture<List<ReplayInfoBean>> getGames(GameSearchFields gameSearchFields, int page, int size);
+  CompletableFuture<List<OnlineReplayInfoBean>> getGames(GameSearchFields gameSearchFields, int page, int size);
 }

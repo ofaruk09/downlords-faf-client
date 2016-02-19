@@ -9,7 +9,7 @@ import com.faforever.client.api.PlayerEvent;
 import com.faforever.client.api.Ranked1v1Stats;
 import com.faforever.client.leaderboard.Ranked1v1EntryBean;
 import com.faforever.client.mod.ModInfoBean;
-import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.OnlineReplayInfoBean;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -58,12 +58,12 @@ public class MockFafApiAccessor implements FafApiAccessor {
   }
 
   @Override
-  public List<ReplayInfoBean> getGames() {
+  public List<OnlineReplayInfoBean> getGames() {
     return null;
   }
 
   @Override
-  public List<ReplayInfoBean> getGames(GameSearchFields gameSearchFields, int page, int size) {
+  public List<OnlineReplayInfoBean> getGames(GameSearchFields gameSearchFields, int page, int size) {
     return null;
   }
 

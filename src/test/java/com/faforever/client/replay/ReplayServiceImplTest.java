@@ -156,7 +156,7 @@ public class ReplayServiceImplTest {
     doThrow(new IOException("Junit test exception")).when(replayFileReader).readReplayInfo(file1);
     doThrow(new IOException("Junit test exception")).when(replayFileReader).readReplayInfo(file2);
 
-    Collection<ReplayInfoBean> localReplays = instance.getLocalReplays().get(3, TimeUnit.SECONDS);
+    Collection<LocalReplayInfoBean> localReplays = instance.getLocalReplays().get(3, TimeUnit.SECONDS);
 
     assertThat(localReplays, empty());
 
@@ -179,7 +179,7 @@ public class ReplayServiceImplTest {
 
     when(replayFileReader.readReplayInfo(file1)).thenReturn(localReplayInfo);
 
-    Collection<ReplayInfoBean> localReplays = instance.getLocalReplays().get(3, TimeUnit.SECONDS);
+    Collection<LocalReplayInfoBean> localReplays = instance.getLocalReplays().get(3, TimeUnit.SECONDS);
 
     assertThat(localReplays, hasSize(1));
     assertThat(localReplays.iterator().next().getId(), is(123));
@@ -196,8 +196,8 @@ public class ReplayServiceImplTest {
   public void testRunFafReplayFile() throws Exception {
     Path replayFile = replayDirectory.newFile("replay.fafreplay").toPath();
 
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
-    replayInfoBean.setReplayFile(replayFile);
+    LocalReplayInfoBean localReplayInfoBean = new LocalReplayInfoBean();
+    localReplayInfoBean.setReplayFile(replayFile);
 
     LocalReplayInfo replayInfo = new LocalReplayInfo();
     replayInfo.setUid(123);
@@ -208,7 +208,7 @@ public class ReplayServiceImplTest {
     when(replayFileReader.readReplayInfo(replayFile)).thenReturn(replayInfo);
     when(replayFileReader.readReplayData(replayFile)).thenReturn(REPLAY_FIRST_BYTES);
 
-    instance.runReplay(replayInfoBean);
+    instance.runReplay(localReplayInfoBean);
 
     verify(gameService).runWithReplay(any(), eq(123), eq("faf"), eq(3632), eq(emptyMap()), eq(emptySet()));
     verifyZeroInteractions(notificationService);
@@ -218,12 +218,12 @@ public class ReplayServiceImplTest {
   public void testRunScFaReplayFile() throws Exception {
     Path replayFile = replayDirectory.newFile("replay.scfareplay").toPath();
 
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
-    replayInfoBean.setReplayFile(replayFile);
+    LocalReplayInfoBean localReplayInfoBean = new LocalReplayInfoBean();
+    localReplayInfoBean.setReplayFile(replayFile);
 
     when(replayFileReader.readReplayData(replayFile)).thenReturn(REPLAY_FIRST_BYTES);
 
-    instance.runReplay(replayInfoBean);
+    instance.runReplay(localReplayInfoBean);
 
     verify(gameService).runWithReplay(any(), eq(null), eq("faf"), eq(3632), eq(emptyMap()), eq(emptySet()));
     verifyZeroInteractions(notificationService);
@@ -235,13 +235,13 @@ public class ReplayServiceImplTest {
 
     doThrow(new RuntimeException("Junit test exception")).when(replayFileReader).readReplayData(replayFile);
 
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
-    replayInfoBean.setReplayFile(replayFile);
+    LocalReplayInfoBean localReplayInfoBean = new LocalReplayInfoBean();
+    localReplayInfoBean.setReplayFile(replayFile);
 
     expectedException.expect(RuntimeException.class);
     expectedException.expectMessage("Junit test exception");
 
-    instance.runReplay(replayInfoBean);
+    instance.runReplay(localReplayInfoBean);
   }
 
   @Test
@@ -251,10 +251,10 @@ public class ReplayServiceImplTest {
     doThrow(new IOException("Junit test exception")).when(replayFileReader).readReplayInfo(replayFile);
     when(replayFileReader.readReplayData(replayFile)).thenReturn(REPLAY_FIRST_BYTES);
 
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
-    replayInfoBean.setReplayFile(replayFile);
+    LocalReplayInfoBean localReplayInfoBean = new LocalReplayInfoBean();
+    localReplayInfoBean.setReplayFile(replayFile);
 
-    instance.runReplay(replayInfoBean);
+    instance.runReplay(localReplayInfoBean);
 
     verify(notificationService).addNotification(any(ImmediateNotification.class));
     verifyNoMoreInteractions(gameService);
@@ -266,7 +266,7 @@ public class ReplayServiceImplTest {
 
     ReplayDownloadTask replayDownloadTask = mock(ReplayDownloadTask.class);
     when(applicationContext.getBean(ReplayDownloadTask.class)).thenReturn(replayDownloadTask);
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
+    LocalReplayInfoBean localReplayInfoBean = new LocalReplayInfoBean();
 
     LocalReplayInfo replayInfo = new LocalReplayInfo();
     replayInfo.setUid(123);
@@ -278,7 +278,7 @@ public class ReplayServiceImplTest {
     when(replayFileReader.readReplayData(replayFile)).thenReturn(REPLAY_FIRST_BYTES);
     when(taskService.submitTask(replayDownloadTask)).thenReturn(CompletableFuture.completedFuture(replayFile));
 
-    instance.runReplay(replayInfoBean);
+    instance.runReplay(localReplayInfoBean);
 
     verify(taskService).submitTask(replayDownloadTask);
     verify(gameService).runWithReplay(any(), eq(123), eq("faf"), eq(3632), eq(emptyMap()), eq(emptySet()));
@@ -291,12 +291,12 @@ public class ReplayServiceImplTest {
 
     ReplayDownloadTask replayDownloadTask = mock(ReplayDownloadTask.class);
     when(applicationContext.getBean(ReplayDownloadTask.class)).thenReturn(replayDownloadTask);
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
+    LocalReplayInfoBean localReplayInfoBean = new LocalReplayInfoBean();
 
     when(replayFileReader.readReplayData(replayFile)).thenReturn(REPLAY_FIRST_BYTES);
     when(taskService.submitTask(replayDownloadTask)).thenReturn(CompletableFuture.completedFuture(replayFile));
 
-    instance.runReplay(replayInfoBean);
+    instance.runReplay(localReplayInfoBean);
 
     verify(taskService).submitTask(replayDownloadTask);
     verify(gameService).runWithReplay(replayFile, null, "faf", 3632, emptyMap(), emptySet());
@@ -310,11 +310,11 @@ public class ReplayServiceImplTest {
 
     ReplayDownloadTask replayDownloadTask = mock(ReplayDownloadTask.class);
     when(applicationContext.getBean(ReplayDownloadTask.class)).thenReturn(replayDownloadTask);
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
+    LocalReplayInfoBean localReplayInfoBean = new LocalReplayInfoBean();
 
     when(taskService.submitTask(replayDownloadTask)).thenReturn(CompletableFuture.completedFuture(replayFile));
 
-    instance.runReplay(replayInfoBean);
+    instance.runReplay(localReplayInfoBean);
 
     verify(notificationService).addNotification(any(ImmediateNotification.class));
     verifyNoMoreInteractions(gameService);

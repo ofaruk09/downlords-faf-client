@@ -2,158 +2,47 @@ package com.faforever.client.replay;
 
 import com.faforever.client.legacy.domain.VictoryCondition;
 import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.MapProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleMapProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
-import org.apache.commons.lang3.StringEscapeUtils;
 
-import java.nio.file.Path;
 import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-
-import static com.faforever.client.util.TimeUtil.fromPythonTime;
 
 public class ReplayInfoBean {
-
   private final IntegerProperty id;
   private final StringProperty title;
-  private final MapProperty<String, List<String>> teams;
-  //  private final MapProperty<Integer,List<GamePlayerStats>> teams;
   private final ObjectProperty<Instant> startTime;
   private final ObjectProperty<Instant> endTime;
   private final StringProperty gameType;
   private final StringProperty map;
-  private final ObjectProperty<Path> replayFile;
-  private final SimpleIntegerProperty likes;
-  private final SimpleIntegerProperty downloads;
   private final SimpleIntegerProperty playerCount;
   private final SimpleStringProperty host;
   private final ObjectProperty<VictoryCondition> victoryCondition;
 
-  public ReplayInfoBean(String title) {
-    this();
-    this.map.set(title);
-  }
-
   public ReplayInfoBean() {
     id = new SimpleIntegerProperty();
     title = new SimpleStringProperty();
-    teams = new SimpleMapProperty<>(FXCollections.observableHashMap());
     startTime = new SimpleObjectProperty<>();
     endTime = new SimpleObjectProperty<>();
     gameType = new SimpleStringProperty();
     map = new SimpleStringProperty();
-    replayFile = new SimpleObjectProperty<>();
-    likes = new SimpleIntegerProperty();
-    downloads = new SimpleIntegerProperty();
     playerCount = new SimpleIntegerProperty();
     host = new SimpleStringProperty();
     victoryCondition = new SimpleObjectProperty<>();
   }
 
-  public ReplayInfoBean(LocalReplayInfo replayInfo, Path replayFile) {
-    this();
-    id.set(replayInfo.getUid());
-    title.set(StringEscapeUtils.unescapeHtml4(replayInfo.getTitle()));
-    startTime.set(fromPythonTime(replayInfo.getGameTime()));
-    endTime.set(fromPythonTime(replayInfo.getGameEnd()));
-    gameType.set(replayInfo.getFeaturedMod());
-    map.set(replayInfo.getMapname());
-    this.replayFile.set(replayFile);
-    if (replayInfo.getTeams() != null) {
-      teams.putAll(replayInfo.getTeams());
-    }
-    if (replayInfo.getNumPlayers() != null) {
-      playerCount.set(replayInfo.getNumPlayers());
-    }
+  public VictoryCondition getVictoryCondition() {
+    return victoryCondition.get();
   }
 
-  public ReplayInfoBean(ServerReplayInfo replayInfo) {
-    this();
-    id.setValue(replayInfo.id);
-    gameType.setValue(replayInfo.mod);
-    map.setValue(replayInfo.map);
-    startTime.setValue(Instant.ofEpochMilli(replayInfo.start * 1000));
-    endTime.setValue(Instant.ofEpochMilli(replayInfo.end * 1000));
+  public void setVictoryCondition(VictoryCondition victoryCondition) {
+    this.victoryCondition.set(victoryCondition);
   }
 
-  public int getPlayerCount() {
-    return playerCount.get();
-  }
-
-  public void setPlayerCount(int playerCount) {
-    this.playerCount.set(playerCount);
-  }
-
-  public SimpleIntegerProperty playerCountProperty() {
-    return playerCount;
-  }
-
-  public int getDownloads() {
-    return downloads.get();
-  }
-
-  public void setDownloads(int downloads) {
-    this.downloads.set(downloads);
-  }
-
-  public SimpleIntegerProperty downloadsProperty() {
-    return downloads;
-  }
-
-  public int getLikes() {
-    return likes.get();
-  }
-
-  public void setLikes(int likes) {
-    this.likes.set(likes);
-  }
-
-  public SimpleIntegerProperty likesProperty() {
-    return likes;
-  }
-
-  public Path getReplayFile() {
-    return replayFile.get();
-  }
-
-  public void setReplayFile(Path replayFile) {
-    this.replayFile.set(replayFile);
-  }
-
-  public ObjectProperty<Path> replayFileProperty() {
-    return replayFile;
-  }
-
-  public String getTitle() {
-    return title.get();
-  }
-
-  public void setTitle(String title) {
-    this.title.set(title);
-  }
-
-  public StringProperty titleProperty() {
-    return title;
-  }
-
-  public ObservableMap<String, List<String>> getTeams() {
-    return teams.get();
-  }
-
-  public void setTeams(ObservableMap<String, List<String>> teams) {
-    this.teams.set(teams);
-  }
-
-  public MapProperty<String, List<String>> teamsProperty() {
-    return teams;
+  public ObjectProperty<VictoryCondition> victoryConditionProperty() {
+    return victoryCondition;
   }
 
   public int getId() {
@@ -166,6 +55,18 @@ public class ReplayInfoBean {
 
   public IntegerProperty idProperty() {
     return id;
+  }
+
+  public String getTitle() {
+    return title.get();
+  }
+
+  public void setTitle(String title) {
+    this.title.set(title);
+  }
+
+  public StringProperty titleProperty() {
+    return title;
   }
 
   public Instant getStartTime() {
@@ -216,28 +117,27 @@ public class ReplayInfoBean {
     return map;
   }
 
+  public int getPlayerCount() {
+    return playerCount.get();
+  }
+
+  public void setPlayerCount(int playerCount) {
+    this.playerCount.set(playerCount);
+  }
+
+  public SimpleIntegerProperty playerCountProperty() {
+    return playerCount;
+  }
+
+  public String getHost() {
+    return host.get();
+  }
+
   public void setHost(String host) {
     this.host.set(host);
   }
 
-  public void setVictoryCondition(VictoryCondition victoryCondition) {
-    this.victoryCondition.set(victoryCondition);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(id.get());
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    ReplayInfoBean that = (ReplayInfoBean) o;
-    return Objects.equals(id.get(), that.id.get());
+  public SimpleStringProperty hostProperty() {
+    return host;
   }
 }

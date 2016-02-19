@@ -34,7 +34,7 @@ public class SortedReplaysController {
   private ReplaySortingOption replaySortingOption;
   private int minValue;
   private int maxValue;
-  private Collection<ReplayInfoBean> replays;
+  private Collection<LocalReplayInfoBean> replays;
   private SelectedReplayVault selectedReplayVault;
 
   public SortedReplaysController() {
@@ -57,16 +57,16 @@ public class SortedReplaysController {
     this.replaySortingOption = replaySortingOption;
   }
 
-  public void addReplay(ReplayInfoBean replayInfoBean) {
-    updateTitle(replayInfoBean);
-    replays.add(replayInfoBean);
+  public void addReplay(LocalReplayInfoBean localReplayInfoBean) {
+    updateTitle(localReplayInfoBean);
+    replays.add(localReplayInfoBean);
 
     if (sortedReplaysRoot.isExpanded()) {
-      addTileForReplay(replayInfoBean);
+      addTileForReplay(localReplayInfoBean);
     }
   }
 
-  private void updateTitle(ReplayInfoBean replayInfoBean) {
+  private void updateTitle(LocalReplayInfoBean localReplayInfoBean) {
     Assert.checkNullIllegalState(replaySortingOption, "Replay sorting option must be set before title is set");
     if (StringUtils.isNotEmpty(sortedReplaysRoot.getText())) {
       return;
@@ -74,29 +74,29 @@ public class SortedReplaysController {
 
     String title;
     if (replaySortingOption == DATE) {
-      title = timeService.timeAgo(replayInfoBean.getStartTime());
+      title = timeService.timeAgo(localReplayInfoBean.getStartTime());
     } else {
       if (replayContentPane.getChildren().isEmpty()) {
-        this.minValue = getSortingValueForReplayInfoBean(replayInfoBean);
+        this.minValue = getSortingValueForReplayInfoBean(localReplayInfoBean);
       }
-      this.maxValue = getSortingValueForReplayInfoBean(replayInfoBean);
+      this.maxValue = getSortingValueForReplayInfoBean(localReplayInfoBean);
       title = i18n.get("replayVault.titlePane.range", minValue, maxValue, i18n.get(replaySortingOption.getI18nKey()));
     }
     sortedReplaysRoot.setText(title);
   }
 
-  private void addTileForReplay(ReplayInfoBean replayInfoBean) {
+  private void addTileForReplay(LocalReplayInfoBean localReplayInfoBean) {
     ReplayTileController replayTileController = applicationContext.getBean(ReplayTileController.class);
-    replayTileController.setReplay(replayInfoBean, selectedReplayVault);
+    replayTileController.setReplay(localReplayInfoBean, selectedReplayVault);
     replayContentPane.getChildren().add(replayTileController.getRoot());
   }
 
-  private int getSortingValueForReplayInfoBean(ReplayInfoBean replayInfoBean) {
+  private int getSortingValueForReplayInfoBean(LocalReplayInfoBean localReplayInfoBean) {
     switch (replaySortingOption) {
-      case MOST_LIKED:
-        return replayInfoBean.getLikes();
+/*      case MOST_LIKED:
+        return localReplayInfoBean.getLikes();
       case MOST_DOWNLOADED:
-        return replayInfoBean.getDownloads();
+        return localReplayInfoBean.getDownloads();*/
       case HIGHEST_AVG_GLOB_RATING:
       case HIGHEST_AVG_LADDER_RATING:
         // FIXME @Aulex I guess this should not be empty?
@@ -104,8 +104,8 @@ public class SortedReplaysController {
     throw new IllegalArgumentException(String.format("Unsupported ReplaySortingOption enum: %s", replaySortingOption.toString()));
   }
 
-  public void addReplays(List<ReplayInfoBean> replayInfoBeans) {
-    replayInfoBeans.forEach(this::addReplay);
+  public void addReplays(List<LocalReplayInfoBean> localReplayInfoBeans) {
+    localReplayInfoBeans.forEach(this::addReplay);
   }
 
   public Node getRoot() {

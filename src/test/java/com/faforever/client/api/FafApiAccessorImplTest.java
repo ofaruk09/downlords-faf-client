@@ -4,7 +4,8 @@ import com.faforever.client.leaderboard.Ranked1v1EntryBean;
 import com.faforever.client.mod.ModInfoBean;
 import com.faforever.client.mod.ModInfoBeanBuilder;
 import com.faforever.client.preferences.PreferencesService;
-import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.LocalReplayInfoBean;
+import com.faforever.client.replay.OnlineReplayInfoBean;
 import com.faforever.client.replay.ReplayInfoBeanBuilder;
 import com.faforever.client.user.UserService;
 import com.google.api.client.auth.oauth2.Credential;
@@ -368,12 +369,12 @@ public class FafApiAccessorImplTest {
         "{'data': []}"
     );
 
-    List<ReplayInfoBean> expected = Arrays.asList(
+    List<LocalReplayInfoBean> expected = Arrays.asList(
         ReplayInfoBeanBuilder.create(4429209).get(),
         ReplayInfoBeanBuilder.create(4429206).get()
     );
 
-    List<ReplayInfoBean> result = instance.getGames();
+    List<OnlineReplayInfoBean> result = instance.getGames();
     assertThat(result, equalTo(expected));
     assertThat(result.get(1).getTitle(), is("KeinPlan92 Vs ojemine"));
     assertThat(result.get(1).getPlayerCount(), is(2));

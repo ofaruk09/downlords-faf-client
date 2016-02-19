@@ -2,7 +2,7 @@ package com.faforever.client.api;
 
 import com.faforever.client.leaderboard.Ranked1v1EntryBean;
 import com.faforever.client.mod.ModInfoBean;
-import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.OnlineReplayInfoBean;
 
 import java.util.List;
 
@@ -25,9 +25,9 @@ public interface FafApiAccessor {
 
   List<ModInfoBean> getMods();
 
-  List<ReplayInfoBean> getGames();
+  List<OnlineReplayInfoBean> getGames();
 
-  List<ReplayInfoBean> getGames(GameSearchFields gameSearchFields, int page, int size);
+  List<OnlineReplayInfoBean> getGames(GameSearchFields gameSearchFields, int page, int size);
 
   List<Ranked1v1EntryBean> getRanked1v1Entries();
 

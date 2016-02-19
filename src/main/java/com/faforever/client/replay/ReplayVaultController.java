@@ -155,15 +155,26 @@ public class ReplayVaultController {
     JavaFxUtil.bindOnApplicationThread(sortByMenu.textProperty(), () -> i18n.get(preferencesService.getPreferences().getReplayVault().getReplaySortingOption().getI18nKey()), replayVaultPrefs.replaySortingOptionProperty());
     JavaFxUtil.bindOnApplicationThread(replayVaultSelectorMenu.textProperty(), () -> i18n.get(preferencesService.getPreferences().getReplayVault().getSelectedReplayVault().getI18nKey()), replayVaultPrefs.selectedReplayVaultProperty());
 
-    LocalReplayVaultController localReplayVaultController = applicationContext.getBean(LocalReplayVaultController.class);
-    CompletableFuture<Void> voidCompletableFuture = localReplayVaultController.loadLocalReplaysInBackground();
+    CompletableFuture<Void> voidCompletableFuture = null;
+    switch (replayVaultPrefs.getSelectedReplayVault()) {
+      case LOCAL:
+        LocalReplayVaultController localReplayVaultController = applicationContext.getBean(LocalReplayVaultController.class);
+        voidCompletableFuture = localReplayVaultController.loadLocalReplaysInBackground();
+//        onSortByDate(new ActionEvent());
+        sortByMenu.setDisable(true);
+        contentPane.setContent(localReplayVaultController.getRoot());
+        break;
+      case ONLINE:
+        break;
+      case LIVE:
+        break;
+    }
 
     voidCompletableFuture.thenAccept(aVoid -> {
       loadingPane.setVisible(false);
       contentPane.setVisible(true);
     });
 
-    contentPane.setContent(localReplayVaultController.getRoot());
   }
 
 /*  public void loadOnlineReplaysInBackground() {
@@ -226,7 +237,7 @@ public class ReplayVaultController {
   @FXML
   void onSearchReplay(ActionEvent actionEvent) {
     Map<String, String> playerFactionMap = parsePlayersField();
-    Predicate<ReplayInfoBean> replayInfoBeanPredicate = replayInfoBean -> {
+    Predicate<LocalReplayInfoBean> replayInfoBeanPredicate = replayInfoBean -> {
       for (String player : playerFactionMap.keySet()) {
         for (List<String> team : replayInfoBean.getTeams().values()) {
           if (!team.stream().filter(new Predicate<String>() {

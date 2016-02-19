@@ -3,10 +3,9 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.FlowPane?>
 <TitledPane xmlns:fx="http://javafx.com/fxml/1" fx:id="sortedReplaysRoot" alignment="TOP_LEFT" expanded="false"
-            maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.40"
-            fx:controller="com.faforever.client.replay.SortedReplaysController">
+            xmlns="http://javafx.com/javafx/8.0.65" fx:controller="com.faforever.client.replay.SortedReplaysController">
   <content>
-    <FlowPane fx:id="replayContentPane" maxWidth="1.7976931348623157E308" orientation="VERTICAL" prefWrapLength="0.0"
-              rowValignment="TOP" styleClass="local-replay-vault-flowpane"/>
+    <FlowPane fx:id="replayContentPane" nodeOrientation="LEFT_TO_RIGHT" prefWrapLength="0.0"
+              styleClass="local-replay-vault-flowpane" vgap="10.0"/>
   </content>
 </TitledPane>

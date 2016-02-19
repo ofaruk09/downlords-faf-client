@@ -46,26 +46,26 @@ public class ReplayTileController {
 
   private int replayId;
   private SelectedReplayVault selectedReplayVault;
-  private ReplayInfoBean replayInfoBean;
+  private LocalReplayInfoBean localReplayInfoBean;
 
-  public void setReplay(ReplayInfoBean replayInfoBean, SelectedReplayVault replayVault) {
-    this.replayInfoBean = replayInfoBean;
+  public void setReplay(LocalReplayInfoBean localReplayInfoBean, SelectedReplayVault replayVault) {
+    this.localReplayInfoBean = localReplayInfoBean;
     this.selectedReplayVault = replayVault;
-    replayId = replayInfoBean.getId();
+    replayId = localReplayInfoBean.getId();
 
-    gameTitleLabel.setText(replayInfoBean.getTitle());
-    gameTypeLabel.setText(replayInfoBean.getGameType());
-    gameMapLabel.setText(replayInfoBean.getMap());
-    playerCountLabel.setText(String.format("%d", replayInfoBean.getPlayerCount()));
-    likesLabel.setText(String.format("%d", replayInfoBean.getLikes()));
-    downloadsLabel.setText(String.format("%d", replayInfoBean.getDownloads()));
-    if (replayInfoBean.getEndTime() == null || replayInfoBean.getStartTime() == null) {
+    gameTitleLabel.setText(localReplayInfoBean.getTitle());
+    gameTypeLabel.setText(localReplayInfoBean.getGameType());
+    gameMapLabel.setText(localReplayInfoBean.getMap());
+    playerCountLabel.setText(String.format("%d", localReplayInfoBean.getPlayerCount()));
+/*    likesLabel.setText(String.format("%d", localReplayInfoBean.getLikes()));
+    downloadsLabel.setText(String.format("%d", localReplayInfoBean.getDownloads()));*/
+    if (localReplayInfoBean.getEndTime() == null || localReplayInfoBean.getStartTime() == null) {
       durationLabel.setText(i18n.get("replayVault.unknownDuration"));
     } else {
-      Duration duration = Duration.between(replayInfoBean.getStartTime(), replayInfoBean.getEndTime());
+      Duration duration = Duration.between(localReplayInfoBean.getStartTime(), localReplayInfoBean.getEndTime());
       durationLabel.setText(timeService.shortDuration(duration));
     }
-    mapImageView.setImage(mapService.loadSmallPreview(replayInfoBean.getMap()));
+    mapImageView.setImage(mapService.loadSmallPreview(localReplayInfoBean.getMap()));
   }
 
   @FXML
@@ -75,7 +75,7 @@ public class ReplayTileController {
       // TODO automatically download replay if local is corrupted
       switch (selectedReplayVault) {
         case LOCAL:
-          replaceService.runReplay(replayInfoBean);
+          replaceService.runReplay(localReplayInfoBean);
           break;
         case ONLINE:
           replaceService.download(replayId);

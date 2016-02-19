@@ -5,7 +5,7 @@ import com.faforever.client.leaderboard.Ranked1v1EntryBean;
 import com.faforever.client.mod.ModInfoBean;
 import com.faforever.client.net.UriUtil;
 import com.faforever.client.preferences.PreferencesService;
-import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.OnlineReplayInfoBean;
 import com.faforever.client.user.UserService;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
@@ -171,18 +171,18 @@ public class FafApiAccessorImpl implements FafApiAccessor {
   }
 
   @Override
-  public List<ReplayInfoBean> getGames() {
+  public List<OnlineReplayInfoBean> getGames() {
     logger.debug("Loading unfiltered online replays");
     return getMany("/games", GameStats.class, 0, DEFAULT_GAME_PAGE_SIZE).stream()
-        .map(GameStats::toReplayInfoBean)
+        .map(OnlineReplayInfoBean::new)
         .collect(Collectors.toList());
   }
 
   @Override
-  public List<ReplayInfoBean> getGames(GameSearchFields gameSearchFields, int page, int size) {
+  public List<OnlineReplayInfoBean> getGames(GameSearchFields gameSearchFields, int page, int size) {
     logger.debug("Loading filtered online replays");
     return getMany("/games" + gameSearchFields.toString(), GameStats.class, size, page).stream()
-        .map(GameStats::toReplayInfoBean)
+        .map(OnlineReplayInfoBean::new)
         .collect(Collectors.toList());
   }
 

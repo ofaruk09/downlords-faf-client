@@ -11,13 +11,13 @@ import java.util.concurrent.CompletableFuture;
 
 public interface ReplayService {
 
- CompletableFuture<Collection<ReplayInfoBean>> getLocalReplays();
+ CompletableFuture<Collection<LocalReplayInfoBean>> getLocalReplays();
 
- CompletableFuture<List<ReplayInfoBean>> getOnlineReplays();
+ CompletableFuture<List<OnlineReplayInfoBean>> getOnlineReplays();
 
- CompletableFuture<List<ReplayInfoBean>> getOnlineReplays(GameSearchFields gameSearchFields, int page, int size);
+ CompletableFuture<List<OnlineReplayInfoBean>> getOnlineReplays(GameSearchFields gameSearchFields, int page, int size);
 
- void runReplay(ReplayInfoBean item);
+ void runReplay(LocalReplayInfoBean item);
 
   void runLiveReplay(int gameId, int playerId) throws IOException;
 

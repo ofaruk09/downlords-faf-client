@@ -1,16 +1,11 @@
 package com.faforever.client.api;
 
-import com.faforever.client.legacy.domain.VictoryCondition;
-import com.faforever.client.replay.ReplayInfoBean;
+import com.faforever.client.replay.OnlineReplayInfoBean;
 import com.google.api.client.util.Key;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class GameStats {
 
@@ -33,35 +28,8 @@ public class GameStats {
   @Key("victory_condition")
   private String victoryCondition;
 
-  public ReplayInfoBean toReplayInfoBean() {
-    ReplayInfoBean replayInfoBean = new ReplayInfoBean();
-    replayInfoBean.setId(Integer.parseInt(id));
-    replayInfoBean.setHost(host);
-    replayInfoBean.setDownloads(0);
-    replayInfoBean.setGameType(gameMod);
-    replayInfoBean.setLikes(0);
-    replayInfoBean.setMap(mapName);
-    replayInfoBean.setPlayerCount(players.size());
-    replayInfoBean.setStartTime(getStartTime().toInstant(ZoneOffset.UTC));
-    replayInfoBean.setTitle(gameName);
-    replayInfoBean.setVictoryCondition(VictoryCondition.valueOf(victoryCondition));
-    Map<String, List<String>> teams = new HashMap<>();
-    for (GamePlayerStats player : players) {
-      String team = Integer.toString(player.getTeam());
-      LocalDateTime scoreTime = player.getScoreTime();
-      if (replayInfoBean.getEndTime() == null && scoreTime != null) {
-        replayInfoBean.setEndTime(scoreTime.toInstant(ZoneOffset.UTC));
-      } else if (scoreTime != null && scoreTime.toInstant(ZoneOffset.UTC).isAfter(replayInfoBean.getEndTime())) {
-        replayInfoBean.setEndTime(scoreTime.toInstant(ZoneOffset.UTC));
-      }
-      if (!teams.containsKey(team)) {
-        teams.put(team, new ArrayList<>());
-      }
-      teams.get(team).add(player.getLogin());
-    }
-    replayInfoBean.getTeams().putAll(teams);
-
-    return replayInfoBean;
+  public OnlineReplayInfoBean toOnlineReplayInfoBean() {
+    return new OnlineReplayInfoBean(this);
   }
 
   public LocalDateTime getStartTime() {
