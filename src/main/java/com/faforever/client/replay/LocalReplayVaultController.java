@@ -61,7 +61,7 @@ public class LocalReplayVaultController {
   @Resource
   ReplayService replayService;
 
-  private ObservableList<LocalReplayInfoBean> localReplayInfoBeans;
+  private ObservableList<LocalReplayInfoBean> replayInfoBeans;
   private ObjectProperty<ReplaySortingOption> replaySortingOption;
 
   public LocalReplayVaultController() {
@@ -94,7 +94,7 @@ public class LocalReplayVaultController {
 
   public void sortLocalReplays(Predicate<LocalReplayInfoBean> replayInfoBeanPredicate) {
     localReplayVaultRoot.getChildren().clear();
-    if (localReplayInfoBeans.isEmpty()) {
+    if (replayInfoBeans.isEmpty()) {
       return;
     }
 
@@ -118,7 +118,7 @@ public class LocalReplayVaultController {
   }
 
   private void sortByDate(Predicate<LocalReplayInfoBean> replayInfoBeanPredicate) {
-    Collections.sort(localReplayInfoBeans, (replayInfoBean1, replayInfoBean2)
+    Collections.sort(replayInfoBeans, (replayInfoBean1, replayInfoBean2)
         -> replayInfoBean2.getStartTime().compareTo(replayInfoBean1.getStartTime())
     );
 
@@ -126,7 +126,7 @@ public class LocalReplayVaultController {
     int currentYear = 0;
     SortedReplaysController currentSortedReplaysController = null;
 
-    List<LocalReplayInfoBean> filteredLocalReplayInfoBeans = localReplayInfoBeans.filtered(replayInfoBeanPredicate);
+    List<LocalReplayInfoBean> filteredLocalReplayInfoBeans = replayInfoBeans.filtered(replayInfoBeanPredicate);
     for (LocalReplayInfoBean localReplayInfoBean : filteredLocalReplayInfoBeans) {
       LocalDate date = timeService.getLocalDateFromInstant(localReplayInfoBean.getStartTime());
       Month month = date.getMonth();
