@@ -285,6 +285,8 @@ public class PircBotXChatServiceTest extends AbstractPlainJavaFxTest {
     SocialMessage socialMessage = new SocialMessage();
     socialMessage.setChannels(Collections.singletonList(DEFAULT_CHANNEL_NAME));
 
+    System.err.println(socialMessageListenerCaptor);
+    System.err.println(socialMessageListenerCaptor.getValue());
     socialMessageListenerCaptor.getValue().accept(socialMessage);
   }
 
