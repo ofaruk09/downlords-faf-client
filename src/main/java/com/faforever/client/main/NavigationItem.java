@@ -3,6 +3,7 @@ package com.faforever.client.main;
 import java.util.HashMap;
 
 public enum NavigationItem {
+  CLAN("theme/clan.fxml"),
   NEWS("theme/news.fxml"),
   CHAT("theme/chat/chat.fxml"),
   PLAY("theme/play/play.fxml"),

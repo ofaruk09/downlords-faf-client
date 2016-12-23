@@ -60,6 +60,9 @@
                         <ToggleButton fx:id="unitsButton" mnemonicParsing="false" onAction="#onNavigate"
                                       styleClass="main-navigation-button" text="%main.units"
                                       toggleGroup="$mainNavigation"/>
+                        <ToggleButton fx:id="clanButton" mnemonicParsing="false" onAction="#onNavigate"
+                                      styleClass="main-navigation-button" text="%main.clan"
+                                      toggleGroup="$mainNavigation"/>
                         <Pane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS"/>
                         <StackPane>
                             <children>
