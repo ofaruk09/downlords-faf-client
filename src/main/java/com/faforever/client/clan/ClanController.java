@@ -1,6 +1,5 @@
 package com.faforever.client.clan;
 
-import com.faforever.client.fx.AbstractViewController;
 import com.faforever.client.preferences.LoginPrefs;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
@@ -17,9 +16,6 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.html.HTMLButtonElement;
 import sun.plugin.javascript.navig.Document;
@@ -40,15 +36,15 @@ import java.net.URLStreamHandlerFactory;
  */
 
 
-@Component
-@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class ClanController extends AbstractViewController<Node> {
+
+public class ClanController {
 
   public WebView clanRoot;
 
   @Value("${clanWebsite.url}")
   private String clanWebsiteUrl;
-
+  @Value("${clanWebsite.clans.url}")
+  private String clanWebsiteClansUrl;
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   @Resource
   PreferencesService preferencesService;
@@ -59,7 +55,7 @@ public class ClanController extends AbstractViewController<Node> {
   {
     login= preferencesService.getPreferences().getLogin();
   }
-  public void onDisplay() {
+  public void setUpIfNecessary() {
     if (Strings.isNullOrEmpty(clanRoot.getEngine().getLocation())) {
 
 
