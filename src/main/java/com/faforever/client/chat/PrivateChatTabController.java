@@ -4,10 +4,13 @@ import com.faforever.client.audio.AudioService;
 import com.faforever.client.fx.WebViewConfigurer;
 import com.faforever.client.player.Player;
 import com.faforever.client.preferences.ChatPrefs;
+import com.faforever.client.util.IdenticonUtil;
 import com.google.common.annotations.VisibleForTesting;
 import javafx.application.Platform;
+import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.image.ImageView;
 import javafx.scene.web.WebView;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -28,6 +31,11 @@ public class PrivateChatTabController extends AbstractChatTabController {
   public Tab privateChatTabRoot;
   public WebView messagesWebView;
   public TextInputControl messageTextField;
+  public ImageView userImageView;
+  public Label usernameLabel;
+  public Label ratingLabel;
+  public Label gamesPlayedLabel;
+  public Label inGameLabel;
   private boolean userOffline;
 
   @Inject
@@ -51,6 +59,17 @@ public class PrivateChatTabController extends AbstractChatTabController {
     super.setReceiver(username);
     privateChatTabRoot.setId(username);
     privateChatTabRoot.setText(username);
+
+    //Load receiver information
+    username = playerService.getCurrentPlayer().getUsername();//TODO: THIS IS FOR TESTING PURPOSES ONLY; REMOVE!
+    Player player = playerService.getPlayerForUsername(username);
+    usernameLabel.setText(username);
+    userImageView.setImage(IdenticonUtil.createIdenticon(player.getId())) ;
+    ratingLabel.setText("R: " + (int)(Math.round(player.getGlobalRatingMean())) + " +/- " + (int)(Math.round(player.getGlobalRatingDeviation())));
+    gamesPlayedLabel.setText("G: " + player.getNumberOfGames());
+    inGameLabel.setText(player.getGame() != null ? "In game" : "Not in game");//TODO: update
+    //TODO: Game information
+    //TODO: country
   }
 
   public void initialize() {

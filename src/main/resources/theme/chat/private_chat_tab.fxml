@@ -1,29 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.web.WebView?>
-<Tab xmlns:fx="http://javafx.com/fxml/1" fx:id="privateChatTabRoot" xmlns="http://javafx.com/javafx/8.0.60"
+
+<Tab fx:id="privateChatTabRoot" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
      fx:controller="com.faforever.client.chat.PrivateChatTabController">
-   <GridPane fx:id="gridPane">
-      <columnConstraints>
-         <ColumnConstraints hgrow="SOMETIMES" minWidth="0.0"/>
-         <ColumnConstraints hgrow="SOMETIMES" minWidth="0.0"/>
-      </columnConstraints>
-      <rowConstraints>
-         <RowConstraints minHeight="0.0" vgrow="SOMETIMES"/>
-         <RowConstraints minHeight="0.0" vgrow="SOMETIMES"/>
-      </rowConstraints>
-      <children>
-         <WebView fx:id="messagesWebView" minHeight="100.0" minWidth="100.0" prefHeight="-1.0" prefWidth="-1.0"
-                  GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS"/>
-         <TextField fx:id="messageTextField" maxWidth="1.7976931348623157E308" onAction="#onSendMessage"
-                    promptText="%chat.messagePrompt" GridPane.rowIndex="1"/>
-         <VBox maxHeight="1.7976931348623157E308" prefWidth="160.0" GridPane.columnIndex="1" GridPane.vgrow="ALWAYS"/>
-      </children>
-   </GridPane>
+    <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="0.0" minWidth="0.0">
+        <children>
+            <SplitPane dividerPositions="0.9" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
+                <items>
+                    <GridPane fx:id="gridPane">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" minWidth="0.0"/>
+                            <ColumnConstraints hgrow="SOMETIMES" minWidth="0.0"/>
+                        </columnConstraints>
+                        <rowConstraints>
+                            <RowConstraints minHeight="0.0" vgrow="SOMETIMES"/>
+                            <RowConstraints minHeight="0.0" vgrow="SOMETIMES"/>
+                        </rowConstraints>
+                        <children>
+                            <WebView fx:id="messagesWebView" minHeight="100.0" minWidth="100.0" prefHeight="-1.0"
+                                     prefWidth="-1.0" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS"/>
+                            <VBox maxHeight="1.7976931348623157E308" prefWidth="160.0" GridPane.columnIndex="1"
+                                  GridPane.vgrow="ALWAYS"/>
+
+                        </children>
+                    </GridPane>
+                    <VBox fx:id="channelTabScrollPaneVBox" alignment="TOP_RIGHT" maxHeight="1.7976931348623157E308"
+                          SplitPane.resizableWithParent="false">
+                        <children>
+                            <HBox alignment="CENTER_RIGHT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+                                <children>
+                                    <Label fx:id="usernameLabel" minWidth="-Infinity" text="username"/>
+                                    <ImageView fx:id="userImageView" fitHeight="32.0" fitWidth="32.0"
+                                               pickOnBounds="true" preserveRatio="true"/>
+                                </children>
+                            </HBox>
+                            <HBox alignment="CENTER_RIGHT" spacing="20.0">
+                                <children>
+                                    <Label fx:id="ratingLabel" minWidth="-Infinity" text="rating"/>
+                                    <Label fx:id="gamesPlayedLabel" minWidth="-Infinity" text="games played"/>
+                                </children>
+                            </HBox>
+                            <HBox alignment="CENTER_RIGHT" spacing="20.0">
+                                <children>
+                                    <Label fx:id="inGameLabel" minWidth="-Infinity" text="in game"/>
+                                </children>
+                            </HBox>
+                        </children>
+                        <padding>
+                            <Insets left="20.0" right="20.0"/>
+                        </padding>
+                    </VBox>
+                </items>
+            </SplitPane>
+            <TextField fx:id="messageTextField" maxWidth="1.7976931348623157E308" onAction="#onSendMessage"
+                       promptText="%chat.messagePrompt"/>
+        </children>
+    </VBox>
 </Tab>
