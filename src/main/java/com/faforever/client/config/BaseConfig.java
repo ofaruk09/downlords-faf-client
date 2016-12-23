@@ -17,6 +17,8 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,9 +51,17 @@ public class BaseConfig {
   MessageSource messageSource() {
     ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
     messageSource.setBasename("i18n.messages");
+    messageSource.setFallbackToSystemLocale(false);
     return messageSource;
   }
-
+  @Bean
+  ArrayList<String> languageInfo(){
+    String[] x={"en","UK","de","DE","ru","RU"};
+    ArrayList<String> languageInfo=new ArrayList<String>();
+    for (String s: x)
+    {languageInfo.add(languageInfo.size(),s);}
+    return languageInfo;
+  }
   @Bean
   I18n i18n() {
     return new I18nImpl();

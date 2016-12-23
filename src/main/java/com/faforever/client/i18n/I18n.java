@@ -10,5 +10,7 @@ public interface I18n {
 
   Locale getLocale();
 
+  Locale getUserSpecificLocale();
+
   String number(int number);
 }

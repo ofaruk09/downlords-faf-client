@@ -2,6 +2,7 @@ package com.faforever.client.theme;
 
 import com.faforever.client.config.CacheNames;
 import com.faforever.client.fx.Controller;
+import com.faforever.client.i18n.I18n;
 import com.faforever.client.main.MainController;
 import com.faforever.client.preferences.PreferencesService;
 import javafx.application.Platform;
@@ -81,7 +82,7 @@ public class UiServiceImpl implements UiService {
   @Inject
   ThreadPoolExecutor threadPoolExecutor;
   @Inject
-  Locale locale;
+  I18n i18n;
   @Inject
   CacheManager cacheManager;
   @Inject
@@ -116,7 +117,7 @@ public class UiServiceImpl implements UiService {
 
   @PostConstruct
   void postConstruct() throws IOException, InterruptedException {
-    resources = new MessageSourceResourceBundle(messageSource, locale);
+    resources = new MessageSourceResourceBundle(messageSource, i18n.getUserSpecificLocale());
     Path themesDirectory = preferencesService.getThemesDirectory();
     startWatchService(themesDirectory);
     Path cacheStylesheetsDirectory = preferencesService.getCacheStylesheetsDirectory();
