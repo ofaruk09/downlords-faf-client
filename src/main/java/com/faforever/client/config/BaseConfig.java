@@ -54,6 +54,7 @@ public class BaseConfig {
     messageSource.setFallbackToSystemLocale(false);
     return messageSource;
   }
+
   @Bean
   ArrayList<String> languageInfo(){
     String[] x={"en","UK","de","DE","ru","RU"};

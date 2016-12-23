@@ -24,6 +24,7 @@ import javafx.beans.value.WeakChangeListener;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -37,15 +38,19 @@ import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.converter.NumberStringConverter;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.lang.invoke.MethodHandles;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static com.faforever.client.fx.JavaFxUtil.PATH_STRING_CONVERTER;
 import static com.faforever.client.theme.UiService.DEFAULT_THEME;
@@ -93,6 +98,7 @@ public class SettingsController implements Controller<Node> {
   public PasswordField currentPasswordField;
   public PasswordField newPasswordField;
   public PasswordField confirmPasswordField;
+  public ComboBox timeComboBox;
   public Label passwordChangeErrorLabel;
   public Label passwordChangeSuccessLabel;
 
@@ -105,15 +111,20 @@ public class SettingsController implements Controller<Node> {
   private final NotificationService notificationService;
   private ChangeListener<Theme> themeChangeListener;
 
+  private final String[] options;
+  private final org.slf4j.Logger logger= LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   @Inject
   public SettingsController(UserService userService, PreferencesService preferencesService, UiService uiService, I18n i18n, EventBus eventBus, ArrayList<String> languageInfo, NotificationService notificationService) {
     this.userService = userService;
     this.preferencesService = preferencesService;
     this.uiService = uiService;
     this.i18n = i18n;
+
     this.eventBus = eventBus;
     this.languageInfo=languageInfo;
     this.notificationService=notificationService;
+    options=i18n.get("settings.chat.optionsForTime").split(" ");
   }
 
   /**
@@ -202,7 +213,7 @@ public class SettingsController implements Controller<Node> {
         preferences.getNotification().setToastPosition(ToastPosition.BOTTOM_RIGHT);
       }
     });
-    configureTimeSetting();
+    configureTimeSetting(preferences);
     configureLanguageSelection(preferences);
     configureThemeSelection(preferences);
     configureRememberLastTab(preferences);
@@ -232,7 +243,54 @@ public class SettingsController implements Controller<Node> {
     passwordChangeErrorLabel.setVisible(false);
   }
 
-  private void configureTimeSetting() {
+  private void configureTimeSetting(Preferences preferences) {
+
+    timeComboBox.setItems(FXCollections.observableArrayList(options));
+    timeComboBox.setOnAction(new EventHandler<ActionEvent>() {
+                               @Override
+                               public void handle(ActionEvent event) {
+                                 newTimeFormatSelected(event);
+                               }
+                             }
+    );
+    timeComboBox.setDisable(false);
+    timeComboBox.setFocusTraversable(true);
+    int index;
+
+
+    index= getIndexNumberOfFormat(preferences.getChat().getUkTime());
+
+
+    timeComboBox.getSelectionModel().select(index);
+
+  }
+
+  private int getIndexNumberOfFormat(String militaryTime) {
+    switch (militaryTime) {
+      case ("system"):
+        return 0;
+      case("yes"):
+        return 1;
+      case("no"):
+        return 2;
+    }
+    return 0;
+
+  }
+
+
+  private void newTimeFormatSelected(ActionEvent event) {
+    HashMap<String,String> saveCodes= new HashMap<>();
+    saveCodes.put(options[0],"system");
+    saveCodes.put(options[1],"yes");
+    saveCodes.put(options[2],"no");
+    logger.info("newTimeFormat is "+timeComboBox.getValue().toString());
+    Preferences preferences= preferencesService.getPreferences();
+
+    String selectedFormat= saveCodes.get(timeComboBox.getValue().toString());
+    preferences.getChat().setUkTime(selectedFormat);
+    preferencesService.storeInBackground();
+    logger.info("saving.....Time Format");
   }
 
   private StringListCell<Screen> screenListCell() {

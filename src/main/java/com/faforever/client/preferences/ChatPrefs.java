@@ -11,6 +11,8 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleMapProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.scene.paint.Color;
@@ -27,6 +29,7 @@ public class ChatPrefs {
   private final IntegerProperty channelTabScrollPaneWidth;
   private final MapProperty<String, Color> userToColor;
   private final BooleanProperty hideFoeMessages;
+  private final StringProperty ukTime;
 
   /**
    * Time in minutes a player has to be inactive to be considered idle.
@@ -35,6 +38,7 @@ public class ChatPrefs {
 
 
   public ChatPrefs() {
+    ukTime= new SimpleStringProperty("system");
     maxMessages = new SimpleIntegerProperty(500);
     zoom = new SimpleDoubleProperty(1);
     learnedAutoComplete = new SimpleBooleanProperty(false);
@@ -52,6 +56,13 @@ public class ChatPrefs {
 
   public void setChatColorMode(ChatColorMode chatColorMode) {
     this.chatColorMode.set(chatColorMode);
+  }
+  public String getUkTime() {
+    return ukTime.get();
+  }
+
+  public void setUkTime(String time) {
+    this.ukTime.set(time);
   }
 
   public ObjectProperty<ChatColorMode> chatColorModeProperty() {

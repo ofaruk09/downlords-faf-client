@@ -1,6 +1,7 @@
 package com.faforever.client.util;
 
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.preferences.PreferencesService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,8 @@ public class TimeServiceImpl implements TimeService {
   I18n i18n;
   @Inject
   Locale locale;
+  @Inject
+  PreferencesService preferencesService;
 
   @Override
   public String timeAgo(Instant instant) {
@@ -76,7 +79,17 @@ public class TimeServiceImpl implements TimeService {
 
   @Override
   public String asShortTime(Instant instant) {
-    return DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(
+    Locale set=locale;
+    switch(preferencesService.getPreferences().getChat().getUkTime())
+    {
+      case("yes"):
+        set= new Locale("en", "UK");
+        break;
+      case ("no"):
+        set= new Locale("de", "DE");
+        break;
+    }
+    return DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(set).format(
         ZonedDateTime.ofInstant(instant, TimeZone.getDefault().toZoneId())
     );
   }
