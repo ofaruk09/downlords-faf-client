@@ -11,6 +11,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 <?import javafx.scene.web.WebView?>
 
 <Tab fx:id="privateChatTabRoot" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
@@ -39,24 +40,54 @@
                     <VBox fx:id="channelTabScrollPaneVBox" alignment="TOP_RIGHT" maxHeight="1.7976931348623157E308"
                           SplitPane.resizableWithParent="false">
                         <children>
-                            <HBox alignment="CENTER_RIGHT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+                            <HBox alignment="CENTER_RIGHT" prefWidth="200.0" spacing="10.0">
                                 <children>
                                     <Label fx:id="usernameLabel" minWidth="-Infinity" text="username"/>
                                     <ImageView fx:id="userImageView" fitHeight="32.0" fitWidth="32.0"
                                                pickOnBounds="true" preserveRatio="true"/>
                                 </children>
                             </HBox>
-                            <HBox alignment="CENTER_RIGHT" spacing="20.0">
+                            <HBox prefHeight="14"></HBox>
+
+                            <Label fx:id="countryLabelLabel" minWidth="-Infinity" text="Country:">
+                                <font>
+                                    <Font size="10.0"/>
+                                </font>
+                            </Label>
+                            <HBox alignment="CENTER_RIGHT" spacing="6">
                                 <children>
-                                    <Label fx:id="ratingLabel" minWidth="-Infinity" text="rating"/>
-                                    <Label fx:id="gamesPlayedLabel" minWidth="-Infinity" text="games played"/>
+                                    <ImageView fx:id="countryImageView" fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true"/>
+                                    <Label fx:id="countryLabel" minWidth="-Infinity" text="country"/>
                                 </children>
                             </HBox>
-                            <HBox alignment="CENTER_RIGHT" spacing="20.0">
+                            <HBox prefHeight="14"></HBox>
+
+                            <Label fx:id="ratingLabelLabel" minWidth="-Infinity" text="Rating:">
+                                <font>
+                                    <Font size="10.0"/>
+                                </font>
+                            </Label>
+                            <Label fx:id="ratingLabel" minWidth="-Infinity" text="rating"/>
+                            <HBox prefHeight="14"></HBox>
+
+                            <Label fx:id="gamesPlayedLabelLabel" minWidth="-Infinity" text="Games played:">
+                                <font>
+                                    <Font size="10.0"/>
+                                </font>
+                            </Label>
+                            <Label fx:id="gamesPlayedLabel" minWidth="-Infinity" text="games played"/>
+
+                            <HBox prefHeight="35"></HBox>
+
+                            <Label fx:id="inGameLabel" minWidth="-Infinity" text="isInGame?"/>
+                            <HBox prefHeight="15"></HBox>
+
+                            <VBox alignment="CENTER">
                                 <children>
-                                    <Label fx:id="inGameLabel" minWidth="-Infinity" text="in game"/>
+                                    <ImageView fx:id="mapPreview" fitWidth="64" fitHeight="64"/>
                                 </children>
-                            </HBox>
+                            </VBox>
+
                         </children>
                         <padding>
                             <Insets left="20.0" right="20.0"/>

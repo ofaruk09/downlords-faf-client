@@ -3,6 +3,7 @@ package com.faforever.client.chat;
 import com.faforever.client.audio.AudioService;
 import com.faforever.client.fx.WebViewConfigurer;
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.map.MapService;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.TransientNotification;
 import com.faforever.client.player.Player;
@@ -50,13 +51,17 @@ public class PrivateChatTabControllerTest extends AbstractPlainJavaFxTest {
   private WebViewConfigurer webViewConfigurer;
   @Mock
   private ChatService chatService;
+  @Mock
+  private CountryFlagService countryFlagService;
+  @Mock
+  private MapService mapService;
 
   private PrivateChatTabController instance;
   private String playerName;
 
   @Before
   public void setUp() throws IOException {
-    instance = new PrivateChatTabController(audioService, chatService, webViewConfigurer);
+    instance = new PrivateChatTabController(audioService, chatService, countryFlagService, mapService, webViewConfigurer);
     instance.preferencesService = preferencesService;
     instance.playerService = playerService;
     instance.notificationService = notificationService;

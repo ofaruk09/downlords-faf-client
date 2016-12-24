@@ -2,14 +2,21 @@ package com.faforever.client.chat;
 
 import com.faforever.client.audio.AudioService;
 import com.faforever.client.fx.WebViewConfigurer;
+import com.faforever.client.game.Game;
+import com.faforever.client.map.MapService;
+import com.faforever.client.map.MapServiceImpl.PreviewSize;
 import com.faforever.client.player.Player;
 import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.util.IdenticonUtil;
 import com.google.common.annotations.VisibleForTesting;
+import com.neovisionaries.i18n.CountryCode;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.web.WebView;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -27,21 +34,28 @@ public class PrivateChatTabController extends AbstractChatTabController {
 
   private final AudioService audioService;
   private final ChatService chatService;
+  private final CountryFlagService countryFlagService;
+  private final MapService mapService;
   private final WebViewConfigurer webViewConfigurer;
   public Tab privateChatTabRoot;
   public WebView messagesWebView;
   public TextInputControl messageTextField;
   public ImageView userImageView;
   public Label usernameLabel;
+  public ImageView countryImageView;
+  public Label countryLabel;
   public Label ratingLabel;
   public Label gamesPlayedLabel;
   public Label inGameLabel;
+  public ImageView mapPreview;
   private boolean userOffline;
 
   @Inject
-  public PrivateChatTabController(AudioService audioService, ChatService chatService, WebViewConfigurer webViewConfigurer) {
+  public PrivateChatTabController(AudioService audioService, ChatService chatService, CountryFlagService countryFlagService, MapService mapService, WebViewConfigurer webViewConfigurer) {
     this.audioService = audioService;
     this.chatService = chatService;
+    this.countryFlagService = countryFlagService;
+    this.mapService = mapService;
     this.webViewConfigurer = webViewConfigurer;
   }
 
@@ -62,14 +76,37 @@ public class PrivateChatTabController extends AbstractChatTabController {
 
     //Load receiver information
     username = playerService.getCurrentPlayer().getUsername();//TODO: THIS IS FOR TESTING PURPOSES ONLY; REMOVE!
-    Player player = playerService.getPlayerForUsername(username);
+    final Player player = playerService.getPlayerForUsername(username);
+    CountryCode countryCode = CountryCode.getByCode(player.getCountry());
+
     usernameLabel.setText(username);
-    userImageView.setImage(IdenticonUtil.createIdenticon(player.getId())) ;
-    ratingLabel.setText("R: " + (int)(Math.round(player.getGlobalRatingMean())) + " +/- " + (int)(Math.round(player.getGlobalRatingDeviation())));
-    gamesPlayedLabel.setText("G: " + player.getNumberOfGames());
-    inGameLabel.setText(player.getGame() != null ? "In game" : "Not in game");//TODO: update
-    //TODO: Game information
-    //TODO: country
+    userImageView.setImage(IdenticonUtil.createIdenticon(player.getId()));
+    countryImageView.setImage(countryFlagService.loadCountryFlag(player.getCountry()));
+    countryLabel.setText(countryCode == null ? player.getCountry() : countryCode.getName());
+    loadReceiverRatingInformation(player);
+    player.globalRatingMeanProperty().addListener((observable, oldValue, newValue) -> loadReceiverRatingInformation(player));
+    gamesPlayedLabel.textProperty().bind(player.numberOfGamesProperty().asString());
+    loadPlayerGameInformation(player.getGame());
+    player.gameProperty().addListener((observable, oldValue, newValue) -> {loadPlayerGameInformation(newValue);});
+
+    //TODO: switch to create object binding
+  }
+
+  private void loadReceiverRatingInformation(Player player) {
+    ratingLabel.setText((int)(Math.round(player.getGlobalRatingMean())) + " +/- " + (int)(Math.round(player.getGlobalRatingDeviation())));
+  }
+
+  private void loadPlayerGameInformation(Game game) {
+    inGameLabel.setText(game != null ? "In game" : "Not in game");//TODO: In lobby
+
+    if(game != null) {
+      loadMapPreview(game.getMapFolderName());
+      game.mapFolderNameProperty().addListener((observable, oldValue, newValue) -> loadMapPreview(newValue));
+    }
+  }
+
+  private void loadMapPreview(String mapName){
+    new Thread(() -> mapPreview.setImage(mapService.loadPreview(mapName, PreviewSize.SMALL))).start();//TODO: nope!
   }
 
   public void initialize() {
