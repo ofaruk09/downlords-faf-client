@@ -7,10 +7,13 @@ import com.faforever.client.map.MapService;
 import com.faforever.client.map.MapServiceImpl.PreviewSize;
 import com.faforever.client.player.Player;
 import com.faforever.client.preferences.ChatPrefs;
+import com.faforever.client.remote.domain.GameState;
 import com.faforever.client.util.IdenticonUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.neovisionaries.i18n.CountryCode;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.Label;
@@ -18,6 +21,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -48,6 +52,11 @@ public class PrivateChatTabController extends AbstractChatTabController {
   public Label gamesPlayedLabel;
   public Label inGameLabel;
   public ImageView mapPreview;
+  public Label gameTitleLabel;
+  public VBox gameHostVBox;
+  public Label gameHostLabel;
+  public VBox gamePreview;
+  public Label gamePlayerCountLabel;
   private boolean userOffline;
 
   @Inject
@@ -77,6 +86,17 @@ public class PrivateChatTabController extends AbstractChatTabController {
     //Load receiver information
     username = playerService.getCurrentPlayer().getUsername();//TODO: THIS IS FOR TESTING PURPOSES ONLY; REMOVE!
     final Player player = playerService.getPlayerForUsername(username);
+    //TODO---------------------------------
+    Game game = new Game();
+    game.setHost("TestHost");
+    game.setId(1234);
+    game.setMapFolderName("10 The Pass");
+    game.setMaxPlayers(10);
+    game.setNumPlayers(7);
+    game.setStatus(GameState.OPEN);
+    game.setTitle("TestTitle");
+    player.setGame(game);
+    //-------------------------------------
     CountryCode countryCode = CountryCode.getByCode(player.getCountry());
 
     usernameLabel.setText(username);
@@ -87,25 +107,53 @@ public class PrivateChatTabController extends AbstractChatTabController {
     player.globalRatingMeanProperty().addListener((observable, oldValue, newValue) -> loadReceiverRatingInformation(player));
     gamesPlayedLabel.textProperty().bind(player.numberOfGamesProperty().asString());
     loadPlayerGameInformation(player.getGame());
-    player.gameProperty().addListener((observable, oldValue, newValue) -> {loadPlayerGameInformation(newValue);});
-
-    //TODO: switch to create object binding
+    player.gameProperty().addListener((observable, oldValue, newValue) -> {
+      loadPlayerGameInformation(newValue);
+    });
   }
 
   private void loadReceiverRatingInformation(Player player) {
-    ratingLabel.setText((int)(Math.round(player.getGlobalRatingMean())) + " +/- " + (int)(Math.round(player.getGlobalRatingDeviation())));
+    ratingLabel.setText((int) (Math.round(player.getGlobalRatingMean())) + " +/- " + (int) (Math.round(player.getGlobalRatingDeviation())));
   }
 
   private void loadPlayerGameInformation(Game game) {
-    inGameLabel.setText(game != null ? "In game" : "Not in game");//TODO: In lobby
+    inGameLabel.setText(game != null ? (game.getStatus() == GameState.OPEN ? "In lobby" : "In game") : "Not in game");
 
-    if(game != null) {
+    gameTitleLabel.textProperty().unbind();
+
+    if (game != null) {
+      gamePreview.setVisible(true);
+      gamePreview.setManaged(true);
+
+      game.statusProperty().addListener((observable, oldValue, newValue) -> {
+        inGameLabel.setText(game != null ? (game.getStatus() == GameState.OPEN ? "In lobby" : "In game") : "Not in game");
+        gameHostVBox.setManaged(false);
+        gameHostVBox.setVisible(false);
+      });
+
+      gameTitleLabel.textProperty().bind(game.titleProperty());
+
       loadMapPreview(game.getMapFolderName());
       game.mapFolderNameProperty().addListener((observable, oldValue, newValue) -> loadMapPreview(newValue));
+
+      InvalidationListener playerCountListener = (observable) -> gamePlayerCountLabel.setText(game.getNumPlayers() + "/" + game.getMaxPlayers());
+      playerCountListener.invalidated(null);
+      game.numPlayersProperty().addListener(playerCountListener);
+      game.maxPlayersProperty().addListener(playerCountListener);
+
+      if (game.getStatus() == GameState.OPEN) {
+        gameHostVBox.setManaged(true);
+        gameHostVBox.setVisible(true);
+        gameHostLabel.setText(game.getHost());
+      }
+      //TODO: featured mod, join/spectate button
+    } else {
+      gamePreview.setManaged(false);
+      gamePreview.setVisible(false);
     }
   }
 
-  private void loadMapPreview(String mapName){
+  private void loadMapPreview(String mapName) {
     new Thread(() -> mapPreview.setImage(mapService.loadPreview(mapName, PreviewSize.SMALL))).start();//TODO: nope!
   }
 
