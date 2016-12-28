@@ -15,6 +15,7 @@
 <?import javafx.scene.web.WebView?>
 
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Button?>
 <Tab fx:id="privateChatTabRoot" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
      fx:controller="com.faforever.client.chat.PrivateChatTabController">
     <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="0.0" minWidth="0.0">
@@ -50,7 +51,7 @@
                             </HBox>
                             <HBox prefHeight="14"></HBox>
 
-                            <Label fx:id="countryLabelLabel" minWidth="-Infinity" text="Country:">
+                            <Label fx:id="countryLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.country">
                                 <font>
                                     <Font size="10.0"/>
                                 </font>
@@ -64,7 +65,7 @@
                             </HBox>
                             <HBox prefHeight="14"></HBox>
 
-                            <Label fx:id="ratingLabelLabel" minWidth="-Infinity" text="Rating:">
+                            <Label fx:id="ratingLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.rating">
                                 <font>
                                     <Font size="10.0"/>
                                 </font>
@@ -72,7 +73,7 @@
                             <Label fx:id="ratingLabel" minWidth="-Infinity" text="rating"/>
                             <HBox prefHeight="14"></HBox>
 
-                            <Label fx:id="gamesPlayedLabelLabel" minWidth="-Infinity" text="Games played:">
+                            <Label fx:id="gamesPlayedLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.gamesPlayed">
                                 <font>
                                     <Font size="10.0"/>
                                 </font>
@@ -89,9 +90,11 @@
                                 <children>
                                     <Label fx:id="gameTitleLabel" minWidth="-Infinity" text="game title"/>
                                     <HBox prefHeight="5"></HBox>
+
                                     <ImageView fx:id="mapPreview" fitWidth="64" fitHeight="64"/>
                                     <HBox prefHeight="7"></HBox>
-                                    <Label fx:id="gamePlayerCountLabelLabel" minWidth="-Infinity" text="players:">
+
+                                    <Label fx:id="gamePlayerCountLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.game.players">
                                         <font>
                                             <Font size="10.0"/>
                                         </font>
@@ -99,15 +102,25 @@
                                     <Label fx:id="gamePlayerCountLabel" minWidth="-Infinity" text="players"/>
                                     <HBox prefHeight="7"></HBox>
 
+                                    <Label fx:id="featuredModLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.game.featuredMod">
+                                        <font>
+                                            <Font size="10.0"/>
+                                        </font>
+                                    </Label>
+                                    <Label fx:id="featuredModLabel" minWidth="-Infinity" text="featured mod"/>
+                                    <HBox prefHeight="7"></HBox>
+
                                     <VBox fx:id="gameHostVBox" alignment="CENTER" visible="false" managed="false">
-                                        <Label fx:id="gameHostLabelLabel" minWidth="-Infinity" text="hosted by:">
+                                        <Label fx:id="gameHostLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.game.host">
                                             <font>
                                                 <Font size="10.0"/>
                                             </font>
                                         </Label>
                                         <Label fx:id="gameHostLabel" minWidth="-Infinity" text="games played"/>
                                     </VBox>
+                                    <HBox prefHeight="20"></HBox>
 
+                                    <Button fx:id="joinSpectateButton" text="join/spectate" onAction="#joinSpectateGameButtonClicked"/>
 
                                 </children>
                             </VBox>

@@ -3,23 +3,27 @@ package com.faforever.client.chat;
 import com.faforever.client.audio.AudioService;
 import com.faforever.client.fx.WebViewConfigurer;
 import com.faforever.client.game.Game;
+import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.map.MapService;
 import com.faforever.client.map.MapServiceImpl.PreviewSize;
+import com.faforever.client.notification.ImmediateNotification;
+import com.faforever.client.notification.NotificationService;
+import com.faforever.client.notification.Severity;
 import com.faforever.client.player.Player;
 import com.faforever.client.preferences.ChatPrefs;
-import com.faforever.client.remote.domain.GameState;
+import com.faforever.client.remote.domain.GameStatus;
+import com.faforever.client.replay.ReplayService;
 import com.faforever.client.util.IdenticonUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.neovisionaries.i18n.CountryCode;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextInputControl;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
@@ -29,6 +33,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 import static com.faforever.client.chat.SocialStatus.FOE;
 
@@ -41,6 +46,8 @@ public class PrivateChatTabController extends AbstractChatTabController {
   private final CountryFlagService countryFlagService;
   private final MapService mapService;
   private final WebViewConfigurer webViewConfigurer;
+  private final JoinGameHelper joinGameHelper;
+  private final ReplayService replayService;
   public Tab privateChatTabRoot;
   public WebView messagesWebView;
   public TextInputControl messageTextField;
@@ -57,15 +64,23 @@ public class PrivateChatTabController extends AbstractChatTabController {
   public Label gameHostLabel;
   public VBox gamePreview;
   public Label gamePlayerCountLabel;
+  public Label featuredModLabel;
+  public Button joinSpectateButton;
+
+  private Game userGame;
+  private Player userPlayer;
   private boolean userOffline;
 
   @Inject
-  public PrivateChatTabController(AudioService audioService, ChatService chatService, CountryFlagService countryFlagService, MapService mapService, WebViewConfigurer webViewConfigurer) {
+  public PrivateChatTabController(AudioService audioService, ChatService chatService, CountryFlagService countryFlagService, MapService mapService, WebViewConfigurer webViewConfigurer, JoinGameHelper joinGameHelper, ReplayService replayService) {
     this.audioService = audioService;
     this.chatService = chatService;
     this.countryFlagService = countryFlagService;
     this.mapService = mapService;
     this.webViewConfigurer = webViewConfigurer;
+    this.joinGameHelper = joinGameHelper;
+    this.replayService = replayService;
+    this.notificationService = notificationService;
   }
 
   public boolean isUserOffline() {
@@ -85,7 +100,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
 
     //Load receiver information
     username = playerService.getCurrentPlayer().getUsername();//TODO: THIS IS FOR TESTING PURPOSES ONLY; REMOVE!
-    final Player player = playerService.getPlayerForUsername(username);
+    userPlayer = playerService.getPlayerForUsername(username);
     //TODO---------------------------------
     Game game = new Game();
     game.setHost("TestHost");
@@ -93,21 +108,22 @@ public class PrivateChatTabController extends AbstractChatTabController {
     game.setMapFolderName("10 The Pass");
     game.setMaxPlayers(10);
     game.setNumPlayers(7);
-    game.setStatus(GameState.OPEN);
+    game.setStatus(GameStatus.OPEN);
+    game.setFeaturedMod("FAF Develop");
     game.setTitle("TestTitle");
-    player.setGame(game);
+    userPlayer.setGame(game);
     //-------------------------------------
-    CountryCode countryCode = CountryCode.getByCode(player.getCountry());
+    CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
 
     usernameLabel.setText(username);
-    userImageView.setImage(IdenticonUtil.createIdenticon(player.getId()));
-    countryImageView.setImage(countryFlagService.loadCountryFlag(player.getCountry()));
-    countryLabel.setText(countryCode == null ? player.getCountry() : countryCode.getName());
-    loadReceiverRatingInformation(player);
-    player.globalRatingMeanProperty().addListener((observable, oldValue, newValue) -> loadReceiverRatingInformation(player));
-    gamesPlayedLabel.textProperty().bind(player.numberOfGamesProperty().asString());
-    loadPlayerGameInformation(player.getGame());
-    player.gameProperty().addListener((observable, oldValue, newValue) -> {
+    userImageView.setImage(IdenticonUtil.createIdenticon(userPlayer.getId()));
+    countryImageView.setImage(countryFlagService.loadCountryFlag(userPlayer.getCountry()));
+    countryLabel.setText(countryCode == null ? userPlayer.getCountry() : countryCode.getName());
+    loadReceiverRatingInformation(userPlayer);
+    userPlayer.globalRatingMeanProperty().addListener((observable, oldValue, newValue) -> loadReceiverRatingInformation(userPlayer));
+    gamesPlayedLabel.textProperty().bind(userPlayer.numberOfGamesProperty().asString());
+    loadPlayerGameInformation(userPlayer.getGame());
+    userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
       loadPlayerGameInformation(newValue);
     });
   }
@@ -117,7 +133,9 @@ public class PrivateChatTabController extends AbstractChatTabController {
   }
 
   private void loadPlayerGameInformation(Game game) {
-    inGameLabel.setText(game != null ? (game.getStatus() == GameState.OPEN ? "In lobby" : "In game") : "Not in game");
+    this.userGame = game;
+
+    setIsInGameLabel();
 
     gameTitleLabel.textProperty().unbind();
 
@@ -126,10 +144,12 @@ public class PrivateChatTabController extends AbstractChatTabController {
       gamePreview.setManaged(true);
 
       game.statusProperty().addListener((observable, oldValue, newValue) -> {
-        inGameLabel.setText(game != null ? (game.getStatus() == GameState.OPEN ? "In lobby" : "In game") : "Not in game");
+        setIsInGameLabel();
+        setJoinSpectateButton();
         gameHostVBox.setManaged(false);
         gameHostVBox.setVisible(false);
       });
+      setJoinSpectateButton();
 
       gameTitleLabel.textProperty().bind(game.titleProperty());
 
@@ -141,20 +161,54 @@ public class PrivateChatTabController extends AbstractChatTabController {
       game.numPlayersProperty().addListener(playerCountListener);
       game.maxPlayersProperty().addListener(playerCountListener);
 
-      if (game.getStatus() == GameState.OPEN) {
+      featuredModLabel.setText(game.getFeaturedMod());
+
+      if (game.getStatus() == GameStatus.OPEN) {
         gameHostVBox.setManaged(true);
         gameHostVBox.setVisible(true);
         gameHostLabel.setText(game.getHost());
       }
-      //TODO: featured mod, join/spectate button
+
     } else {
       gamePreview.setManaged(false);
       gamePreview.setVisible(false);
     }
   }
 
+  private void setIsInGameLabel() {
+    if (userGame != null && userGame.getStatus() == GameStatus.OPEN) {
+      inGameLabel.setText(i18n.get("game.gameStatus.lobby"));
+    } else if (userGame != null && userGame.getStatus() == GameStatus.PLAYING) {
+      inGameLabel.setText(i18n.get("game.gameStatus.playing"));
+    } else {
+      inGameLabel.setText(i18n.get("chat.privateMessage.gamestate.notInGame"));
+    }
+  }
+
+  private void setJoinSpectateButton() {
+    if (userGame.getStatus() == GameStatus.OPEN) {
+      joinSpectateButton.setText(i18n.get("game.join"));
+    } else if (userGame.getStatus() == GameStatus.PLAYING) {
+      joinSpectateButton.setText(i18n.get("game.spectate"));
+    } else {
+      notificationService.addNotification(new ImmediateNotification(i18n.get("keyTile"), i18n.get("keyText"), Severity.ERROR));//TODO: introduce localization
+    }
+  }
+
   private void loadMapPreview(String mapName) {
-    new Thread(() -> mapPreview.setImage(mapService.loadPreview(mapName, PreviewSize.SMALL))).start();//TODO: nope!
+    CompletableFuture.runAsync(() -> mapPreview.setImage(mapService.loadPreview(mapName, PreviewSize.SMALL)));
+  }
+
+  @FXML
+  private void joinSpectateGameButtonClicked(ActionEvent event) {
+    if (userGame.getStatus() == GameStatus.OPEN) {
+      joinGameHelper.join(userGame);
+    } else if (userGame.getStatus() == GameStatus.PLAYING) {
+      replayService.runLiveReplay(userGame.getId(), userPlayer.getId());
+    } else {
+
+    }
+
   }
 
   public void initialize() {

@@ -21,7 +21,7 @@ import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.ReportAction;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.preferences.PreferencesService;
-import com.faforever.client.remote.domain.GameState;
+import com.faforever.client.remote.domain.GameStatus;
 import com.faforever.client.replay.ReplayService;
 import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.theme.UiService;
@@ -72,7 +72,7 @@ import static javafx.collections.FXCollections.observableList;
 public class CoopController implements Controller<Node> {
 
   private static final Predicate<Game> OPEN_COOP_GAMES_PREDICATE = gameInfoBean ->
-      gameInfoBean.getStatus() == GameState.OPEN
+      gameInfoBean.getStatus() == GameStatus.OPEN
           && COOP.getString().equals(gameInfoBean.getFeaturedMod());
 
   public Node coopRoot;

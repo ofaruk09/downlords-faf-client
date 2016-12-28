@@ -2,6 +2,7 @@ package com.faforever.client.chat;
 
 import com.faforever.client.audio.AudioService;
 import com.faforever.client.fx.WebViewConfigurer;
+import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.map.MapService;
 import com.faforever.client.notification.NotificationService;
@@ -11,6 +12,7 @@ import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
+import com.faforever.client.replay.ReplayService;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
 import com.sun.javafx.scene.control.skin.TabPaneSkin;
 import javafx.scene.control.TabPane;
@@ -55,13 +57,17 @@ public class PrivateChatTabControllerTest extends AbstractPlainJavaFxTest {
   private CountryFlagService countryFlagService;
   @Mock
   private MapService mapService;
+  @Mock
+  private JoinGameHelper joinGameHelper;
+  @Mock
+  private ReplayService replayService;
 
   private PrivateChatTabController instance;
   private String playerName;
 
   @Before
   public void setUp() throws IOException {
-    instance = new PrivateChatTabController(audioService, chatService, countryFlagService, mapService, webViewConfigurer);
+    instance = new PrivateChatTabController(audioService, chatService, countryFlagService, mapService, webViewConfigurer, joinGameHelper, replayService);
     instance.preferencesService = preferencesService;
     instance.playerService = playerService;
     instance.notificationService = notificationService;

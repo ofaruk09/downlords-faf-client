@@ -11,7 +11,7 @@ import com.faforever.client.map.MapService;
 import com.faforever.client.map.MapServiceImpl.PreviewSize;
 import com.faforever.client.player.PlayerService;
 import com.faforever.client.remote.FafService;
-import com.faforever.client.remote.domain.GameState;
+import com.faforever.client.remote.domain.GameStatus;
 import com.faforever.client.theme.UiService;
 import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import javafx.application.Platform;
@@ -66,7 +66,7 @@ public class LiveReplayController extends AbstractViewController<Node> {
   }
 
   public void initialize() {
-    initializeGameTable(gameService.getGames().filtered(game -> game.getStatus() == GameState.PLAYING));
+    initializeGameTable(gameService.getGames().filtered(game -> game.getStatus() == GameStatus.PLAYING));
   }
 
   public void initializeGameTable(ObservableList<Game> games) {

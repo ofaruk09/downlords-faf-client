@@ -87,7 +87,6 @@ public class GameTileController implements Controller<Node> {
         game.numPlayersProperty(),
         game.maxPlayersProperty()
     ));
-    mapImageView.imageProperty().bind(createObjectBinding(() -> mapService.loadPreview(game.getMapFolderName(), PreviewSize.LARGE), game.mapFolderNameProperty()));
 
     modsLabel.textProperty().bind(createStringBinding(
         () -> Joiner.on(i18n.get("textSeparator")).join(game.getSimMods().values()),

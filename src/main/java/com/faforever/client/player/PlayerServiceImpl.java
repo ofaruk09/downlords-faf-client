@@ -8,7 +8,7 @@ import com.faforever.client.game.Game;
 import com.faforever.client.game.GameService;
 import com.faforever.client.player.event.FriendJoinedGameEvent;
 import com.faforever.client.remote.FafService;
-import com.faforever.client.remote.domain.GameState;
+import com.faforever.client.remote.domain.GameStatus;
 import com.faforever.client.remote.domain.PlayersMessage;
 import com.faforever.client.remote.domain.SocialMessage;
 import com.faforever.client.user.UserService;
@@ -135,11 +135,11 @@ public class PlayerServiceImpl implements PlayerService {
           if (game == null) {
             return;
           }
-          GameState gameState = game.getStatus();
+          GameStatus gameStatus = game.getStatus();
           if (player.getSocialStatus() == FRIEND) {
-            if (gameState == GameState.OPEN) {
+            if (gameStatus == GameStatus.OPEN) {
               eventBus.post(new FriendJoinedGameEvent(player));
-            } else if (gameState == GameState.PLAYING) {
+            } else if (gameStatus == GameStatus.PLAYING) {
 //              eventBus.post(new FriendPlaysGameEvent(player));
             }
           }

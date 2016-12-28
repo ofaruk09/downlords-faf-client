@@ -9,7 +9,7 @@ public class GameInfoMessage extends FafServerMessage {
   private Boolean passwordProtected;
   // TODO use enum
   private String visibility;
-  private GameState state;
+  private GameStatus state;
   private Integer numPlayers;
   private Map<String, List<String>> teams;
   private Map<String, Integer> featuredModVersions;
@@ -63,11 +63,11 @@ public class GameInfoMessage extends FafServerMessage {
     this.title = title;
   }
 
-  public GameState getState() {
+  public GameStatus getState() {
     return state;
   }
 
-  public void setState(GameState state) {
+  public void setState(GameStatus state) {
     this.state = state;
   }
 

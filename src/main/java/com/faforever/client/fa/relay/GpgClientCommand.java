@@ -10,7 +10,7 @@ import java.util.Map;
 public enum GpgClientCommand {
   DISCONNECTED("Disconnected"),
   CONNECTED("Connected"),
-  GAME_STATE("GameState"),
+  GAME_STATE("GameStatus"),
   GAME_OPTION("GameOption"),
   GAME_MODS("GameMods"),
   PLAYER_OPTION("PlayerOption"),

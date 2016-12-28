@@ -7,7 +7,7 @@ import com.faforever.client.map.MapServiceImpl.PreviewSize;
 import com.faforever.client.mod.FeaturedModBean;
 import com.faforever.client.mod.ModService;
 import com.faforever.client.preferences.PreferencesService;
-import com.faforever.client.remote.domain.GameState;
+import com.faforever.client.remote.domain.GameStatus;
 import com.faforever.client.theme.UiService;
 import com.faforever.client.ui.preferences.event.GameDirectoryChooseEvent;
 import com.google.common.annotations.VisibleForTesting;
@@ -59,7 +59,7 @@ public class CustomGamesController implements Controller<Node> {
   );
 
   private static final Predicate<Game> OPEN_CUSTOM_GAMES_PREDICATE = gameInfoBean ->
-      gameInfoBean.getStatus() == GameState.OPEN
+      gameInfoBean.getStatus() == GameStatus.OPEN
           && !HIDDEN_FEATURED_MODS.contains(gameInfoBean.getFeaturedMod());
   private final UiService uiService;
   private final I18n i18n;
