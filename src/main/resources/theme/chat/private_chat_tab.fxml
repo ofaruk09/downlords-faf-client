@@ -39,96 +39,89 @@
 
                         </children>
                     </GridPane>
-                    <VBox fx:id="channelTabScrollPaneVBox" alignment="TOP_RIGHT" maxHeight="1.7976931348623157E308"
+                    <VBox alignment="TOP_RIGHT" maxHeight="1.7976931348623157E308"
                           SplitPane.resizableWithParent="false">
-                        <children>
-                            <HBox alignment="CENTER_RIGHT" prefWidth="200.0" spacing="10.0">
-                                <children>
-                                    <Label fx:id="usernameLabel" minWidth="-Infinity" text="username"/>
-                                    <ImageView fx:id="userImageView" fitHeight="32.0" fitWidth="32.0"
-                                               pickOnBounds="true" preserveRatio="true"/>
-                                </children>
-                            </HBox>
-                            <HBox prefHeight="14"></HBox>
-
-                            <Label fx:id="countryLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.country">
-                                <font>
-                                    <Font size="10.0"/>
-                                </font>
-                            </Label>
-                            <HBox alignment="CENTER_RIGHT" spacing="6">
-                                <children>
-                                    <ImageView fx:id="countryImageView" fitHeight="16.0" fitWidth="16.0"
-                                               pickOnBounds="true" preserveRatio="true"/>
-                                    <Label fx:id="countryLabel" minWidth="-Infinity" text="country"/>
-                                </children>
-                            </HBox>
-                            <HBox prefHeight="14"></HBox>
-
-                            <Label fx:id="ratingLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.rating">
-                                <font>
-                                    <Font size="10.0"/>
-                                </font>
-                            </Label>
-                            <Label fx:id="ratingLabel" minWidth="-Infinity" text="rating"/>
-                            <HBox prefHeight="14"></HBox>
-
-                            <Label fx:id="gamesPlayedLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.gamesPlayed">
-                                <font>
-                                    <Font size="10.0"/>
-                                </font>
-                            </Label>
-                            <Label fx:id="gamesPlayedLabel" minWidth="-Infinity" text="games played"/>
-                            <HBox prefHeight="35"></HBox>
-
-                            <Label fx:id="inGameLabel" minWidth="-Infinity" text="isInGame?"/>
-                            <HBox prefHeight="25"></HBox>
-                            <Separator/>
-                            <HBox prefHeight="10"></HBox>
-
-                            <VBox fx:id="gamePreview" alignment="CENTER">
-                                <children>
-                                    <Label fx:id="gameTitleLabel" minWidth="-Infinity" text="game title"/>
-                                    <HBox prefHeight="5"></HBox>
-
-                                    <ImageView fx:id="mapPreview" fitWidth="64" fitHeight="64"/>
-                                    <HBox prefHeight="7"></HBox>
-
-                                    <Label fx:id="gamePlayerCountLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.game.players">
-                                        <font>
-                                            <Font size="10.0"/>
-                                        </font>
-                                    </Label>
-                                    <Label fx:id="gamePlayerCountLabel" minWidth="-Infinity" text="players"/>
-                                    <HBox prefHeight="7"></HBox>
-
-                                    <Label fx:id="featuredModLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.game.featuredMod">
-                                        <font>
-                                            <Font size="10.0"/>
-                                        </font>
-                                    </Label>
-                                    <Label fx:id="featuredModLabel" minWidth="-Infinity" text="featured mod"/>
-                                    <HBox prefHeight="7"></HBox>
-
-                                    <VBox fx:id="gameHostVBox" alignment="CENTER" visible="false" managed="false">
-                                        <Label fx:id="gameHostLabelLabel" minWidth="-Infinity" text="%chat.privateMessage.game.host">
-                                            <font>
-                                                <Font size="10.0"/>
-                                            </font>
-                                        </Label>
-                                        <Label fx:id="gameHostLabel" minWidth="-Infinity" text="games played"/>
-                                    </VBox>
-                                    <HBox prefHeight="20"></HBox>
-
-                                    <Button fx:id="joinSpectateButton" text="join/spectate" onAction="#joinSpectateGameButtonClicked"/>
-
-                                </children>
-                            </VBox>
-
-                        </children>
                         <padding>
                             <Insets left="20.0" right="20.0"/>
                         </padding>
+                        <HBox alignment="CENTER_RIGHT" prefWidth="200.0" spacing="10.0">
+                            <Label fx:id="usernameLabel" minWidth="-Infinity" text="username"/>
+                            <ImageView fx:id="userImageView" fitHeight="32.0" fitWidth="32.0"
+                                       pickOnBounds="true" preserveRatio="true"/>
+                        </HBox>
+                        <HBox prefHeight="14"/>
+
+                        <Label minWidth="-Infinity" text="%chat.privateMessage.country">
+                            <font>
+                                <Font size="10.0"/>
+                            </font>
+                        </Label>
+                        <HBox alignment="CENTER_RIGHT" spacing="6">
+                            <ImageView fx:id="countryImageView" fitHeight="16.0" fitWidth="16.0"
+                                       pickOnBounds="true" preserveRatio="true"/>
+                            <Label fx:id="countryLabel" minWidth="-Infinity" text="country"/>
+                        </HBox>
+                        <HBox prefHeight="14"/>
+
+                        <Label minWidth="-Infinity" text="%chat.privateMessage.rating">
+                            <font>
+                                <Font size="10.0"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="ratingLabel" minWidth="-Infinity" text="rating"/>
+                        <HBox prefHeight="14"/>
+
+                        <Label minWidth="-Infinity" text="%chat.privateMessage.gamesPlayed">
+                            <font>
+                                <Font size="10.0"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="gamesPlayedLabel" minWidth="-Infinity" text="games played"/>
+                        <HBox prefHeight="35"/>
+
+                        <Label fx:id="inGameLabel" minWidth="-Infinity" text="isInGame?"/>
+                        <HBox prefHeight="25"/>
+                        <Separator/>
+                        <HBox prefHeight="10"/>
+
+                        <VBox fx:id="gamePreview" alignment="CENTER">
+                            <Label fx:id="gameTitleLabel" minWidth="-Infinity" text="game title"/>
+                            <HBox prefHeight="5"/>
+
+                            <ImageView fx:id="mapPreview" fitWidth="64" fitHeight="64"/>
+                            <HBox prefHeight="7"/>
+
+                            <Label minWidth="-Infinity" text="%chat.privateMessage.game.players">
+                                <font>
+                                    <Font size="10.0"/>
+                                </font>
+                            </Label>
+                            <Label fx:id="gamePlayerCountLabel" minWidth="-Infinity" text="players"/>
+                            <HBox prefHeight="7"/>
+
+                            <Label minWidth="-Infinity" text="%chat.privateMessage.game.featuredMod">
+                                <font>
+                                    <Font size="10.0"/>
+                                </font>
+                            </Label>
+                            <Label fx:id="featuredModLabel" minWidth="-Infinity" text="featured mod"/>
+                            <HBox prefHeight="7"/>
+
+                            <VBox fx:id="gameHostVBox" alignment="CENTER" visible="false" managed="false">
+                                <Label minWidth="-Infinity" text="%chat.privateMessage.game.host">
+                                    <font>
+                                        <Font size="10.0"/>
+                                    </font>
+                                </Label>
+                                <Label fx:id="gameHostLabel" minWidth="-Infinity" text="games played"/>
+                            </VBox>
+                            <HBox prefHeight="20"/>
+
+                            <Button fx:id="joinSpectateButton" text="join/spectate"
+                                    onAction="#joinSpectateGameButtonClicked"/>
+
+                        </VBox>
+
                     </VBox>
                 </items>
             </SplitPane>

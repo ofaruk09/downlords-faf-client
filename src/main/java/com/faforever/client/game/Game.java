@@ -19,13 +19,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Game {
 
@@ -112,17 +110,17 @@ public class Game {
         teams.putAll(gameInfoMessage.getTeams());
       }
       //TODO: debug game display when starting for the first time
-      List<String> newUsers = teams.entrySet().stream().flatMap(newTeam -> {
-        return newTeam.getValue().stream();
-      }).filter(Objects::nonNull).collect(Collectors.toList());
+      List<String> newUsers = teams.entrySet().stream().flatMap(newTeam -> newTeam.getValue().stream()).filter(Objects::nonNull).collect(Collectors.toList());
       List<String> oldUsers = oldTeams.entrySet().stream().flatMap(newTeam -> {//TODO: remove test code
         return newTeam.getValue().stream();
       }).filter(Objects::nonNull).collect(Collectors.toList());
       System.err.println(gameInfoMessage.getTitle() + ":  " + oldUsers.size() + " -> " + newUsers.size());
       oldTeams.entrySet().forEach(oldTeam -> oldTeam.getValue().forEach(oldUser -> {
-        if (newUsers == null || !newUsers.contains(oldUser)) {//TODO: fix null pointers
-          playerService.getPlayerForUsername(oldUser).setGame(null);
-          System.err.println(oldUser);
+        if (!newUsers.contains(oldUser)) {
+          Player leavingPlayer = playerService.getPlayerForUsername(oldUser);
+          if (leavingPlayer != null) {
+            leavingPlayer.setGame(null);
+          }
         }
       }));
     }

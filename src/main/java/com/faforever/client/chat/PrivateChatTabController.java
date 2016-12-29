@@ -112,24 +112,26 @@ public class PrivateChatTabController extends AbstractChatTabController {
     game.setTitle("TestTitle");
     userPlayer.setGame(game);*/
     //-------------------------------------
-    CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
+    if(userPlayer != null) {
+      CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
 
-    usernameLabel.setText(username);
-    userImageView.setImage(IdenticonUtil.createIdenticon(userPlayer.getId()));
-    countryImageView.setImage(countryFlagService.loadCountryFlag(userPlayer.getCountry()));
-    countryLabel.setText(countryCode == null ? userPlayer.getCountry() : countryCode.getName());
-    loadReceiverRatingInformation(userPlayer);
-    userPlayer.globalRatingMeanProperty().addListener((observable, oldValue, newValue) -> loadReceiverRatingInformation(userPlayer));
-    gamesPlayedLabel.textProperty().bind(userPlayer.numberOfGamesProperty().asString());
-    loadPlayerGameInformation(userPlayer.getGame());
-    userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
-      loadPlayerGameInformation(newValue);
-      System.out.println("game changed " + newValue + " " + userPlayer.getGame());
-    });
+      usernameLabel.setText(username);
+      userImageView.setImage(IdenticonUtil.createIdenticon(userPlayer.getId()));
+      countryImageView.setImage(countryFlagService.loadCountryFlag(userPlayer.getCountry()));
+      countryLabel.setText(countryCode == null ? userPlayer.getCountry() : countryCode.getName());
+      loadReceiverRatingInformation(userPlayer);
+      userPlayer.globalRatingMeanProperty().addListener((observable, oldValue, newValue) -> loadReceiverRatingInformation(userPlayer));
+      gamesPlayedLabel.textProperty().bind(userPlayer.numberOfGamesProperty().asString());
+      loadPlayerGameInformation(userPlayer.getGame());
+      userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
+        loadPlayerGameInformation(newValue);
+        System.out.println("game changed " + newValue + " " + userPlayer.getGame());
+      });
+    }
   }//TODO: fix chat pane
 
   private void loadReceiverRatingInformation(Player player) {
-    ratingLabel.setText((int) (Math.round(player.getGlobalRatingMean())) + " +/- " + (int) (Math.round(player.getGlobalRatingDeviation())));
+    ratingLabel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation()));
   }
 
   private void loadPlayerGameInformation(Game game) {
