@@ -97,20 +97,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
     privateChatTabRoot.setText(username);
 
     //Load receiver information
-    //username = playerService.getCurrentPlayer().getUsername();//TODO: THIS IS FOR TESTING PURPOSES ONLY; REMOVE!
     userPlayer = playerService.getPlayerForUsername(username);
-    /*/TODO---------------------------------
-    Game game = new Game();
-    game.setHost("TestHost");
-    game.setId(1234);
-    game.setMapFolderName("10 The Pass");
-    game.setMaxPlayers(10);
-    game.setNumPlayers(7);
-    game.setStatus(GameStatus.OPEN);
-    game.setFeaturedMod("FAF Develop");
-    game.setTitle("TestTitle");
-    userPlayer.setGame(game);*/
-    //-------------------------------------
     if (userPlayer != null) {
       CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
 
@@ -127,7 +114,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
         System.out.println("game changed " + newValue + " " + userPlayer.getGame());
       });
     }
-  }//TODO: fix chat pane
+  }
 
   private void loadReceiverRatingInformation(Player player) {
     ratingLabel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation()));
