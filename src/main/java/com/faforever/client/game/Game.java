@@ -82,7 +82,7 @@ public class Game {
     status = new SimpleObjectProperty<>();
   }
 
-  public void updateFromGameInfo(GameInfoMessage gameInfoMessage, PlayerService playerService)/*TODO:outsource playerService*/ {
+  public void updateFromGameInfo(GameInfoMessage gameInfoMessage, PlayerService playerService) {
     id.set(gameInfoMessage.getUid());
     host.set(gameInfoMessage.getHost());
     title.set(StringEscapeUtils.unescapeHtml4(gameInfoMessage.getTitle()));
@@ -109,12 +109,8 @@ public class Game {
       if (gameInfoMessage.getTeams() != null) {
         teams.putAll(gameInfoMessage.getTeams());
       }
-      //TODO: debug game display when starting for the first time
+
       List<String> newUsers = teams.entrySet().stream().flatMap(newTeam -> newTeam.getValue().stream()).filter(Objects::nonNull).collect(Collectors.toList());
-      List<String> oldUsers = oldTeams.entrySet().stream().flatMap(newTeam -> {//TODO: remove test code
-        return newTeam.getValue().stream();
-      }).filter(Objects::nonNull).collect(Collectors.toList());
-      System.err.println(gameInfoMessage.getTitle() + ":  " + oldUsers.size() + " -> " + newUsers.size());
       oldTeams.entrySet().forEach(oldTeam -> oldTeam.getValue().forEach(oldUser -> {
         if (!newUsers.contains(oldUser)) {
           Player leavingPlayer = playerService.getPlayerForUsername(oldUser);

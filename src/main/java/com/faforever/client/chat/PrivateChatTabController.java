@@ -7,7 +7,6 @@ import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.map.MapService;
 import com.faforever.client.map.MapServiceImpl.PreviewSize;
 import com.faforever.client.notification.ImmediateNotification;
-import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.player.Player;
 import com.faforever.client.preferences.ChatPrefs;
@@ -112,7 +111,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
     game.setTitle("TestTitle");
     userPlayer.setGame(game);*/
     //-------------------------------------
-    if(userPlayer != null) {
+    if (userPlayer != null) {
       CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
 
       usernameLabel.setText(username);
@@ -211,6 +210,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
   }
 
   public void initialize() {
+    super.initialize();
     userOffline = false;
     chatService.addChatUsersByNameListener(change -> {
       if (change.wasRemoved()) {
