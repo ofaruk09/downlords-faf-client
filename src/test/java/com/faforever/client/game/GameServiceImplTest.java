@@ -277,8 +277,8 @@ public class GameServiceImplTest extends AbstractPlainJavaFxTest {
     GameInfoMessage gameInfoMessage2 = GameInfoMessageBuilder.create(2).defaultValues().title("Game 2").get();
     gameInfoMessageListenerCaptor.getValue().accept(gameInfoMessage2);
 
-    Game game1 = new Game(gameInfoMessage1);
-    Game game2 = new Game(gameInfoMessage2);
+    Game game1 = new Game(gameInfoMessage1, playerService);
+    Game game2 = new Game(gameInfoMessage2, playerService);
 
     assertThat(instance.getGames(), containsInAnyOrder(game1, game2));
   }

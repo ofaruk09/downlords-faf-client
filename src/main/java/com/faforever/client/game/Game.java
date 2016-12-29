@@ -1,5 +1,7 @@
 package com.faforever.client.game;
 
+import com.faforever.client.player.Player;
+import com.faforever.client.player.PlayerService;
 import com.faforever.client.remote.domain.GameInfoMessage;
 import com.faforever.client.remote.domain.GameStatus;
 import com.faforever.client.remote.domain.VictoryCondition;
@@ -17,9 +19,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import javax.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Game {
 
@@ -53,9 +59,9 @@ public class Game {
    */
   private final MapProperty<String, Integer> featuredModVersions;
 
-  public Game(GameInfoMessage gameInfoMessage) {
+  public Game(GameInfoMessage gameInfoMessage, PlayerService playerService) {
     this();
-    updateFromGameInfo(gameInfoMessage);
+    updateFromGameInfo(gameInfoMessage, playerService);
   }
 
   public Game() {
@@ -78,7 +84,7 @@ public class Game {
     status = new SimpleObjectProperty<>();
   }
 
-  public void updateFromGameInfo(GameInfoMessage gameInfoMessage) {
+  public void updateFromGameInfo(GameInfoMessage gameInfoMessage, PlayerService playerService)/*TODO:outsource playerService*/ {
     id.set(gameInfoMessage.getUid());
     host.set(gameInfoMessage.getHost());
     title.set(StringEscapeUtils.unescapeHtml4(gameInfoMessage.getTitle()));
@@ -98,10 +104,27 @@ public class Game {
     }
 
     synchronized (teams.get()) {
+      MapProperty<String, List<String>> oldTeams = new SimpleMapProperty<>(FXCollections.observableHashMap());
+      oldTeams.putAll(teams);
+
       teams.clear();
       if (gameInfoMessage.getTeams() != null) {
         teams.putAll(gameInfoMessage.getTeams());
       }
+      //TODO: debug game display when starting for the first time
+      List<String> newUsers = teams.entrySet().stream().flatMap(newTeam -> {
+        return newTeam.getValue().stream();
+      }).filter(Objects::nonNull).collect(Collectors.toList());
+      List<String> oldUsers = oldTeams.entrySet().stream().flatMap(newTeam -> {//TODO: remove test code
+        return newTeam.getValue().stream();
+      }).filter(Objects::nonNull).collect(Collectors.toList());
+      System.err.println(gameInfoMessage.getTitle() + ":  " + oldUsers.size() + " -> " + newUsers.size());
+      oldTeams.entrySet().forEach(oldTeam -> oldTeam.getValue().forEach(oldUser -> {
+        if (newUsers == null || !newUsers.contains(oldUser)) {//TODO: fix null pointers
+          playerService.getPlayerForUsername(oldUser).setGame(null);
+          System.err.println(oldUser);
+        }
+      }));
     }
 
     synchronized (featuredModVersions.get()) {

@@ -463,11 +463,11 @@ public class GameServiceImpl implements GameService {
     Integer gameId = gameInfoMessage.getUid();
     Player currentPlayer = playerService.getCurrentPlayer();
     if (!uidToGameInfoBean.containsKey(gameId)) {
-      game = new Game(gameInfoMessage);
+      game = new Game(gameInfoMessage, playerService);
       uidToGameInfoBean.put(gameId, game);
     } else {
       game = uidToGameInfoBean.get(gameId);
-      Platform.runLater(() -> game.updateFromGameInfo(gameInfoMessage));
+      Platform.runLater(() -> game.updateFromGameInfo(gameInfoMessage, playerService));
 
       if (GameStatus.CLOSED == gameInfoMessage.getState()) {
         if (currentPlayer.getGame() == game) {

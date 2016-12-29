@@ -15,6 +15,11 @@ public interface PlayerService {
   Player getPlayerForUsername(@Nullable String username);
 
   /**
+   * Returns the PlayerInfoBean for the specified id. Returns null if no such player is known.
+   */
+  Player getPlayerForId(int id);
+
+  /**
    * Gets a player for the given username. A new user is created and registered if it does not yet exist.
    */
   Player createAndGetPlayerForUsername(@NotNull String username);

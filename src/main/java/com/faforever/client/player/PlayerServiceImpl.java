@@ -30,6 +30,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -49,6 +50,7 @@ public class PlayerServiceImpl implements PlayerService {
   private final List<Integer> foeList;
   private final List<Integer> friendList;
   private final ObjectProperty<Player> currentPlayer;
+
   @Inject
   FafService fafService;
   @Inject
@@ -74,15 +76,15 @@ public class PlayerServiceImpl implements PlayerService {
 
     gameService.getGames().addListener((ListChangeListener<? super Game>) listChange -> {
       while (listChange.next()) {
-        listChange.getRemoved().forEach(this::updateGameForPlayersInGame);
+          listChange.getRemoved().forEach(this::updateGameForPlayersInGame);
 
-        if (listChange.wasUpdated()) {
-          for (int i = listChange.getFrom(); i < listChange.getTo(); i++) {
-            updateGameForPlayersInGame(listChange.getList().get(i));
+          if (listChange.wasUpdated()) {
+            for (int i = listChange.getFrom(); i < listChange.getTo(); i++) {
+              updateGameForPlayersInGame(listChange.getList().get(i));
+            }
           }
-        }
 
-        listChange.getAddedSubList().forEach(this::updateGameForPlayersInGame);
+          listChange.getAddedSubList().forEach(this::updateGameForPlayersInGame);
       }
     });
   }
@@ -132,9 +134,6 @@ public class PlayerServiceImpl implements PlayerService {
         .forEach(player -> {
           resetIdleTime(player);
           player.setGame(game);
-          if (game == null) {
-            return;
-          }
           GameStatus gameStatus = game.getStatus();
           if (player.getSocialStatus() == FRIEND) {
             if (gameStatus == GameStatus.OPEN) {
@@ -149,6 +148,11 @@ public class PlayerServiceImpl implements PlayerService {
   @Override
   public Player getPlayerForUsername(String username) {
     return playersByName.get(username);
+  }
+
+  @Override
+  public Player getPlayerForId(int id) {
+    return playersById.get(id);
   }
 
   @Override

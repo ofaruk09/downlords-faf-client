@@ -80,7 +80,6 @@ public class PrivateChatTabController extends AbstractChatTabController {
     this.webViewConfigurer = webViewConfigurer;
     this.joinGameHelper = joinGameHelper;
     this.replayService = replayService;
-    this.notificationService = notificationService;
   }
 
   public boolean isUserOffline() {
@@ -99,9 +98,9 @@ public class PrivateChatTabController extends AbstractChatTabController {
     privateChatTabRoot.setText(username);
 
     //Load receiver information
-    username = playerService.getCurrentPlayer().getUsername();//TODO: THIS IS FOR TESTING PURPOSES ONLY; REMOVE!
+    //username = playerService.getCurrentPlayer().getUsername();//TODO: THIS IS FOR TESTING PURPOSES ONLY; REMOVE!
     userPlayer = playerService.getPlayerForUsername(username);
-    //TODO---------------------------------
+    /*/TODO---------------------------------
     Game game = new Game();
     game.setHost("TestHost");
     game.setId(1234);
@@ -111,7 +110,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
     game.setStatus(GameStatus.OPEN);
     game.setFeaturedMod("FAF Develop");
     game.setTitle("TestTitle");
-    userPlayer.setGame(game);
+    userPlayer.setGame(game);*/
     //-------------------------------------
     CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
 
@@ -125,8 +124,9 @@ public class PrivateChatTabController extends AbstractChatTabController {
     loadPlayerGameInformation(userPlayer.getGame());
     userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
       loadPlayerGameInformation(newValue);
+      System.out.println("game changed " + newValue + " " + userPlayer.getGame());
     });
-  }
+  }//TODO: fix chat pane
 
   private void loadReceiverRatingInformation(Player player) {
     ratingLabel.setText((int) (Math.round(player.getGlobalRatingMean())) + " +/- " + (int) (Math.round(player.getGlobalRatingDeviation())));
@@ -170,8 +170,8 @@ public class PrivateChatTabController extends AbstractChatTabController {
       }
 
     } else {
-      gamePreview.setManaged(false);
       gamePreview.setVisible(false);
+      gamePreview.setManaged(false);
     }
   }
 
@@ -190,8 +190,6 @@ public class PrivateChatTabController extends AbstractChatTabController {
       joinSpectateButton.setText(i18n.get("game.join"));
     } else if (userGame.getStatus() == GameStatus.PLAYING) {
       joinSpectateButton.setText(i18n.get("game.spectate"));
-    } else {
-      notificationService.addNotification(new ImmediateNotification(i18n.get("keyTile"), i18n.get("keyText"), Severity.ERROR));//TODO: introduce localization
     }
   }
 
@@ -206,9 +204,8 @@ public class PrivateChatTabController extends AbstractChatTabController {
     } else if (userGame.getStatus() == GameStatus.PLAYING) {
       replayService.runLiveReplay(userGame.getId(), userPlayer.getId());
     } else {
-
+      notificationService.addNotification(new ImmediateNotification(i18n.get("chat.privateMessage.game.joinSpectateError.title"), i18n.get("chat.privateMessage.game.joinSpectateError.text"), Severity.ERROR));
     }
-
   }
 
   public void initialize() {
