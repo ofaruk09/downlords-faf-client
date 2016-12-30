@@ -14,6 +14,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.transformation.FilteredList;
@@ -44,7 +45,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-import static javafx.beans.binding.Bindings.createObjectBinding;
 import static javafx.beans.binding.Bindings.createStringBinding;
 
 @Component
@@ -203,10 +203,11 @@ public class CustomGamesController implements Controller<Node> {
 
     gameTitleLabel.textProperty().bind(game.titleProperty());
 
-    mapImageView.imageProperty().bind(createObjectBinding(
-        () -> mapService.loadPreview(game.getMapFolderName(), PreviewSize.LARGE),
-        game.mapFolderNameProperty()
-    ));
+    ChangeListener<String> mapFolderNameChangeListener = (observable, oldValue, newValue) -> {
+      CompletableFuture.supplyAsync(() -> mapService.loadPreview(newValue, PreviewSize.LARGE)).thenAccept(image -> mapImageView.setImage(image));
+    };
+    mapFolderNameChangeListener.changed(game.mapFolderNameProperty(), null, game.mapFolderNameProperty().getValue());
+    game.mapFolderNameProperty().addListener(mapFolderNameChangeListener);
 
     numberOfPlayersLabel.textProperty().bind(createStringBinding(
         () -> i18n.get("game.detail.players.format", game.getNumPlayers(), game.getMaxPlayers()),

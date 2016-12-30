@@ -8,6 +8,7 @@ import com.faforever.client.mod.ModService;
 import com.faforever.client.theme.UiService;
 import com.google.common.base.Joiner;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
@@ -21,9 +22,9 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static javafx.beans.binding.Bindings.createObjectBinding;
 import static javafx.beans.binding.Bindings.createStringBinding;
 
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -94,10 +95,11 @@ public class GameTileController implements Controller<Node> {
     ));
 
     // TODO display "unknown map" image first since loading may take a while
-    mapImageView.imageProperty().bind(createObjectBinding(
-        () -> mapService.loadPreview(game.getMapFolderName(), PreviewSize.SMALL),
-        game.mapFolderNameProperty()
-    ));
+    ChangeListener<String> mapFolderNameChangeListener = (observable, oldValue, newValue) -> {
+      CompletableFuture.supplyAsync(() -> mapService.loadPreview(newValue, PreviewSize.LARGE)).thenAccept(image -> mapImageView.setImage(image));
+    };
+    mapFolderNameChangeListener.changed(game.mapFolderNameProperty(), null, game.mapFolderNameProperty().getValue());
+    game.mapFolderNameProperty().addListener(mapFolderNameChangeListener);
 
     lockIconLabel.visibleProperty().bind(game.passwordProtectedProperty());
 

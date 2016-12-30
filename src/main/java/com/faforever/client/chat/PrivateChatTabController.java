@@ -182,7 +182,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
   }
 
   private void loadMapPreview(String mapName) {
-    CompletableFuture.runAsync(() -> mapPreview.setImage(mapService.loadPreview(mapName, PreviewSize.SMALL)));
+    CompletableFuture.supplyAsync(() -> mapService.loadPreview(mapName, PreviewSize.SMALL)).thenAccept(image -> mapPreview.setImage(image));
   }
 
   @FXML

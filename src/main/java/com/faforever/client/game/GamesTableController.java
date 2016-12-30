@@ -28,19 +28,25 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.image.Image;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Component
 public class GamesTableController implements Controller<Node> {
 
+  private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final ObjectProperty<Game> selectedGame;
   public TableView<Game> gamesTable;
   public TableColumn<Game, Image> mapPreviewColumn;
@@ -87,14 +93,21 @@ public class GamesTableController implements Controller<Node> {
     passwordProtectionColumn.setCellValueFactory(param -> param.getValue().passwordProtectedProperty());
     passwordProtectionColumn.setCellFactory(param -> passwordIndicatorColumn());
     mapPreviewColumn.setCellFactory(param -> new MapPreviewTableCell(uiService));
-    mapPreviewColumn.setCellValueFactory(param -> new ObjectBinding<Image>() {
+    mapPreviewColumn.setCellValueFactory(param -> new ObjectBinding<Image>() {//TODO: do this async
       {
         bind(param.getValue().mapFolderNameProperty());
       }
 
       @Override
       protected Image computeValue() {
-        return mapService.loadPreview(param.getValue().getMapFolderName(), PreviewSize.SMALL);
+        CompletableFuture<Image> mapPreviewImageFuture = CompletableFuture.supplyAsync(() -> mapService.loadPreview(param.getValue().getMapFolderName(), PreviewSize.SMALL));
+        Image mapPreviewImage = null;
+        try {
+          mapPreviewImage = mapPreviewImageFuture.get();
+        } catch (ExecutionException | InterruptedException e) {
+          logger.error("Could not load map preview", e);
+        }
+        return mapPreviewImage;
       }
     });
 
