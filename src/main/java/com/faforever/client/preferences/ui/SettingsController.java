@@ -235,10 +235,7 @@ public class SettingsController implements Controller<Node> {
   private void configureTimeSetting(Preferences preferences) {
     timeComboBox.setItems(FXCollections.observableArrayList(TimeInfo.getAllDisplayNames()));
     timeComboBox.setOnAction(event -> {
-
       newTimeFormatSelected(event);
-
-
     });
     timeComboBox.setDisable(false);
     timeComboBox.setFocusTraversable(true);
@@ -306,17 +303,12 @@ public class SettingsController implements Controller<Node> {
       notificationService.addNotification(new PersistentNotification(i18n.get("settings.languages.restart.title") + "\n" + i18n.get("settings.languages.restart.message"), Severity.WARN, Collections.singletonList(new Action(i18n.get("settings.languages.restart"), new ActionCallback() {
         @Override
         public void call(Event event) {
-
           Stage stage = (Stage) languageComboBox.getScene().getWindow();
           Stage mainStage = (Stage) stage.getOwner();
           mainStage.close();
         }
       }))));
-
-
     }
-
-
   }
 
   private void configureToastScreen(Preferences preferences) {
