@@ -40,7 +40,6 @@ import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -50,7 +49,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -76,20 +74,12 @@ public class UiServiceImpl implements UiService {
   private static final String METADATA_FILE_NAME = "theme.properties";
   private final Set<Scene> scenes;
   private final Set<WebView> webViews;
-
-  @Inject
-  PreferencesService preferencesService;
-  @Inject
-  ThreadPoolExecutor threadPoolExecutor;
-  @Inject
-  I18n i18n;
-  @Inject
-  CacheManager cacheManager;
-  @Inject
-  MessageSource messageSource;
-  @Inject
-  ApplicationContext applicationContext;
-
+  private PreferencesService preferencesService;
+  private ThreadPoolExecutor threadPoolExecutor;
+  private I18n i18n;
+  private CacheManager cacheManager;
+  private MessageSource messageSource;
+  private ApplicationContext applicationContext;
   private WatchService watchService;
   private ObservableMap<String, Theme> themesByFolderName;
   private Map<Theme, String> folderNamesByTheme;
@@ -98,7 +88,14 @@ public class UiServiceImpl implements UiService {
   private Path currentTempStyleSheet;
   private MessageSourceResourceBundle resources;
 
-  public UiServiceImpl() {
+  @Inject
+  public UiServiceImpl(PreferencesService preferencesService, ThreadPoolExecutor threadPoolExecutor, I18n i18n, CacheManager chacheManager, MessageSource messageSource, ApplicationContext applicationContext) {
+    this.preferencesService = preferencesService;
+    this.threadPoolExecutor = threadPoolExecutor;
+    this.i18n = i18n;
+    this.cacheManager = chacheManager;
+    this.messageSource = messageSource;
+    this.applicationContext = applicationContext;
     scenes = Collections.synchronizedSet(new HashSet<>());
     webViews = new HashSet<>();
     watchKeys = new HashMap<>();

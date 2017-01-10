@@ -18,21 +18,22 @@ import java.util.Locale;
 @Lazy
 public class FxmlLoaderImpl implements FxmlLoader {
 
-  @Inject
-  MessageSource messageSource;
-  @Inject
-  Locale locale;
-  @Inject
-  UiService uiService;
-  @Inject
-  ApplicationContext applicationContext;
-
+  private MessageSource messageSource;
+  private Locale locale;
+  private UiService uiService;
+  private ApplicationContext applicationContext;
   private I18n i18n;
   private MessageSourceResourceBundle resources;
+
   @Inject
-  public FxmlLoaderImpl(I18n i18n) {
+  public FxmlLoaderImpl(I18n i18n, MessageSource messageSource, Locale locale, UiService uiService, ApplicationContext applicationContext) {
     this.i18n = i18n;
+    this.messageSource = messageSource;
+    this.locale = locale;
+    this.uiService = uiService;
+    this.applicationContext = applicationContext;
   }
+
   @PostConstruct
   void postConstruct() {
     resources = new MessageSourceResourceBundle(messageSource, i18n.getUserSpecificLocale());
