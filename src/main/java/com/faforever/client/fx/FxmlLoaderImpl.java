@@ -1,7 +1,6 @@
 package com.faforever.client.fx;
 
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.theme.UiService;
 import javafx.fxml.FXMLLoader;
 import org.springframework.context.ApplicationContext;
@@ -27,17 +26,16 @@ public class FxmlLoaderImpl implements FxmlLoader {
   UiService uiService;
   @Inject
   ApplicationContext applicationContext;
-  @Inject
-  I18n i18n;
 
+  private I18n i18n;
   private MessageSourceResourceBundle resources;
-
+  @Inject
+  public FxmlLoaderImpl(I18n i18n) {
+    this.i18n = i18n;
+  }
   @PostConstruct
   void postConstruct() {
-
     resources = new MessageSourceResourceBundle(messageSource, i18n.getUserSpecificLocale());
-
-
   }
 
   @Override
@@ -65,8 +63,6 @@ public class FxmlLoaderImpl implements FxmlLoader {
       loader.setRoot(root);
       loader.setLocation(uiService.getThemeFileUrl(file));
       loader.setResources(resources);
-      notifyAll();
-
       loader.load();
       return loader;
     } catch (IOException e) {

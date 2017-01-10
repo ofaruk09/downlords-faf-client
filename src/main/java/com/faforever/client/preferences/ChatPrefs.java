@@ -38,7 +38,7 @@ public class ChatPrefs {
 
 
   public ChatPrefs() {
-    ukTime= new SimpleStringProperty("system");
+    ukTime = new SimpleStringProperty(TimeInfo.AUTO.getDisplayName());
     maxMessages = new SimpleIntegerProperty(500);
     zoom = new SimpleDoubleProperty(1);
     learnedAutoComplete = new SimpleBooleanProperty(false);
@@ -57,6 +57,7 @@ public class ChatPrefs {
   public void setChatColorMode(ChatColorMode chatColorMode) {
     this.chatColorMode.set(chatColorMode);
   }
+
   public String getUkTime() {
     return ukTime.get();
   }
@@ -96,15 +97,12 @@ public class ChatPrefs {
   public Double getZoom() {
     return zoom.getValue();
   }
-
-  public void setZoom(Double zoom) {
-    this.zoom.set(zoom);
-  }
-
   public void setZoom(double zoom) {
     this.zoom.set(zoom);
   }
-
+  public void setZoom(Double zoom) {
+    this.zoom.set(zoom);
+  }
   public DoubleProperty zoomProperty() {
     return zoom;
   }
@@ -161,12 +159,10 @@ public class ChatPrefs {
   public int getIdleThreshold() {
     return idleThreshold.get();
   }
-
-  public IntegerProperty idleThresholdProperty() {
-    return idleThreshold;
-  }
-
   public void setIdleThreshold(int idleThreshold) {
     this.idleThreshold.set(idleThreshold);
+  }
+  public IntegerProperty idleThresholdProperty() {
+    return idleThreshold;
   }
 }

@@ -4,8 +4,7 @@ import com.faforever.client.fx.AbstractViewController;
 import com.faforever.client.preferences.LoginPrefs;
 import com.faforever.client.preferences.PreferencesService;
 import com.google.common.base.Strings;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Worker;
 import javafx.scene.Node;
 import javafx.scene.web.WebView;
 import org.slf4j.Logger;
@@ -28,7 +27,7 @@ public class ClanController extends AbstractViewController<Node> {
   public WebView clanRoot;
   @Inject
   PreferencesService preferencesService;
-  LoginPrefs login;
+  private LoginPrefs login;
   @Value("${clanWebsite.url}")
   private String clanWebsiteUrl;
   @PostConstruct
@@ -40,9 +39,8 @@ public class ClanController extends AbstractViewController<Node> {
     if (Strings.isNullOrEmpty(clanRoot.getEngine().getLocation())) {
       clanRoot.getEngine().load(clanWebsiteUrl);
       clanRoot.getEngine().setJavaScriptEnabled(true);
-      clanRoot.getEngine().documentProperty().addListener(new ChangeListener<org.w3c.dom.Document>() {
-        @Override
-        public void changed(ObservableValue<? extends org.w3c.dom.Document> observable, org.w3c.dom.Document oldValue, org.w3c.dom.Document newValue) {
+      clanRoot.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
+        if (Worker.State.SUCCEEDED == newValue) {
           onSiteLoaded();
         }
       });
@@ -54,17 +52,17 @@ public class ClanController extends AbstractViewController<Node> {
       org.w3c.dom.Document site = clanRoot.getEngine().getDocument();
       org.w3c.dom.Element username = site.getElementById("login_form_username_input");
       if (username == null) {
-        throw new Exception("usernameField not found. Is this the main Page?");
+        logger.trace("usernameField not found. Is this the main Page?");
+      } else {
+        username.setAttribute("value", login.getUsername());
+        NodeList elemtenList = site.getElementsByTagName("input");
+        org.w3c.dom.Element passwordElement = (org.w3c.dom.Element) elemtenList.item(1);
+        passwordElement.setAttribute("value", "");
+        HTMLButtonElement button = (HTMLButtonElement) site.getElementsByTagName("button").item(0);
+
       }
-      username.setAttribute("value", login.getUsername());
-      NodeList elemtenList = site.getElementsByTagName("input");
-      org.w3c.dom.Element passwordElement = (org.w3c.dom.Element) elemtenList.item(1);
-      passwordElement.setAttribute("value", "");
-      HTMLButtonElement button = (HTMLButtonElement) site.getElementsByTagName("button").item(0);
-      //button.getForm().submit();
-      //clanRoot.getEngine().reload();
     } catch (Exception e) {
-      logger.warn(e.toString() + " consider this might be triggered also if another page then the front page is loaded");
+      logger.warn("Consider this might be triggered also if another page then the front page is loaded", e);
     }
   }
 

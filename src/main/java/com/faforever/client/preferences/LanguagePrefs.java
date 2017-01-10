@@ -3,24 +3,20 @@ package com.faforever.client.preferences;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+
 public class LanguagePrefs {
   private StringProperty language;
 
-
   public LanguagePrefs() {
-    language = new SimpleStringProperty("auto");
+    language = new SimpleStringProperty(LanguageInfo.AUTO.getLanguageCode());
   }
 
   public String getLanguage() {
     return language.get();
   }
 
-  public void setLanguage(String newLanguage) {
-    this.language.set(newLanguage);
+  public void setLanguage(String language) {
+    this.language.set(language);
   }
-  public StringProperty language() {
-    return language;
-  }
-
 
 }

@@ -1,49 +1,47 @@
 package com.faforever.client.i18n;
 
+import com.faforever.client.preferences.LanguageInfo;
 import com.faforever.client.preferences.PreferencesService;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.util.ArrayList;
+import java.lang.invoke.MethodHandles;
 import java.util.Locale;
 
+@Service
 public class I18nImpl implements I18n {
 
+  private final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private MessageSource messageSource;
+  private Locale locale;
   @Inject
-  MessageSource messageSource;
+  private PreferencesService preferencesService;
+  private Locale userSpecificLocale;
 
   @Inject
-  Locale locale;
-  @Inject
-  ArrayList<String> languageInfo;
-  @Inject
-  PreferencesService preferencesService;
-
-  Locale userSpecificLocale;
+  public I18nImpl(Locale locale, MessageSource messageSource) {
+    this.messageSource = messageSource;
+    this.locale = locale;
+  }
 
   @PostConstruct
-  public void init()
-  {
-    if(!preferencesService.getPreferences().getLang().getLanguage().equals("auto")) {
-      userSpecificLocale = new Locale(preferencesService.getPreferences().getLang().getLanguage(), getCountryFromLanguage(preferencesService.getPreferences().getLang().getLanguage()));
+  public void init() {
+    if (!preferencesService.getPreferences().getLanguage().getLanguage().equals(LanguageInfo.AUTO.getLanguageCode())) {
+      try {
+        userSpecificLocale = new Locale(preferencesService.getPreferences().getLanguage().getLanguage(), LanguageInfo.getLanuageInfoByLanguageCode(preferencesService.getPreferences().getLanguage().getLanguage()).getCountryCode());
+      } catch (Exception e) {
+        logger.error("error setting locale", e);
+      }
     }else {
       userSpecificLocale=locale;
     }
   }
   @Override
-  public Locale getUserSpecificLocale()
-  {
-    return userSpecificLocale;
-  }
-
-  private String getCountryFromLanguage(String language) {
-    for (int i=0; i!=languageInfo.size();i++)
-    {
-      if(languageInfo.get(i).equals(language))return languageInfo.get(i+1);
-
-    }
-    return"UK";
+  public Locale getUserSpecificLocale() {
+    return this.userSpecificLocale;
   }
 
   @Override

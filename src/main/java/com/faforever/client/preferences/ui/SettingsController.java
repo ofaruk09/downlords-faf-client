@@ -9,9 +9,11 @@ import com.faforever.client.notification.Action.ActionCallback;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.notification.Severity;
+import com.faforever.client.preferences.LanguageInfo;
 import com.faforever.client.preferences.NotificationsPrefs;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
+import com.faforever.client.preferences.TimeInfo;
 import com.faforever.client.preferences.ToastPosition;
 import com.faforever.client.theme.Theme;
 import com.faforever.client.theme.UiService;
@@ -24,7 +26,6 @@ import javafx.beans.value.WeakChangeListener;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -46,9 +47,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 
 import static com.faforever.client.fx.JavaFxUtil.PATH_STRING_CONVERTER;
 import static com.faforever.client.theme.UiService.DEFAULT_THEME;
@@ -56,15 +55,12 @@ import static com.faforever.client.theme.UiService.DEFAULT_THEME;
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class SettingsController implements Controller<Node> {
-
   private final UserService userService;
   private final PreferencesService preferencesService;
   private final UiService uiService;
   private final I18n i18n;
   private final EventBus eventBus;
-  private final ArrayList<String> languageInfo;
   private final NotificationService notificationService;
-  private final String[] options;
   private final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   public TextField executableDecoratorField;
   public TextField executionDirectoryField;
@@ -111,16 +107,13 @@ public class SettingsController implements Controller<Node> {
   private ChangeListener<Theme> themeChangeListener;
 
   @Inject
-  public SettingsController(UserService userService, PreferencesService preferencesService, UiService uiService, I18n i18n, EventBus eventBus, ArrayList<String> languageInfo, NotificationService notificationService) {
+  public SettingsController(UserService userService, PreferencesService preferencesService, UiService uiService, I18n i18n, EventBus eventBus, NotificationService notificationService) {
     this.userService = userService;
     this.preferencesService = preferencesService;
     this.uiService = uiService;
     this.i18n = i18n;
-
     this.eventBus = eventBus;
-    this.languageInfo = languageInfo;
     this.notificationService = notificationService;
-    options = i18n.get("settings.chat.optionsForTime").split(" ");
   }
 
   /**
@@ -240,43 +233,22 @@ public class SettingsController implements Controller<Node> {
   }
 
   private void configureTimeSetting(Preferences preferences) {
-    timeComboBox.setItems(FXCollections.observableArrayList(options));
-    timeComboBox.setOnAction(new EventHandler<ActionEvent>() {
-                               @Override
-                               public void handle(ActionEvent event) {
-                                 newTimeFormatSelected(event);
-                               }
-                             }
-    );
+    timeComboBox.setItems(FXCollections.observableArrayList(TimeInfo.getAllDisplayNames()));
+    timeComboBox.setOnAction(event -> {
+
+      newTimeFormatSelected(event);
+
+
+    });
     timeComboBox.setDisable(false);
     timeComboBox.setFocusTraversable(true);
-    int index;
-    index = getIndexNumberOfFormat(preferences.getChat().getUkTime());
-    timeComboBox.getSelectionModel().select(index);
+    timeComboBox.getSelectionModel().select(TimeInfo.getIndexByDisplayName(preferences.getChat().getUkTime()));
   }
 
-  private int getIndexNumberOfFormat(String militaryTime) {
-    switch (militaryTime) {
-      case ("system"):
-        return 0;
-      case ("yes"):
-        return 1;
-      case ("no"):
-        return 2;
-    }
-    return 0;
-  }
-
-
-  private void newTimeFormatSelected(ActionEvent event) {
-    HashMap<String, String> saveCodes = new HashMap<>();
-    saveCodes.put(options[0], "system");
-    saveCodes.put(options[1], "yes");
-    saveCodes.put(options[2], "no");
+  private void newTimeFormatSelected(Event event) {
     logger.info("newTimeFormat is " + timeComboBox.getValue().toString());
     Preferences preferences = preferencesService.getPreferences();
-    String selectedFormat = saveCodes.get(timeComboBox.getValue().toString());
-    preferences.getChat().setUkTime(selectedFormat);
+    preferences.getChat().setUkTime(timeComboBox.getValue().toString());
     preferencesService.storeInBackground();
     logger.info("saving.....Time Format");
   }
@@ -318,9 +290,9 @@ public class SettingsController implements Controller<Node> {
   }
 
   private void configureLanguageSelection(Preferences preferences) {
-    languageComboBox.setItems(FXCollections.observableArrayList(i18n.get("settings.languages").split(" ")));
-    String language = preferences.getLang().getLanguage();
-    languageComboBox.getSelectionModel().select(getIndexFromLanguage(language));
+    languageComboBox.setItems(FXCollections.observableArrayList(LanguageInfo.getAllDisplayNames()));
+    String language = preferences.getLanguage().getLanguage();
+    languageComboBox.getSelectionModel().select(LanguageInfo.getIndexByLanguageCode(language));
 
     languageComboBox.setDisable(false);
     languageComboBox.setOnAction(event -> onLanguageSelected(preferences));
@@ -328,11 +300,10 @@ public class SettingsController implements Controller<Node> {
 
   private void onLanguageSelected(Preferences preferences) {
 
-    if (languageComboBox.getValue().toString() != preferences.getLang().getLanguage()) {
-      String languageToSet = getLanguageFromLanguageName(languageComboBox.getValue().toString());
-      preferences.getLang().setLanguage(languageToSet);
+    if (languageComboBox.getValue().toString() != preferences.getLanguage().getLanguage()) {
+      preferences.getLanguage().setLanguage(LanguageInfo.getLanuageInfoByDisplayName(languageComboBox.getValue().toString()).getLanguageCode());
       preferencesService.storeInBackground();
-      notificationService.addNotification(new PersistentNotification(i18n.get("settings.languages.restart.title") + i18n.get("settings.languages.restart.message"), Severity.WARN, Collections.singletonList(new Action(i18n.get("settings.languages.restart"), new ActionCallback() {
+      notificationService.addNotification(new PersistentNotification(i18n.get("settings.languages.restart.title") + "\n" + i18n.get("settings.languages.restart.message"), Severity.WARN, Collections.singletonList(new Action(i18n.get("settings.languages.restart"), new ActionCallback() {
         @Override
         public void call(Event event) {
 
@@ -346,26 +317,6 @@ public class SettingsController implements Controller<Node> {
     }
 
 
-  }
-
-  private String getLanguageFromLanguageName(String s) {
-    int i = 0;
-    for (String st : i18n.get("settings.languages.withoutAuto").split(" ")) {
-      if (st.equals(s)) {
-        return languageInfo.get(i * 2);
-      }
-      i++;
-    }
-    return "auto";
-  }
-
-  private int getIndexFromLanguage(String language) {
-    for (int i = 0; i != languageInfo.size(); i++) {
-      if (language.equals(languageInfo.get(i))) {
-        return i / 2 + 1; //plus 1 for auto
-      }
-    }
-    return 0;
   }
 
   private void configureToastScreen(Preferences preferences) {

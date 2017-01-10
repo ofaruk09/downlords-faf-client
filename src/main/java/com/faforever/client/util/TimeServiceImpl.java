@@ -2,6 +2,7 @@ package com.faforever.client.util;
 
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.preferences.PreferencesService;
+import com.faforever.client.preferences.TimeInfo;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -72,26 +73,27 @@ public class TimeServiceImpl implements TimeService {
   @Override
   public String asDate(TemporalAccessor temporalAccessor) {
     return DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)
-        .withLocale(locale)
+        .withLocale(getCurrentTimeLocale())
         .withZone(TimeZone.getDefault().toZoneId())
         .format(temporalAccessor);
   }
 
   @Override
   public String asShortTime(Instant instant) {
-    Locale set=locale;
-    switch(preferencesService.getPreferences().getChat().getUkTime())
-    {
-      case("yes"):
-        set= new Locale("en", "UK");
-        break;
-      case ("no"):
-        set= new Locale("de", "DE");
-        break;
-    }
-    return DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(set).format(
+
+    return DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(getCurrentTimeLocale()).format(
         ZonedDateTime.ofInstant(instant, TimeZone.getDefault().toZoneId())
     );
+  }
+
+  public Locale getCurrentTimeLocale() {
+    Locale set;
+    if (TimeInfo.getTimeInfoByDisplayName(preferencesService.getPreferences().getChat().getUkTime()).equals(TimeInfo.AUTO)) {
+      set = locale;
+    } else {
+      set = TimeInfo.getTimeInfoByDisplayName(preferencesService.getPreferences().getChat().getUkTime()).getUsedLocale();
+    }
+    return set;
   }
 
   @Override

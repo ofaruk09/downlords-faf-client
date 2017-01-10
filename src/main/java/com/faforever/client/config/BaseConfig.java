@@ -1,7 +1,5 @@
 package com.faforever.client.config;
 
-import com.faforever.client.i18n.I18n;
-import com.faforever.client.i18n.I18nImpl;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -17,8 +15,8 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -56,16 +54,8 @@ public class BaseConfig {
   }
 
   @Bean
-  ArrayList<String> languageInfo(){
-    String[] x={"en","UK","de","DE","ru","RU"};
-    ArrayList<String> languageInfo=new ArrayList<String>();
-    for (String s: x)
-    {languageInfo.add(languageInfo.size(),s);}
-    return languageInfo;
-  }
-  @Bean
-  I18n i18n() {
-    return new I18nImpl();
+  List<String> languageInfo() {
+    return Arrays.asList("en", "UK", "de", "DE", "ru", "RU");
   }
 
   @Bean
