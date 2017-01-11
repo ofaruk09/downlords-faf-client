@@ -5,8 +5,6 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.ProgressBar?>
-<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
@@ -60,9 +58,7 @@
                         <ToggleButton fx:id="unitsButton" mnemonicParsing="false" onAction="#onNavigate"
                                       styleClass="main-navigation-button" text="%main.units"
                                       toggleGroup="$mainNavigation"/>
-                        <ToggleButton fx:id="clanButton" mnemonicParsing="false" onAction="#onNavigate"
-                                      styleClass="main-navigation-button" text="%main.clan"
-                                      toggleGroup="$mainNavigation"/>
+
                         <Pane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS"/>
                         <StackPane>
                             <children>
