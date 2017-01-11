@@ -15,8 +15,6 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -51,11 +49,6 @@ public class BaseConfig {
     messageSource.setBasename("i18n.messages");
     messageSource.setFallbackToSystemLocale(false);
     return messageSource;
-  }
-
-  @Bean
-  List<String> languageInfo() {
-    return Arrays.asList("en", "UK", "de", "DE", "ru", "RU");
   }
 
   @Bean
