@@ -48,12 +48,20 @@
                         </HBox>
                         <HBox prefHeight="14"/>
 
-                        <Label minWidth="-Infinity" text="%chat.privateMessage.rating">
+                        <Label minWidth="-Infinity" text="%chat.privateMessage.globalrating">
                             <font>
                                 <Font size="10.0"/>
                             </font>
                         </Label>
-                        <Label fx:id="ratingLabel" minWidth="-Infinity" text="rating"/>
+                        <Label fx:id="globalRatingLevel" minWidth="-Infinity" text="rating"/>
+                        <HBox prefHeight="14"/>
+
+                        <Label minWidth="-Infinity" text="%chat.privateMessage.leaderboardrating">
+                            <font>
+                                <Font size="10.0"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="leaderboardRatingLevel" minWidth="-Infinity" text="rating"/>
                         <HBox prefHeight="14"/>
 
                         <Label minWidth="-Infinity" text="%chat.privateMessage.gamesPlayed">

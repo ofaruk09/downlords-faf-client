@@ -54,7 +54,8 @@ public class PrivateChatTabController extends AbstractChatTabController {
   public Label usernameLabel;
   public ImageView countryImageView;
   public Label countryLabel;
-  public Label ratingLabel;
+  public Label globalRatingLevel;
+  public Label leaderboardRatingLevel;
   public Label gamesPlayedLabel;
   public Label inGameLabel;
   public ImageView mapPreview;
@@ -66,6 +67,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
   public Label featuredModLabel;
   public Button joinSpectateButton;
 
+  //user references the receiver of the private chat
   private Game userGame;
   private Player userPlayer;
   private boolean userOffline;
@@ -96,7 +98,7 @@ public class PrivateChatTabController extends AbstractChatTabController {
     privateChatTabRoot.setId(username);
     privateChatTabRoot.setText(username);
 
-    //Load receiver information
+    //Load receiver information for detail pane
     userPlayer = playerService.getPlayerForUsername(username);
     if (userPlayer != null) {
       CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
@@ -105,8 +107,14 @@ public class PrivateChatTabController extends AbstractChatTabController {
       userImageView.setImage(IdenticonUtil.createIdenticon(userPlayer.getId()));
       countryImageView.setImage(countryFlagService.loadCountryFlag(userPlayer.getCountry()));
       countryLabel.setText(countryCode == null ? userPlayer.getCountry() : countryCode.getName());
-      loadReceiverRatingInformation(userPlayer);
-      userPlayer.globalRatingMeanProperty().addListener((observable, oldValue, newValue) -> loadReceiverRatingInformation(userPlayer));
+
+      userPlayer.globalRatingMeanProperty().addListener((observable) -> loadReceiverGlobalRatingInformation(userPlayer));
+      userPlayer.globalRatingDeviationProperty().addListener((observable) -> loadReceiverGlobalRatingInformation(userPlayer));
+      userPlayer.leaderboardRatingMeanProperty().addListener((observable) -> loadReceiverLadderRatingInformation(userPlayer));
+      userPlayer.leaderboardRatingDeviationProperty().addListener((observable) -> loadReceiverLadderRatingInformation(userPlayer));
+      loadReceiverGlobalRatingInformation(userPlayer);
+      loadReceiverLadderRatingInformation(userPlayer);
+
       gamesPlayedLabel.textProperty().bind(userPlayer.numberOfGamesProperty().asString());
       loadPlayerGameInformation(userPlayer.getGame());
       userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
@@ -116,8 +124,12 @@ public class PrivateChatTabController extends AbstractChatTabController {
     }
   }
 
-  private void loadReceiverRatingInformation(Player player) {
-    ratingLabel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation()));
+  private void loadReceiverGlobalRatingInformation(Player player) {
+    globalRatingLevel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation()) + "   (" + Math.round(player.getGlobalRatingMean() - player.getGlobalRatingDeviation() * 3f) + ")");
+  }
+
+  private void loadReceiverLadderRatingInformation(Player player) {
+    leaderboardRatingLevel.setText(Math.round(player.getLeaderboardRatingMean()) + " +/- " + Math.round(player.getLeaderboardRatingDeviation()) + "   (" + Math.round(player.getLeaderboardRatingMean() - player.getLeaderboardRatingDeviation() * 3f) + ")");
   }
 
   private void loadPlayerGameInformation(Game game) {
