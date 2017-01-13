@@ -13,6 +13,7 @@ import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.remote.domain.GameStatus;
 import com.faforever.client.replay.ReplayService;
 import com.faforever.client.util.IdenticonUtil;
+import com.faforever.client.util.RatingUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.neovisionaries.i18n.CountryCode;
 import javafx.application.Platform;
@@ -125,11 +126,11 @@ public class PrivateChatTabController extends AbstractChatTabController {
   }
 
   private void loadReceiverGlobalRatingInformation(Player player) {
-    globalRatingLevel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation()) + "   (" + Math.round(player.getGlobalRatingMean() - player.getGlobalRatingDeviation() * 3f) + ")");
+    globalRatingLevel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation()) + "   (" + RatingUtil.getGlobalRating(player) + ")");
   }
 
   private void loadReceiverLadderRatingInformation(Player player) {
-    leaderboardRatingLevel.setText(Math.round(player.getLeaderboardRatingMean()) + " +/- " + Math.round(player.getLeaderboardRatingDeviation()) + "   (" + Math.round(player.getLeaderboardRatingMean() - player.getLeaderboardRatingDeviation() * 3f) + ")");
+    leaderboardRatingLevel.setText(Math.round(player.getLeaderboardRatingMean()) + " +/- " + Math.round(player.getLeaderboardRatingDeviation()) + "   (" + RatingUtil.getLeaderboardRating(player) + ")");
   }
 
   private void loadPlayerGameInformation(Game game) {

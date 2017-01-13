@@ -1,7 +1,7 @@
 package com.faforever.client.util;
 
-import com.faforever.client.player.Player;
 import com.faforever.client.domain.RatingHistoryDataPoint;
+import com.faforever.client.player.Player;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,7 +27,7 @@ public final class RatingUtil {
   }
 
   public static int getRating(float ratingMean, float ratingDeviation) {
-    return (int) (ratingMean - 3 * ratingDeviation);
+    return (int) (ratingMean - 3f * ratingDeviation);
   }
 
   public static int getLeaderboardRating(Player player) {
