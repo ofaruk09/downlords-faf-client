@@ -1,5 +1,6 @@
 package com.faforever.client.remote;
 
+import com.faforever.client.api.Clan;
 import com.faforever.client.api.CoopLeaderboardEntry;
 import com.faforever.client.api.FafApiAccessor;
 import com.faforever.client.api.FeaturedMod;
@@ -168,6 +169,11 @@ public class FafServiceImpl implements FafService {
   @Override
   public List<Mod> getMods() {
     return fafApiAccessor.getMods();
+  }
+
+  @Override
+  public List<Clan> getClans() {
+    return fafApiAccessor.getClans();
   }
 
   @Override

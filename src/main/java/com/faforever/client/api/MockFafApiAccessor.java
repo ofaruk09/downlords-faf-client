@@ -30,6 +30,11 @@ public class MockFafApiAccessor implements FafApiAccessor {
   }
 
   @Override
+  public List<Clan> getClans() {
+    return null;
+  }
+
+  @Override
   public List<PlayerEvent> getPlayerEvents(int playerId) {
     return null;
   }

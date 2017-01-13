@@ -1,5 +1,6 @@
 package com.faforever.client.remote;
 
+import com.faforever.client.api.Clan;
 import com.faforever.client.api.CoopLeaderboardEntry;
 import com.faforever.client.api.FeaturedMod;
 import com.faforever.client.api.FeaturedModFile;
@@ -75,6 +76,8 @@ public interface FafService {
   MapBean findMapByName(String mapName);
 
   List<Mod> getMods();
+
+  List<Clan> getClans();
 
   Mod getMod(String uid);
 

@@ -20,6 +20,8 @@ public interface FafApiAccessor {
 
   List<PlayerAchievement> getPlayerAchievements(int playerId);
 
+  List<Clan> getClans();
+
   @SuppressWarnings("unchecked")
   List<PlayerEvent> getPlayerEvents(int playerId);
 

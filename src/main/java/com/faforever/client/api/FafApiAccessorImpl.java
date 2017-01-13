@@ -159,6 +159,12 @@ public class FafApiAccessorImpl implements FafApiAccessor {
   }
 
   @Override
+  public List<Clan> getClans() {
+    logger.debug("Loading Clan");
+    return getMany("/clans", Clan.class);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public List<PlayerEvent> getPlayerEvents(int playerId) {
     logger.debug("Loading events for player: {}", playerId);
