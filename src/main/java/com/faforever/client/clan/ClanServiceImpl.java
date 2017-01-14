@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
@@ -24,19 +25,13 @@ public class ClanServiceImpl implements ClanService {
     this.fafService = fafService;
   }
 
-
-  @Override
-  public HashMap<String, Clan> getclansByTag() {
+  @PostConstruct
+  public void init() {
+    //how do I put that into a new Thread
     clans = fafService.getClans();
     for (Clan clan : clans) {
       clansByTag.put(clan.getClanTag(), clan);
     }
-    return clansByTag;
-  }
-
-  @Override
-  public void setClansByTag(HashMap clansByTag) {
-    this.clansByTag = clansByTag;
   }
 
   @Override

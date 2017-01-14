@@ -223,7 +223,7 @@ public class ChatUserItemController implements Controller<Node> {
     if (StringUtils.isEmpty(newValue)) {
       clanMenu.setVisible(false);
     } else {
-      CompletableFuture.supplyAsync(() -> clanService.getclansByTag()).thenAccept(clansByTag -> clanService.setClansByTag(clansByTag));
+
       clan = clanService.getClanByTag(player.getClan());
 
       if (clan != null) {
