@@ -29,6 +29,7 @@ import javafx.collections.WeakMapChangeListener;
 import javafx.css.PseudoClass;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -77,7 +78,7 @@ public class ChatUserItemController implements Controller<Node> {
   public ImageView countryImageView;
   public ImageView avatarImageView;
   public Label usernameLabel;
-  public Label clanLabel;
+  public MenuButton clanLabel;
   public Label statusLabel;
   public Text presenceStatusIndicator;
   private Player player;
@@ -117,7 +118,6 @@ public class ChatUserItemController implements Controller<Node> {
   public void initialize() {
     userActivityListener = (observable) -> Platform.runLater(this::onUserActivity);
 
-
     // TODO until server side support is available, the precense status is initially set to "unknown" until the user
     // does something
     presenceStatusIndicator.setText("\uF10C");
@@ -143,7 +143,6 @@ public class ChatUserItemController implements Controller<Node> {
     clanChangeListener = (observable, oldValue, newValue) -> Platform.runLater(() -> setClanTag(newValue));
     gameStatusChangeListener = (observable, oldValue, newValue) -> Platform.runLater(this::updateGameStatus);
     joinGameHelper.setParentNode(getRoot());
-
   }
 
   public void onContextMenuRequested(ContextMenuEvent event) {
@@ -216,15 +215,10 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   private void setClanTag(String newValue) {
-    if (player.getClan() != null) {
-      clan = clanService.getClanByTag(player.getClan());
-    }
-    if (player.getUsername().equals("axel12")) {
-      clan = clanService.getClanByTag("ATP");
-    }
     if (StringUtils.isEmpty(newValue)) {
       clanLabel.setVisible(false);
     } else {
+      clan = clanService.getClanByTag(player.getClan());
       clanLabel.setText(String.format(CLAN_TAG_FORMAT, newValue));
       clanLabel.setVisible(true);
     }
@@ -301,9 +295,6 @@ public class ChatUserItemController implements Controller<Node> {
 
   private void configureClanLabel() {
     setClanTag(player.getClan());
-    if (player.getUsername().equals("axel12")) {
-      setClanTag("ATP");
-    }
     player.clanProperty().addListener(new WeakChangeListener<>(clanChangeListener));
   }
 

@@ -16,7 +16,6 @@ import java.util.List;
 @Service
 public class ClanServiceImpl implements ClanService {
   private static final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  @Inject
   private FafService fafService;
   private List<Clan> clans;
   private HashMap<String, Clan> clansByTag;
