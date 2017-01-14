@@ -11,7 +11,7 @@ public class Clan {
   @Key("clan_id")
   private String clanId;
   @Key("clan_leader_id")
-  private String clanLeader;
+  private Integer clanLeader;
   @Key("clan_members")
   private Integer clanMembers;
   @Key("clan_name")
@@ -52,11 +52,11 @@ public class Clan {
     this.clanId = clanId;
   }
 
-  public String getClanLeader() {
+  public Integer getClanLeader() {
     return clanLeader;
   }
 
-  public void setClanLeader(String clanLeader) {
+  public void setClanLeader(Integer clanLeader) {
     this.clanLeader = clanLeader;
   }
 

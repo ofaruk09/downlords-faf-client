@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
@@ -16,22 +15,28 @@ import java.util.List;
 @Service
 public class ClanServiceImpl implements ClanService {
   private static final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private FafService fafService;
+  public FafService fafService;
   private List<Clan> clans;
-  private HashMap<String, Clan> clansByTag;
-
+  private HashMap<String, Clan> clansByTag = new HashMap<String, Clan>();
+  private Thread run;
   @Inject
   public ClanServiceImpl(FafService fafService) {
     this.fafService = fafService;
   }
 
-  @PostConstruct
-  public void init() {
-    //can anybody help me, I know how to make a new Thread, but there seems to be some Class that handles Thread, how do I use it?
+
+  @Override
+  public HashMap<String, Clan> getclansByTag() {
     clans = fafService.getClans();
     for (Clan clan : clans) {
       clansByTag.put(clan.getClanTag(), clan);
     }
+    return clansByTag;
+  }
+
+  @Override
+  public void setClansByTag(HashMap clansByTag) {
+    this.clansByTag = clansByTag;
   }
 
   @Override
