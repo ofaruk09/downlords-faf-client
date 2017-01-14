@@ -150,11 +150,12 @@ public class PlayerServiceImpl implements PlayerService {
   }
 
   @Override
+  public Boolean isOnline(String username) {
+    return playersByName.containsKey(username);
+  }
+  @Override
   public Player getPlayerForUsername(String username) {
-    if (!playersByName.containsKey(username)) {
-      logger.warn("user requested not found user: {} is he online?????", username);
-      return null;
-    }
+
     return playersByName.get(username);
   }
 

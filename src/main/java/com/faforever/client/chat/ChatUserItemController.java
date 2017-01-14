@@ -8,7 +8,6 @@ import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.game.PlayerStatus;
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.notification.Action.ActionCallback;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.TransientNotification;
 import com.faforever.client.player.Player;
@@ -28,7 +27,6 @@ import javafx.beans.value.WeakChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.WeakMapChangeListener;
 import javafx.css.PseudoClass;
-import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
@@ -161,16 +159,9 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   public void onClanTagClicked(MouseEvent mouseEvent) {
-    if (playerService.getPlayerForUsername(clan.getLeaderName()) != null) {
+    if (playerService.isOnline(clan.getLeaderName())) {
       if (mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
-        notificationService.addNotification(new TransientNotification(i18n.get("clan.writeToLeader"), i18n.get("clan.contactLeader"), new Image("http://clans.faforever.com/ui/images/SupComFA-icon.png"), new ActionCallback() {
-          @Override
-          public void call(Event event) {
-
-            eventBus.post(new InitiatePrivateChatEvent(clan.getLeaderName()));
-
-          }
-        }));
+        notificationService.addNotification(new TransientNotification(i18n.get("clan.writeToLeader"), i18n.get("clan.contactLeader"), new Image("http://clans.faforever.com/ui/images/SupComFA-icon.png"), event -> eventBus.post(new InitiatePrivateChatEvent(clan.getLeaderName()))));
       }
     }
   }
