@@ -1,13 +1,18 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.chat.avatar.AvatarService;
+import com.faforever.client.clan.Clan;
+import com.faforever.client.clan.ClanService;
 import com.faforever.client.fx.Controller;
 import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.game.PlayerStatus;
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.notification.Action.ActionCallback;
 import com.faforever.client.notification.NotificationService;
+import com.faforever.client.notification.TransientNotification;
 import com.faforever.client.player.Player;
+import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.replay.ReplayService;
@@ -23,9 +28,11 @@ import javafx.beans.value.WeakChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.WeakMapChangeListener;
 import javafx.css.PseudoClass;
+import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
@@ -83,6 +90,10 @@ public class ChatUserItemController implements Controller<Node> {
   private ChangeListener<String> clanChangeListener;
   private ChangeListener<PlayerStatus> gameStatusChangeListener;
   private InvalidationListener userActivityListener;
+  private ClanService clanService;
+  private NotificationService notificationService;
+  private Clan clan;
+  private PlayerService playerService;
 
   @Inject
   // TODO reduce dependencies, rely on eventBus instead
@@ -90,19 +101,24 @@ public class ChatUserItemController implements Controller<Node> {
                                 CountryFlagService countryFlagService, ChatService chatService,
                                 ReplayService replayService, I18n i18n, UiService uiService,
                                 NotificationService notificationService, ReportingService reportingService,
-                                JoinGameHelper joinGameHelper, EventBus eventBus) {
+                                JoinGameHelper joinGameHelper, EventBus eventBus, ClanService clanService, PlayerService playerService) {
     this.preferencesService = preferencesService;
     this.avatarService = avatarService;
+    this.playerService = playerService;
+    this.clanService = clanService;
     this.countryFlagService = countryFlagService;
     this.chatService = chatService;
     this.i18n = i18n;
     this.uiService = uiService;
     this.joinGameHelper = joinGameHelper;
     this.eventBus = eventBus;
+    this.notificationService = notificationService;
+
   }
 
   public void initialize() {
     userActivityListener = (observable) -> Platform.runLater(this::onUserActivity);
+
 
     // TODO until server side support is available, the precense status is initially set to "unknown" until the user
     // does something
@@ -129,6 +145,7 @@ public class ChatUserItemController implements Controller<Node> {
     clanChangeListener = (observable, oldValue, newValue) -> Platform.runLater(() -> setClanTag(newValue));
     gameStatusChangeListener = (observable, oldValue, newValue) -> Platform.runLater(this::updateGameStatus);
     joinGameHelper.setParentNode(getRoot());
+
   }
 
   public void onContextMenuRequested(ContextMenuEvent event) {
@@ -142,6 +159,22 @@ public class ChatUserItemController implements Controller<Node> {
       eventBus.post(new InitiatePrivateChatEvent(player.getUsername()));
     }
   }
+
+  public void onClanTagClicked(MouseEvent mouseEvent) {
+    if (playerService.getPlayerForUsername(clan.getLeaderName()) != null) {
+      if (mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
+        notificationService.addNotification(new TransientNotification(i18n.get("clan.writeToLeader"), i18n.get("clan.contactLeader"), new Image("http://clans.faforever.com/ui/images/SupComFA-icon.png"), new ActionCallback() {
+          @Override
+          public void call(Event event) {
+
+            eventBus.post(new InitiatePrivateChatEvent(clan.getLeaderName()));
+
+          }
+        }));
+      }
+    }
+  }
+
 
   private void configureColor() {
     ChatPrefs chatPrefs = preferencesService.getPreferences().getChat();
@@ -192,6 +225,12 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   private void setClanTag(String newValue) {
+    if (player.getClan() != null) {
+      clan = clanService.getClanByTag(player.getClan());
+    }
+    if (player.getUsername().equals("axel12")) {
+      clan = clanService.getClanByTag("ATP");
+    }
     if (StringUtils.isEmpty(newValue)) {
       clanLabel.setVisible(false);
     } else {
@@ -271,6 +310,9 @@ public class ChatUserItemController implements Controller<Node> {
 
   private void configureClanLabel() {
     setClanTag(player.getClan());
+    if (player.getUsername().equals("axel12")) {
+      setClanTag("ATP");
+    }
     player.clanProperty().addListener(new WeakChangeListener<>(clanChangeListener));
   }
 
@@ -292,11 +334,12 @@ public class ChatUserItemController implements Controller<Node> {
     if (player == null || player.getChatOnly() || usernameLabel.getTooltip() != null) {
       return;
     }
-
     Tooltip tooltip = new Tooltip();
     usernameLabel.setTooltip(tooltip);
-    clanLabel.setTooltip(tooltip);
+    Tooltip clanTooltip = new Tooltip();
+    clanLabel.setTooltip(clanTooltip);
 
+    clanTooltip.setText(i18n.get("clan.clanName") + "\n" + clan.getClanName() + "\n\r" + i18n.get("clan.describtion") + "\n" + clan.getDescription() + "\n\r" + i18n.get("clan.clanMembers") + "\n" + clan.getClanMembers() + "\n\r" + i18n.get("clan.leader") + "\n" + clan.getLeaderName());
     tooltip.textProperty().bind(Bindings.createStringBinding(
         () -> i18n.get("userInfo.ratingFormat", getGlobalRating(player), getLeaderboardRating(player)),
         player.leaderboardRatingMeanProperty(), player.leaderboardRatingDeviationProperty(),

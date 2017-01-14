@@ -1,6 +1,7 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.chat.avatar.AvatarService;
+import com.faforever.client.clan.ClanService;
 import com.faforever.client.fx.MouseEvents;
 import com.faforever.client.game.GameBuilder;
 import com.faforever.client.game.JoinGameHelper;
@@ -8,6 +9,7 @@ import com.faforever.client.i18n.I18n;
 import com.faforever.client.notification.NotificationService;
 import com.faforever.client.player.Player;
 import com.faforever.client.player.PlayerBuilder;
+import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.remote.domain.GameState;
@@ -65,10 +67,14 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
   private JoinGameHelper joinGameHelper;
   @Mock
   private EventBus eventBus;
+  @Mock
+  private ClanService clanService;
+  @Mock
+  private PlayerService playerService;
 
   @Before
   public void setUp() throws Exception {
-    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, replayService, i18n, uiService, notificationService, reportingService, joinGameHelper, eventBus);
+    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, replayService, i18n, uiService, notificationService, reportingService, joinGameHelper, eventBus, clanService, playerService);
 
     Preferences preferences = new Preferences();
     when(preferencesService.getPreferences()).thenReturn(preferences);

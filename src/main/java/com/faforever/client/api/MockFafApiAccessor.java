@@ -1,5 +1,6 @@
 package com.faforever.client.api;
 
+import com.faforever.client.clan.Clan;
 import com.faforever.client.coop.CoopMission;
 import com.faforever.client.io.ByteCountListener;
 import com.faforever.client.leaderboard.Ranked1v1EntryBean;

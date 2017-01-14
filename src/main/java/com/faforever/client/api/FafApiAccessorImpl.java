@@ -1,5 +1,6 @@
 package com.faforever.client.api;
 
+import com.faforever.client.clan.Clan;
 import com.faforever.client.config.CacheNames;
 import com.faforever.client.coop.CoopMission;
 import com.faforever.client.io.ByteCountListener;
@@ -161,6 +162,7 @@ public class FafApiAccessorImpl implements FafApiAccessor {
   @Override
   public List<Clan> getClans() {
     logger.debug("Loading Clan");
+    //makes some error
     return getMany("/clans", Clan.class);
   }
 

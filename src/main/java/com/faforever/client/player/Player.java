@@ -65,7 +65,7 @@ public class Player {
   private Player() {
     id = new SimpleIntegerProperty();
     username = new SimpleStringProperty();
-    clan = new SimpleStringProperty();
+    clan = new SimpleStringProperty(null);
     country = new SimpleStringProperty();
     avatarUrl = new SimpleStringProperty();
     avatarTooltip = new SimpleStringProperty();

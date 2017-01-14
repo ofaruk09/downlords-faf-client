@@ -1,4 +1,4 @@
-package com.faforever.client.api;
+package com.faforever.client.clan;
 
 import com.google.api.client.util.Key;
 

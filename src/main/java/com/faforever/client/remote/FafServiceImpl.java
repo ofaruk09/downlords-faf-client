@@ -1,6 +1,5 @@
 package com.faforever.client.remote;
 
-import com.faforever.client.api.Clan;
 import com.faforever.client.api.CoopLeaderboardEntry;
 import com.faforever.client.api.FafApiAccessor;
 import com.faforever.client.api.FeaturedMod;
@@ -9,6 +8,7 @@ import com.faforever.client.api.Ranked1v1Stats;
 import com.faforever.client.api.RatingType;
 import com.faforever.client.chat.avatar.AvatarBean;
 import com.faforever.client.chat.avatar.event.AvatarChangedEvent;
+import com.faforever.client.clan.Clan;
 import com.faforever.client.config.CacheNames;
 import com.faforever.client.coop.CoopMission;
 import com.faforever.client.domain.RatingHistoryDataPoint;
