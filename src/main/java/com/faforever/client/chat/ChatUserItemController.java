@@ -362,7 +362,7 @@ public class ChatUserItemController implements Controller<Node> {
     Runnable setClanTooltip = new Runnable() {
       @Override
       public void run() {
-        if (!clanMenu.getText().isEmpty() && clan != null) {
+        if (clanMenu.getTooltip() == null && clan != null) {
           Tooltip clanTooltip = new Tooltip();
           clanMenu.setTooltip(clanTooltip);
           if (clan.getDescription() == null) {
