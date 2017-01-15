@@ -243,7 +243,7 @@ public class ChatUserItemController implements Controller<Node> {
             MenuItem page = new MenuItem(i18n.get("clan.visitPage"));
             page.setOnAction(event -> {
               platformService.showDocument(baseClanWebsite + clan.getClanId());
-              // Could be viewed in clan section (if implemented)
+              // TODO: Could be viewed in clan section (if implemented)
             });
 
             if (playerService.isOnline(clan.getLeaderName())) {
