@@ -223,10 +223,12 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   private void setClanTag(String newValue) {
+    /* code to test as there are no clans on Test Server
     if (player.getUsername().equals("axel12")) {
       player.setClan("DEV");
       newValue = "DEV";
     }
+    */
     if (StringUtils.isEmpty(newValue)) {
       clanMenu.setVisible(false);
     } else {
