@@ -54,7 +54,7 @@ public class ClanServiceImpl implements ClanService {
       if (clanByTagFuture.get(60, TimeUnit.SECONDS).containsKey(tag)) {
         return clanByTagFuture.get().get(tag);
       } else {
-        logger.warn("Clan with tag: {} not found, Consider there are currently issues with the API (15.01.2017)", tag);
+        logger.warn("Clan with tag"+tag+" not found, Consider there are currently issues with the API (15.01.2017)");
       }
     } catch (Exception e) {
       logger.error("Error acquiring Clan Information (Check your connection): ", e);
