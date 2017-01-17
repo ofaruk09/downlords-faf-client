@@ -17,11 +17,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.nocatch.NoCatch.noCatch;
+
 @Lazy
 @Service
 public class ClanServiceImpl implements ClanService {
   private static final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  public FafService fafService;
+  private final FafService fafService;
 
   private Future<ConcurrentHashMap<String, Clan>> clanByTagFuture;
 
@@ -33,32 +35,32 @@ public class ClanServiceImpl implements ClanService {
   @PostConstruct
   public void init() {
     ExecutorService executorService = Executors.newSingleThreadExecutor();
-    Callable<List<Clan>> clanCall = () -> fafService.getClans();
+    Callable<List<Clan>> clanCall = fafService::getClans;
     Future<List<Clan>> clans = executorService.submit(clanCall);
 
-    Callable<ConcurrentHashMap<String, Clan>> byTagCall = new Callable<ConcurrentHashMap<String, Clan>>() {
-      @Override
-      public ConcurrentHashMap<String, Clan> call() throws Exception {
-        ConcurrentHashMap<String, Clan> resultMap = new ConcurrentHashMap<String, Clan>();
-        clans.get().forEach(clanItem -> resultMap.put(clanItem.getClanTag(), clanItem));
-        return resultMap;
-      }
+    Callable<ConcurrentHashMap<String, Clan>> byTagCall = () -> {
+      ConcurrentHashMap<String, Clan> resultMap = new ConcurrentHashMap<String, Clan>();
+      clans.get().forEach(clanItem -> resultMap.put(clanItem.getClanTag(), clanItem));
+      return resultMap;
     };
+
     clanByTagFuture = executorService.submit(byTagCall);
     executorService.shutdown();
   }
 
   @Override
   public Clan getClanByTag(@Nullable String tag) {
-    try {
+    return noCatch(() -> {
+
       if (clanByTagFuture.get(60, TimeUnit.SECONDS).containsKey(tag)) {
         return clanByTagFuture.get().get(tag);
       } else {
         logger.warn("Clan with tag: {} not found, Consider there are currently issues with the API (15.01.2017)", tag);
+        return null;
       }
-    } catch (Exception e) {
-      logger.error("Error acquiring Clan Information (Check your connection): ", e);
-    }
-    return null;
+    });
   }
+
 }
+
+

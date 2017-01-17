@@ -8,7 +8,7 @@ import java.util.Set;
 
 public interface PlayerService {
 
-  Boolean isOnline(String username);
+  boolean isOnline(String username);
 
   /**
    * Returns the PlayerInfoBean for the specified username. Returns null if no such player is known.

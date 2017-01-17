@@ -231,40 +231,44 @@ public class ChatUserItemController implements Controller<Node> {
 
     if (StringUtils.isEmpty(newValue)) {
       clanMenu.setVisible(false);
-    } else {
+      return;
+    }
 
 
       Runnable setMenuItems = new Runnable() {
         @Override
         public void run() {
           clan = clanService.getClanByTag(player.getClan());
+          if (clan == null) {
+            return;
+          }
 
-          if (clan != null) {
             MenuItem page = new MenuItem(i18n.get("clan.visitPage"));
             page.setOnAction(event -> {
               platformService.showDocument(baseClanWebsite + clan.getClanId());
               // TODO: Could be viewed in clan section (if implemented)
             });
 
-            if (playerService.isOnline(clan.getLeaderName())) {
+          if (!playerService.isOnline(clan.getLeaderName())) {
+            clanMenu.getItems().addAll(FXCollections.observableArrayList(page));
+            return;
+          }
+
               MenuItem toLeader = new MenuItem(i18n.get("clan.toLeader"));
-              toLeader.setOnAction(event -> {
-                onClanTagClicked();
-              });
+          toLeader.setOnAction(event -> onClanTagClicked());
 
               clanMenu.getItems().addAll(FXCollections.observableArrayList(toLeader, page));
-            } else {
-              clanMenu.getItems().addAll(FXCollections.observableArrayList(page));
-            }
-          }
+
+
         }
+
       };
       executorService.submit(setMenuItems);
 
 
       clanMenu.setText(String.format(CLAN_TAG_FORMAT, newValue));
       clanMenu.setVisible(true);
-    }
+
   }
 
   private void updateGameStatus() {
@@ -299,7 +303,7 @@ public class ChatUserItemController implements Controller<Node> {
     addChatColorModeListener();
     configureCountryImageView();
     configureAvatarImageView();
-    configureclanMenu();
+    configureClanMenu();
     configureGameStatusView();
 
     usernameLabel.setText(player.getUsername());
@@ -336,7 +340,7 @@ public class ChatUserItemController implements Controller<Node> {
     Tooltip.install(avatarImageView, avatarTooltip);
   }
 
-  private void configureclanMenu() {
+  private void configureClanMenu() {
     setClanTag(player.getClan());
     player.clanProperty().addListener(new WeakChangeListener<>(clanChangeListener));
   }
@@ -371,7 +375,7 @@ public class ChatUserItemController implements Controller<Node> {
           if (clan.getDescription() == null) {
             clan.setDescription("-");
           }
-          clanTooltip.setText(i18n.get("clan.clanName") + "\n" + clan.getClanName() + "\n\r" + i18n.get("clan.describtion") + "\n" + clan.getDescription() + "\n\r" + i18n.get("clan.clanMembers") + "\n" + clan.getClanMembers() + "\n\r" + i18n.get("clan.leader") + "\n" + clan.getLeaderName());
+          clanTooltip.setText(i18n.get("clan.clanName") + "\n" + clan.getClanName() + "\n\r" + i18n.get("clan.description") + "\n" + clan.getDescription() + "\n\r" + i18n.get("clan.clanMembers") + "\n" + clan.getClanMembers() + "\n\r" + i18n.get("clan.leader") + "\n" + clan.getLeaderName());
         }
       }
     };

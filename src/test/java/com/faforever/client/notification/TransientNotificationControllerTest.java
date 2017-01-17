@@ -47,4 +47,6 @@ public class TransientNotificationControllerTest extends AbstractPlainJavaFxTest
     Assert.assertThat(instance.getRoot(), is(instance.transientNotificationRoot));
     Assert.assertThat(instance.getRoot().getParent(), is(nullValue()));
   }
+
+
 }
