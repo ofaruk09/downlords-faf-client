@@ -10,6 +10,7 @@ import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.preferences.LanguageInfo;
+import com.faforever.client.preferences.LanguagePrefs;
 import com.faforever.client.preferences.NotificationsPrefs;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
@@ -39,6 +40,7 @@ import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.converter.NumberStringConverter;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -48,6 +50,7 @@ import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
 import java.text.NumberFormat;
 import java.util.Collections;
+import java.util.Objects;
 
 import static com.faforever.client.fx.JavaFxUtil.PATH_STRING_CONVERTER;
 import static com.faforever.client.theme.UiService.DEFAULT_THEME;
@@ -55,13 +58,13 @@ import static com.faforever.client.theme.UiService.DEFAULT_THEME;
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class SettingsController implements Controller<Node> {
+  private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final UserService userService;
   private final PreferencesService preferencesService;
   private final UiService uiService;
   private final I18n i18n;
   private final EventBus eventBus;
   private final NotificationService notificationService;
-  private final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   public TextField executableDecoratorField;
   public TextField executionDirectoryField;
   public ToggleGroup colorModeToggleGroup;
@@ -88,7 +91,7 @@ public class SettingsController implements Controller<Node> {
   public CheckBox displayRanked1v1ToastCheckBox;
   public CheckBox playPmReceivedSoundCheckBox;
   public Region settingsRoot;
-  public ComboBox<String> languageComboBox;
+  public ComboBox<LanguageInfo> languageComboBox;
   public ComboBox<Theme> themeComboBox;
   public CheckBox rememberLastTabCheckBox;
   public ToggleGroup toastPosition;
@@ -101,7 +104,7 @@ public class SettingsController implements Controller<Node> {
   public PasswordField currentPasswordField;
   public PasswordField newPasswordField;
   public PasswordField confirmPasswordField;
-  public ComboBox timeComboBox;
+  public ComboBox<TimeInfo> timeComboBox;
   public Label passwordChangeErrorLabel;
   public Label passwordChangeSuccessLabel;
   private ChangeListener<Theme> themeChangeListener;
@@ -233,21 +236,20 @@ public class SettingsController implements Controller<Node> {
   }
 
   private void configureTimeSetting(Preferences preferences) {
-    timeComboBox.setItems(FXCollections.observableArrayList(TimeInfo.getAllDisplayNames()));
-    timeComboBox.setOnAction(event -> {
-      newTimeFormatSelected(event);
-    });
+    timeComboBox.setButtonCell(new StringListCell<>(TimeInfo::getDisplayName));
+    timeComboBox.setCellFactory(param -> new StringListCell<>(TimeInfo::getDisplayName));
+    timeComboBox.setItems(FXCollections.observableArrayList(TimeInfo.values()));
+    timeComboBox.setOnAction(this::newTimeFormatSelected);
     timeComboBox.setDisable(false);
     timeComboBox.setFocusTraversable(true);
-    timeComboBox.getSelectionModel().select(TimeInfo.getIndexByDisplayName(preferences.getChat().getUkTime()));
+    timeComboBox.getSelectionModel().select(TimeInfo.valueOf(preferences.getChat().getUkTime()));
   }
 
   private void newTimeFormatSelected(Event event) {
-    logger.info("newTimeFormat is " + timeComboBox.getValue().toString());
+    logger.debug("A new time format was elected", timeComboBox.getValue());
     Preferences preferences = preferencesService.getPreferences();
-    preferences.getChat().setUkTime(timeComboBox.getValue().toString());
+    preferences.getChat().setUkTime(timeComboBox.getValue().name());
     preferencesService.storeInBackground();
-    logger.info("saving.....Time Format");
   }
 
   private StringListCell<Screen> screenListCell() {
@@ -287,28 +289,32 @@ public class SettingsController implements Controller<Node> {
   }
 
   private void configureLanguageSelection(Preferences preferences) {
-    languageComboBox.setItems(FXCollections.observableArrayList(LanguageInfo.getAllDisplayNames()));
-    String language = preferences.getLanguage().getLanguage();
-    languageComboBox.getSelectionModel().select(LanguageInfo.getIndexByLanguageCode(language));
-
+    languageComboBox.setButtonCell(new StringListCell<>(LanguageInfo::getDisplayName));
+    languageComboBox.setCellFactory(param -> new StringListCell<>(LanguageInfo::getDisplayName));
+    languageComboBox.setItems(FXCollections.observableArrayList(LanguageInfo.values()));
+    LanguageInfo languageInfo = LanguageInfo.valueOf(preferences.getLanguagePrefs().getLanguage());
+    languageComboBox.getSelectionModel().select(languageInfo.ordinal());
     languageComboBox.setDisable(false);
     languageComboBox.setOnAction(event -> onLanguageSelected(preferences));
   }
 
   private void onLanguageSelected(Preferences preferences) {
-
-    if (languageComboBox.getValue().toString() != preferences.getLanguage().getLanguage()) {
-      preferences.getLanguage().setLanguage(LanguageInfo.getLanuageInfoByDisplayName(languageComboBox.getValue().toString()).getLanguageCode());
-      preferencesService.storeInBackground();
-      notificationService.addNotification(new PersistentNotification(i18n.get("settings.languages.restart.title") + "\n" + i18n.get("settings.languages.restart.message"), Severity.WARN, Collections.singletonList(new Action(i18n.get("settings.languages.restart"), new ActionCallback() {
-        @Override
-        public void call(Event event) {
+    LanguagePrefs languagePrefs = preferences.getLanguagePrefs();
+    if (Objects.equals(languageComboBox.getValue(), LanguageInfo.valueOf(languagePrefs.getLanguage()).getDisplayName())) {
+      return;
+    }
+    logger.debug("A new language was elected", languageComboBox.getValue());
+    languagePrefs.setLanguage(languageComboBox.getValue().name());
+    preferencesService.storeInBackground();
+    notificationService.addNotification(new PersistentNotification(i18n.get("settings.languages.restart.title") + "\n" + i18n.get("settings.languages.restart.message"), Severity.WARN, Collections.singletonList(new Action(i18n.get("settings.languages.restart"), new ActionCallback() {
+      @Override
+      public void call(Event event) {
           Stage stage = (Stage) languageComboBox.getScene().getWindow();
           Stage mainStage = (Stage) stage.getOwner();
           mainStage.close();
-        }
-      }))));
-    }
+      }
+    }))));
+
   }
 
   private void configureToastScreen(Preferences preferences) {

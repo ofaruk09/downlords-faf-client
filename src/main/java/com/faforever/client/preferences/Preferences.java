@@ -73,7 +73,7 @@ public class Preferences {
     return mainWindow;
   }
 
-  public LanguagePrefs getLanguage() {
+  public LanguagePrefs getLanguagePrefs() {
     return language;
   }
 

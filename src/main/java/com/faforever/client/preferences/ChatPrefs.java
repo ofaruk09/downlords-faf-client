@@ -38,7 +38,7 @@ public class ChatPrefs {
 
 
   public ChatPrefs() {
-    ukTime = new SimpleStringProperty(TimeInfo.AUTO.getDisplayName());
+    ukTime = new SimpleStringProperty(TimeInfo.AUTO.name());
     maxMessages = new SimpleIntegerProperty(500);
     zoom = new SimpleDoubleProperty(1);
     learnedAutoComplete = new SimpleBooleanProperty(false);
@@ -97,12 +97,15 @@ public class ChatPrefs {
   public Double getZoom() {
     return zoom.getValue();
   }
-  public void setZoom(double zoom) {
-    this.zoom.set(zoom);
-  }
+
   public void setZoom(Double zoom) {
     this.zoom.set(zoom);
   }
+
+  public void setZoom(double zoom) {
+    this.zoom.set(zoom);
+  }
+
   public DoubleProperty zoomProperty() {
     return zoom;
   }

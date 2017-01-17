@@ -29,12 +29,10 @@ public class I18nImpl implements I18n {
 
   @PostConstruct
   public void init() {
-    if (!preferencesService.getPreferences().getLanguage().getLanguage().equals(LanguageInfo.AUTO.getLanguageCode())) {
-      try {
-        userSpecificLocale = new Locale(preferencesService.getPreferences().getLanguage().getLanguage(), LanguageInfo.getLanuageInfoByLanguageCode(preferencesService.getPreferences().getLanguage().getLanguage()).getCountryCode());
-      } catch (Exception e) {
-        logger.error("error setting locale", e);
-      }
+    LanguageInfo languageInfo = LanguageInfo.valueOf(preferencesService.getPreferences().getLanguagePrefs().getLanguage());
+    String languageCode = languageInfo.getLanguageCode();
+    if (!languageCode.equals(LanguageInfo.AUTO.getLanguageCode())) {
+      userSpecificLocale = new Locale(languageCode, languageInfo.getCountryCode());
     }else {
       userSpecificLocale=locale;
     }

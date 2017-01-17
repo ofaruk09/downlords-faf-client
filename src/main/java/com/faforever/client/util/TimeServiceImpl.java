@@ -1,6 +1,7 @@
 package com.faforever.client.util;
 
 import com.faforever.client.i18n.I18n;
+import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.preferences.TimeInfo;
 import org.springframework.context.annotation.Lazy;
@@ -87,13 +88,12 @@ public class TimeServiceImpl implements TimeService {
   }
 
   public Locale getCurrentTimeLocale() {
-    Locale set;
-    if (TimeInfo.getTimeInfoByDisplayName(preferencesService.getPreferences().getChat().getUkTime()).equals(TimeInfo.AUTO)) {
-      set = locale;
+    ChatPrefs chatPrefs = preferencesService.getPreferences().getChat();
+    if (chatPrefs.getUkTime().equals(TimeInfo.AUTO.name())) {
+      return locale;
     } else {
-      set = TimeInfo.getTimeInfoByDisplayName(preferencesService.getPreferences().getChat().getUkTime()).getUsedLocale();
+      return TimeInfo.valueOf(preferencesService.getPreferences().getChat().getUkTime()).getUsedLocale();
     }
-    return set;
   }
 
   @Override
