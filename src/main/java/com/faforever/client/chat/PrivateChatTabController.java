@@ -120,17 +120,16 @@ public class PrivateChatTabController extends AbstractChatTabController {
       loadPlayerGameInformation(userPlayer.getGame());
       userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
         loadPlayerGameInformation(newValue);
-        System.out.println("game changed " + newValue + " " + userPlayer.getGame());
       });
     }
   }
 
   private void loadReceiverGlobalRatingInformation(Player player) {
-    globalRatingLevel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation()) + "   (" + RatingUtil.getGlobalRating(player) + ")");
+    globalRatingLevel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation() * 3f) + "   (" + RatingUtil.getGlobalRating(player) + ")");
   }
 
   private void loadReceiverLadderRatingInformation(Player player) {
-    leaderboardRatingLevel.setText(Math.round(player.getLeaderboardRatingMean()) + " +/- " + Math.round(player.getLeaderboardRatingDeviation()) + "   (" + RatingUtil.getLeaderboardRating(player) + ")");
+    leaderboardRatingLevel.setText(Math.round(player.getLeaderboardRatingMean()) + " +/- " + Math.round(player.getLeaderboardRatingDeviation() * 3f) + "   (" + RatingUtil.getLeaderboardRating(player) + ")");
   }
 
   private void loadPlayerGameInformation(Game game) {
