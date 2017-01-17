@@ -2,21 +2,19 @@ package com.faforever.client.i18n;
 
 import com.faforever.client.preferences.LanguageInfo;
 import com.faforever.client.preferences.PreferencesService;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.lang.invoke.MethodHandles;
 import java.util.Locale;
 
 @Service
 public class I18nImpl implements I18n {
 
-  private final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private MessageSource messageSource;
   private Locale locale;
+  //Constructor injection causes circular reference exception
   @Inject
   private PreferencesService preferencesService;
   private Locale userSpecificLocale;
@@ -37,6 +35,7 @@ public class I18nImpl implements I18n {
       userSpecificLocale=locale;
     }
   }
+
   @Override
   public Locale getUserSpecificLocale() {
     return this.userSpecificLocale;
