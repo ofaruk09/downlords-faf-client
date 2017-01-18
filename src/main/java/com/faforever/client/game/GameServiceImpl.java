@@ -43,7 +43,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -99,7 +98,6 @@ public class GameServiceImpl implements GameService {
   private final GameUpdater gameUpdater;
   private final NotificationService notificationService;
   private final I18n i18n;
-  private final ApplicationContext applicationContext;
   private final ScheduledExecutorService scheduledExecutorService;
   private final PlayerService playerService;
   private final ReportingService reportingService;
@@ -117,7 +115,7 @@ public class GameServiceImpl implements GameService {
   private boolean rehostRequested;
 
   @Inject
-  public GameServiceImpl(FafService fafService, ForgedAllianceService forgedAllianceService, MapService mapService, PreferencesService preferencesService, GameUpdater gameUpdater, NotificationService notificationService, I18n i18n, ApplicationContext applicationContext, ScheduledExecutorService scheduledExecutorService, PlayerService playerService, ReportingService reportingService, ReplayService replayService, EventBus eventBus, IceAdapter iceAdapter, ModService modService, PlatformService platformService) {
+  public GameServiceImpl(FafService fafService, ForgedAllianceService forgedAllianceService, MapService mapService, PreferencesService preferencesService, GameUpdater gameUpdater, NotificationService notificationService, I18n i18n, ScheduledExecutorService scheduledExecutorService, PlayerService playerService, ReportingService reportingService, ReplayService replayService, EventBus eventBus, IceAdapter iceAdapter, ModService modService, PlatformService platformService) {
     this.fafService = fafService;
     this.forgedAllianceService = forgedAllianceService;
     this.mapService = mapService;
@@ -125,7 +123,6 @@ public class GameServiceImpl implements GameService {
     this.gameUpdater = gameUpdater;
     this.notificationService = notificationService;
     this.i18n = i18n;
-    this.applicationContext = applicationContext;
     this.scheduledExecutorService = scheduledExecutorService;
     this.playerService = playerService;
     this.reportingService = reportingService;
