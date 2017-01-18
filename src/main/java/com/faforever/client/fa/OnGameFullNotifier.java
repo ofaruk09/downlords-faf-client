@@ -31,20 +31,24 @@ import static java.lang.Thread.sleep;
 @Component
 public class OnGameFullNotifier {
 
+  private final PlatformService platformService;
+  private final ThreadPoolExecutor threadPoolExecutor;
+  private final GameService gameService;
+  private final NotificationService notificationService;
+  private final I18n i18n;
+  private final MapService mapService;
+  private final EventBus eventBus;
+
   @Inject
-  PlatformService platformService;
-  @Inject
-  ThreadPoolExecutor threadPoolExecutor;
-  @Inject
-  GameService gameService;
-  @Inject
-  NotificationService notificationService;
-  @Inject
-  I18n i18n;
-  @Inject
-  MapService mapService;
-  @Inject
-  EventBus eventBus;
+  public OnGameFullNotifier(PlatformService platformService, ThreadPoolExecutor threadPoolExecutor, GameService gameService, NotificationService notificationService, I18n i18n, MapService mapService, EventBus eventBus) {
+    this.platformService = platformService;
+    this.threadPoolExecutor = threadPoolExecutor;
+    this.gameService = gameService;
+    this.notificationService = notificationService;
+    this.i18n = i18n;
+    this.mapService = mapService;
+    this.eventBus = eventBus;
+  }
 
   @PostConstruct
   void postConstruct() {
