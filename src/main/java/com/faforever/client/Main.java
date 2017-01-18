@@ -1,7 +1,6 @@
 package com.faforever.client;
 
 import com.faforever.client.fx.JavaFxUtil;
-import com.faforever.client.fx.PlatformServiceImpl;
 import com.faforever.client.main.MainController;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.theme.UiService;
@@ -79,7 +78,7 @@ public class Main extends Application {
   private void initApplicationContext(Stage stage) {
     Stopwatch stopwatch = Stopwatch.createStarted();
 
-    context.getBeanFactory().registerSingleton("hostService", new PlatformServiceImpl(getHostServices()));
+    context.getBeanFactory().registerSingleton("hostServices", getHostServices());
     context.getBeanFactory().registerSingleton("stage", stage);
     context.register(Main.class);
     context.registerShutdownHook();
