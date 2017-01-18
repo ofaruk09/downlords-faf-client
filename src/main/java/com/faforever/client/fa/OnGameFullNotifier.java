@@ -12,7 +12,6 @@ import com.faforever.client.notification.TransientNotification;
 import com.faforever.client.util.ProgrammingError;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -47,9 +46,6 @@ public class OnGameFullNotifier {
   @Inject
   EventBus eventBus;
 
-  @Value("${forgedAlliance.windowTitle}")
-  String faWindowTitle;
-
   @PostConstruct
   void postConstruct() {
     eventBus.register(this);
@@ -58,23 +54,23 @@ public class OnGameFullNotifier {
   @Subscribe
   public void onGameFull(GameFullEvent event) {
     threadPoolExecutor.submit(() -> {
-      platformService.startFlashingWindow(faWindowTitle);
-      while (gameService.isGameRunning() && !faWindowTitle.equals(platformService.getForegroundWindowTitle())) {
+      platformService.startFlashingGameWindow();
+      while (gameService.isGameRunning() && !platformService.isGameWindowFocused()) {
         noCatch(() -> sleep(500));
       }
-      platformService.stopFlashingWindow(faWindowTitle);
+      platformService.stopFlashingGameWindow();
     });
 
     Game currentGame = gameService.getCurrentGame();
     if (currentGame == null) {
       throw new ProgrammingError("Got a GameFull notification but player is not in a preferences");
     }
-    if (faWindowTitle.equals(platformService.getForegroundWindowTitle())) {
+    if (platformService.isGameWindowFocused()) {
       return;
     }
 
     notificationService.addNotification(new TransientNotification(i18n.get("game.full"), i18n.get("game.full.action"),
         mapService.loadPreview(currentGame.getMapFolderName(), PreviewSize.SMALL),
-        v -> platformService.showWindow(faWindowTitle)));
+        v -> platformService.focusGameWindow()));
   }
 }

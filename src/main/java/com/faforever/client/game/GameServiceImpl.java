@@ -5,6 +5,7 @@ import com.faforever.client.fa.RatingMode;
 import com.faforever.client.fa.relay.event.RehostRequestEvent;
 import com.faforever.client.fa.relay.ice.IceAdapter;
 import com.faforever.client.fx.JavaFxUtil;
+import com.faforever.client.fx.PlatformService;
 import com.faforever.client.i18n.I18n;
 import com.faforever.client.map.MapService;
 import com.faforever.client.mod.FeaturedModBean;
@@ -121,6 +122,8 @@ public class GameServiceImpl implements GameService {
   IceAdapter iceAdapter;
   @Inject
   ModService modService;
+  @Inject
+  PlatformService platformService;
 
   @VisibleForTesting
   RatingMode ratingMode;
@@ -492,6 +495,12 @@ public class GameServiceImpl implements GameService {
         currentGame.set(game);
       }
     }
+
+    game.statusProperty().addListener((observable, oldValue, newValue) -> {
+      if (oldValue == GameState.OPEN && newValue == GameState.PLAYING && game.getTeams().values().stream().anyMatch(team -> team.contains(currentPlayer.getUsername())) && !platformService.isGameWindowFocused()) {
+        platformService.focusGameWindow();
+      }
+    });
   }
 
   private void removeGame(GameInfoMessage gameInfoMessage) {
