@@ -3,7 +3,9 @@ package com.faforever.client.chat;
 import com.faforever.client.chat.avatar.AvatarService;
 import com.faforever.client.clan.Clan;
 import com.faforever.client.clan.ClanService;
+import com.faforever.client.clan.ClanTooltipController;
 import com.faforever.client.fx.Controller;
+import com.faforever.client.fx.FxmlLoader;
 import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.fx.PlatformService;
 import com.faforever.client.game.JoinGameHelper;
@@ -98,16 +100,19 @@ public class ChatUserItemController implements Controller<Node> {
   private PlatformService platformService;
   private String baseClanWebsite;
   private ExecutorService executorService = Executors.newFixedThreadPool(2);
+  private FxmlLoader fxmlLoader;
+
 
   @Inject
   // TODO reduce dependencies, rely on eventBus instead
   public ChatUserItemController(PreferencesService preferencesService, AvatarService avatarService,
                                 CountryFlagService countryFlagService, ChatService chatService,
                                 ReplayService replayService, I18n i18n, UiService uiService,
-                                ReportingService reportingService,
+                                ReportingService reportingService, FxmlLoader fxmlLoader,
                                 JoinGameHelper joinGameHelper, EventBus eventBus, ClanService clanService,
                                 PlayerService playerService, PlatformService platformService,
                                 @Value("${clan.clanWebpagesBaseUrl}") String baseClanWebsite) {
+    this.fxmlLoader = fxmlLoader;
     this.preferencesService = preferencesService;
     this.avatarService = avatarService;
     this.playerService = playerService;
@@ -224,39 +229,35 @@ public class ChatUserItemController implements Controller<Node> {
 
   private void setClanTag(String newValue) {
     // code to test can be inserted here set new Value to some existing clanTag and the players clan...player.setClan("TAG")
-   
+
     if (StringUtils.isEmpty(newValue)) {
       clanMenu.setVisible(false);
       return;
     }
 
 
-      Runnable setMenuItems = new Runnable() {
-        @Override
-        public void run() {
-          clan = clanService.getClanByTag(player.getClan());
-          if (clan == null) {
-            return;
-          }
+    Runnable setMenuItems = () -> {
+      clan = clanService.getClanByTag(player.getClan());
+      if (clan == null) {
+        return;
+      }
 
-            MenuItem page = new MenuItem(i18n.get("clan.visitPage"));
-            page.setOnAction(event -> {
-              platformService.showDocument(baseClanWebsite + clan.getClanId());
-              // TODO: Could be viewed in clan section (if implemented)
-            });
+      MenuItem page = new MenuItem(i18n.get("clan.visitPage"));
+      page.setOnAction(event -> {
+        platformService.showDocument(baseClanWebsite + clan.getClanId());
+        // TODO: Could be viewed in clan section (if implemented)
+      });
 
-          if (!playerService.isOnline(clan.getLeaderName())) {
-            clanMenu.getItems().addAll(FXCollections.observableArrayList(page));
-            return;
-          }
+      if (!playerService.isOnline(clan.getLeaderName())) {
+        clanMenu.getItems().addAll(FXCollections.observableArrayList(page));
+        return;
+      }
 
-              MenuItem toLeader = new MenuItem(i18n.get("clan.toLeader"));
-          toLeader.setOnAction(event -> onClanTagClicked());
+      MenuItem toLeader = new MenuItem(i18n.get("clan.toLeader"));
+      toLeader.setOnAction(event -> onClanTagClicked());
 
-              clanMenu.getItems().addAll(FXCollections.observableArrayList(toLeader, page));
+      clanMenu.getItems().addAll(FXCollections.observableArrayList(toLeader, page));
 
-
-        }
 
       };
       executorService.submit(setMenuItems);
@@ -361,30 +362,28 @@ public class ChatUserItemController implements Controller<Node> {
     }
     Tooltip tooltip = new Tooltip();
     usernameLabel.setTooltip(tooltip);
-
-    Runnable setClanTooltip = new Runnable() {
-      @Override
-      public void run() {
-        if (clanMenu.getTooltip() == null && clan != null) {
-          Tooltip clanTooltip = new Tooltip();
-          clanMenu.setTooltip(clanTooltip);
-          if (clan.getDescription() == null) {
-            clan.setDescription("-");
-          }
-          clanTooltip.setText(i18n.get("clan.clanName") + "\n" + clan.getClanName() + "\n\r" + i18n.get("clan.description") + "\n" + clan.getDescription() + "\n\r" + i18n.get("clan.clanMembers") + "\n" + clan.getClanMembers() + "\n\r" + i18n.get("clan.leader") + "\n" + clan.getLeaderName());
-        }
-      }
-    };
-
-    executorService.submit(setClanTooltip);
-    executorService.shutdown();
-
-
     tooltip.textProperty().bind(Bindings.createStringBinding(
         () -> i18n.get("userInfo.ratingFormat", getGlobalRating(player), getLeaderboardRating(player)),
         player.leaderboardRatingMeanProperty(), player.leaderboardRatingDeviationProperty(),
         player.globalRatingMeanProperty(), player.globalRatingDeviationProperty()
     ));
+
+    Runnable setClanTooltip = () -> {
+      clan = clanService.getClanByTag(player.getClan());
+      if (clanMenu.getTooltip() == null && clan != null) {
+        Tooltip clanTooltip = new Tooltip();
+        clanMenu.setTooltip(clanTooltip);
+        if (clan.getDescription() == null) {
+          clan.setDescription("-");
+        }
+        ClanTooltipController clanTooltipController = fxmlLoader.loadAndGetController("theme/chat/clan_tooltip.fxml");
+        clanTooltipController.setClan(clan);
+        clanTooltip.setMaxHeight(clanTooltipController.getRoot().getHeight());
+        clanTooltip.setGraphic(clanTooltipController.getRoot());
+      }
+    };
+    executorService.submit(setClanTooltip);
+    executorService.shutdown();
   }
 
   void setColorsAllowedInPane(boolean colorsAllowedInPane) {

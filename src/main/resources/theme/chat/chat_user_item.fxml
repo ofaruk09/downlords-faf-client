@@ -25,7 +25,7 @@
        <ImageView fx:id="avatarImageView" fitHeight="20.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true"/>
        <ImageView fx:id="countryImageView" fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="1" GridPane.valignment="CENTER" />
        <MenuButton fx:id="clanMenu" minWidth="-Infinity" styleClass="chat-user-item-clan" GridPane.columnIndex="2"
-                   onMouseClicked="#onClanTagClicked" onMouseEntered="#onMouseEnterUsername"/>
+                   onMouseEntered="#onMouseEnterUsername"/>
        <Label fx:id="usernameLabel" maxWidth="1.7976931348623157E308" minWidth="50.0"
               onMouseEntered="#onMouseEnterUsername" styleClass="chat-user-item-username" text="&lt;Username&gt;"
               GridPane.columnIndex="3" GridPane.valignment="CENTER"/>
