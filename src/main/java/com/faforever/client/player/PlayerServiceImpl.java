@@ -151,6 +151,7 @@ public class PlayerServiceImpl implements PlayerService {
 
   @Override
   public boolean isOnline(String username) {
+    //attention if called while loading
     return playersByName.containsKey(username);
   }
 

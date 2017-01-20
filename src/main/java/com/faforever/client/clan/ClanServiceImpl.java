@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.lang.invoke.MethodHandles;
@@ -49,7 +48,18 @@ public class ClanServiceImpl implements ClanService {
   }
 
   @Override
-  public Clan getClanByTag(@Nullable String tag) {
+  public Clan getClanByTag(String tag) {
+    /* example Clan
+    if(tag.equals("DEV"))
+    {
+      Clan clan=new Clan();
+      clan.setClanMembers(2);
+      clan.setDescription("some des");
+      clan.setClanName("Developers");
+      clan.setLeaderName("Com");
+      return clan;
+    }
+    */
     return noCatch(() -> {
 
       if (clanByTagFuture.get(60, TimeUnit.SECONDS).containsKey(tag)) {

@@ -3,6 +3,7 @@ package com.faforever.client.chat;
 import com.faforever.client.chat.avatar.AvatarService;
 import com.faforever.client.clan.ClanService;
 import com.faforever.client.fx.MouseEvents;
+import com.faforever.client.fx.PlatformService;
 import com.faforever.client.game.GameBuilder;
 import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.i18n.I18n;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.when;
 
 public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
 
+  private static final String baseClanWebsite = "http://clans.faforever.com/clan_";
   private ChatUserItemController instance;
   @Mock
   private AvatarService avatarService;
@@ -71,10 +73,12 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
   private ClanService clanService;
   @Mock
   private PlayerService playerService;
+  @Mock
+  private PlatformService platformService;
 
   @Before
   public void setUp() throws Exception {
-    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, replayService, i18n, uiService, notificationService, reportingService, joinGameHelper, eventBus, clanService, playerService);
+    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, replayService, i18n, uiService, joinGameHelper, eventBus, clanService, playerService, platformService, baseClanWebsite);
 
     Preferences preferences = new Preferences();
     when(preferencesService.getPreferences()).thenReturn(preferences);
@@ -96,7 +100,7 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
   public void testSetPlayer() throws Exception {
     instance.setPlayer(PlayerBuilder.create("junit").defaultValues().get());
 
-    assertThat(instance.clanLabel.getText(), is("[e]"));
+    assertThat(instance.clanMenu.getText(), is("[e]"));
     assertThat(instance.countryImageView.isVisible(), is(true));
     verify(countryFlagService).loadCountryFlag("US");
   }

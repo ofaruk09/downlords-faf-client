@@ -5,7 +5,6 @@ import com.faforever.client.clan.Clan;
 import com.faforever.client.clan.ClanService;
 import com.faforever.client.clan.ClanTooltipController;
 import com.faforever.client.fx.Controller;
-import com.faforever.client.fx.FxmlLoader;
 import com.faforever.client.fx.JavaFxUtil;
 import com.faforever.client.fx.PlatformService;
 import com.faforever.client.game.JoinGameHelper;
@@ -16,7 +15,6 @@ import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.ChatPrefs;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.replay.ReplayService;
-import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.theme.UiService;
 import com.google.common.eventbus.EventBus;
 import javafx.application.Platform;
@@ -30,6 +28,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.WeakMapChangeListener;
 import javafx.css.PseudoClass;
 import javafx.scene.Node;
+import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -39,6 +38,7 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.PopupWindow;
@@ -52,8 +52,6 @@ import org.springframework.util.StringUtils;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.faforever.client.chat.ChatColorMode.CUSTOM;
 import static com.faforever.client.chat.SocialStatus.SELF;
@@ -86,6 +84,7 @@ public class ChatUserItemController implements Controller<Node> {
   public MenuButton clanMenu;
   public Label statusLabel;
   public Text presenceStatusIndicator;
+  public Label clanLabel;
   private Player player;
   private boolean colorsAllowedInPane;
   private ChangeListener<ChatColorMode> colorModeChangeListener;
@@ -99,8 +98,15 @@ public class ChatUserItemController implements Controller<Node> {
   private PlayerService playerService;
   private PlatformService platformService;
   private String baseClanWebsite;
-  private ExecutorService executorService = Executors.newFixedThreadPool(2);
-  private FxmlLoader fxmlLoader;
+  private boolean closedByClick = false;
+  private InvalidationListener closingListener = observable -> {
+    if (clanMenu.isShowing() || closedByClick) {
+      closedByClick = false;
+      return;
+    }
+    deflate(clanMenu);
+    inflate(clanLabel);
+  };
 
 
   @Inject
@@ -108,11 +114,10 @@ public class ChatUserItemController implements Controller<Node> {
   public ChatUserItemController(PreferencesService preferencesService, AvatarService avatarService,
                                 CountryFlagService countryFlagService, ChatService chatService,
                                 ReplayService replayService, I18n i18n, UiService uiService,
-                                ReportingService reportingService, FxmlLoader fxmlLoader,
                                 JoinGameHelper joinGameHelper, EventBus eventBus, ClanService clanService,
                                 PlayerService playerService, PlatformService platformService,
                                 @Value("${clan.clanWebpagesBaseUrl}") String baseClanWebsite) {
-    this.fxmlLoader = fxmlLoader;
+
     this.preferencesService = preferencesService;
     this.avatarService = avatarService;
     this.playerService = playerService;
@@ -170,7 +175,7 @@ public class ChatUserItemController implements Controller<Node> {
     }
   }
 
-  public void onClanTagClicked() {
+  public void onClanLeaderRequested() {
     if (clan != null) {
       if (playerService.isOnline(clan.getLeaderName())) {
         eventBus.post(new InitiatePrivateChatEvent(clan.getLeaderName()));
@@ -229,42 +234,24 @@ public class ChatUserItemController implements Controller<Node> {
 
   private void setClanTag(String newValue) {
     // code to test can be inserted here set new Value to some existing clanTag and the players clan...player.setClan("TAG")
-
     if (StringUtils.isEmpty(newValue)) {
-      clanMenu.setVisible(false);
+      clanLabel.setVisible(false);
       return;
     }
-
-
-    Runnable setMenuItems = () -> {
-      clan = clanService.getClanByTag(player.getClan());
-      if (clan == null) {
+    clanMenu.showingProperty().addListener(closingListener);
+    clanMenu.setOnMousePressed(event -> {
+      event.consume();
+      if (clanMenu.isShowing()) {
+        closedByClick = true;
+        clanMenu.hide();
         return;
       }
+      clanMenu.show();
+    });
+    clanLabel.setVisible(true);
+    clanMenu.setText(String.format(CLAN_TAG_FORMAT, newValue));
+    clanLabel.setText(String.format(CLAN_TAG_FORMAT, newValue));
 
-      MenuItem page = new MenuItem(i18n.get("clan.visitPage"));
-      page.setOnAction(event -> {
-        platformService.showDocument(baseClanWebsite + clan.getClanId());
-        // TODO: Could be viewed in clan section (if implemented)
-      });
-
-      if (!playerService.isOnline(clan.getLeaderName())) {
-        clanMenu.getItems().addAll(FXCollections.observableArrayList(page));
-        return;
-      }
-
-      MenuItem toLeader = new MenuItem(i18n.get("clan.toLeader"));
-      toLeader.setOnAction(event -> onClanTagClicked());
-
-      clanMenu.getItems().addAll(FXCollections.observableArrayList(toLeader, page));
-
-
-      };
-      executorService.submit(setMenuItems);
-
-
-      clanMenu.setText(String.format(CLAN_TAG_FORMAT, newValue));
-      clanMenu.setVisible(true);
 
   }
 
@@ -338,6 +325,7 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   private void configureClanMenu() {
+    //code to test as api is bugged: if(player.getUsername().equals("axel12"))player.setClan("DEV");
     setClanTag(player.getClan());
     player.clanProperty().addListener(new WeakChangeListener<>(clanChangeListener));
   }
@@ -368,22 +356,36 @@ public class ChatUserItemController implements Controller<Node> {
         player.globalRatingMeanProperty(), player.globalRatingDeviationProperty()
     ));
 
-    Runnable setClanTooltip = () -> {
-      clan = clanService.getClanByTag(player.getClan());
-      if (clanMenu.getTooltip() == null && clan != null) {
+    CompletableFuture<Clan> clanCompletableFutureForTooltip = CompletableFuture.supplyAsync(() -> clanService.getClanByTag(player.getClan()));
+    clanCompletableFutureForTooltip.thenAccept(clan1 -> {
+      clan = clan1;
+      if (clanMenu.getTooltip() != null || clan == null) {
+        return;
+      }
         Tooltip clanTooltip = new Tooltip();
         clanMenu.setTooltip(clanTooltip);
         if (clan.getDescription() == null) {
           clan.setDescription("-");
         }
-        ClanTooltipController clanTooltipController = fxmlLoader.loadAndGetController("theme/chat/clan_tooltip.fxml");
+      ClanTooltipController clanTooltipController = uiService.loadFxml("theme/chat/clan_tooltip.fxml");
         clanTooltipController.setClan(clan);
         clanTooltip.setMaxHeight(clanTooltipController.getRoot().getHeight());
         clanTooltip.setGraphic(clanTooltipController.getRoot());
+
+      MenuItem page = new MenuItem(i18n.get("clan.visitPage"));
+      page.setOnAction(event -> {
+        platformService.showDocument(baseClanWebsite + clan.getClanId());
+        // TODO: Could be viewed in clan section (if implemented)
+      });
+      if (!playerService.isOnline(clan.getLeaderName())) {
+        clanMenu.getItems().addAll(FXCollections.observableArrayList(page));
+        return;
       }
-    };
-    executorService.submit(setClanTooltip);
-    executorService.shutdown();
+      MenuItem toLeader = new MenuItem(i18n.get("clan.toLeader"));
+      toLeader.setOnAction(event -> onClanLeaderRequested());
+      clanMenu.getItems().addAll(FXCollections.observableArrayList(toLeader, page));
+    });
+
   }
 
   void setColorsAllowedInPane(boolean colorsAllowedInPane) {
@@ -424,4 +426,34 @@ public class ChatUserItemController implements Controller<Node> {
     presenceStatusIndicator.setText("\uF111");
     updatePresenceStatusIndicator();
   }
+
+  public void onMouseEnterTag(MouseEvent mouseEvent) {
+    onMouseEnterUsername();
+    inflate(clanMenu);
+    deflate(clanLabel);
+
+  }
+
+  public void onMouseExitedTag(MouseEvent mouseEvent) {
+    if (clanMenu.isShowing()) {
+      return;
+    }
+    deflate(clanMenu);
+    inflate(clanLabel);
+  }
+
+  public void inflate(Control control) {
+    control.setMinWidth(Region.USE_PREF_SIZE);
+    control.setMaxHeight(Region.USE_PREF_SIZE);
+    control.setPrefWidth(Region.USE_COMPUTED_SIZE);
+    control.setVisible(true);
+  }
+
+  private void deflate(Control control) {
+    control.setMinWidth(0);
+    control.setMaxHeight(0);
+    control.setPrefWidth(0);
+    control.setVisible(false);
+  }
+
 }
