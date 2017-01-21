@@ -23,13 +23,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableMap;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +44,6 @@ import static com.faforever.client.chat.SocialStatus.SELF;
 @Service
 public class PlayerServiceImpl implements PlayerService {
 
-  private static final org.slf4j.Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final ObservableMap<String, Player> playersByName;
   private final ObservableMap<Integer, Player> playersById;
   private final List<Integer> foeList;

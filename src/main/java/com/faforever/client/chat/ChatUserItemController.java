@@ -99,7 +99,6 @@ public class ChatUserItemController implements Controller<Node> {
   private PlatformService platformService;
   private String baseClanWebsite;
   private boolean closedByClick = false;
-  private InvalidationListener closingClanMenuListener;
 
 
   @Inject
@@ -140,7 +139,7 @@ public class ChatUserItemController implements Controller<Node> {
     statusLabel.managedProperty().bind(statusLabel.visibleProperty());
     statusLabel.visibleProperty().bind(statusLabel.textProperty().isNotEmpty());
 
-    closingClanMenuListener = observable -> {
+    InvalidationListener closingClanMenuListener = observable -> {
       if (clanMenu.isShowing() || closedByClick) {
         closedByClick = false;
         return;
