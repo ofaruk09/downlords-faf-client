@@ -161,7 +161,7 @@ public class FafApiAccessorImpl implements FafApiAccessor {
 
   @Override
   public List<Clan> getClans() {
-    logger.debug("Loading Clan");
+    logger.debug("Loading Clans");
     return getMany("/clans", Clan.class);
   }
 

@@ -99,14 +99,7 @@ public class ChatUserItemController implements Controller<Node> {
   private PlatformService platformService;
   private String baseClanWebsite;
   private boolean closedByClick = false;
-  private InvalidationListener closingListener = observable -> {
-    if (clanMenu.isShowing() || closedByClick) {
-      closedByClick = false;
-      return;
-    }
-    deflate(clanMenu);
-    inflate(clanLabel);
-  };
+  private InvalidationListener closingClanMenuListener;
 
 
   @Inject
@@ -147,6 +140,16 @@ public class ChatUserItemController implements Controller<Node> {
     statusLabel.managedProperty().bind(statusLabel.visibleProperty());
     statusLabel.visibleProperty().bind(statusLabel.textProperty().isNotEmpty());
 
+    closingClanMenuListener = observable -> {
+      if (clanMenu.isShowing() || closedByClick) {
+        closedByClick = false;
+        return;
+      }
+      deflate(clanMenu);
+      inflate(clanLabel);
+    };
+    clanMenu.showingProperty().addListener(closingClanMenuListener);
+
     ChatPrefs chatPrefs = preferencesService.getPreferences().getChat();
 
     colorModeChangeListener = (observable, oldValue, newValue) -> configureColor();
@@ -176,10 +179,8 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   public void onClanLeaderRequested() {
-    if (clan != null) {
-      if (playerService.isOnline(clan.getLeaderName())) {
-        eventBus.post(new InitiatePrivateChatEvent(clan.getLeaderName()));
-      }
+    if (clan != null || playerService.isOnline(clan.getLeaderName())) {
+      eventBus.post(new InitiatePrivateChatEvent(clan.getLeaderName()));
     }
   }
 
@@ -238,7 +239,10 @@ public class ChatUserItemController implements Controller<Node> {
       clanLabel.setVisible(false);
       return;
     }
-    clanMenu.showingProperty().addListener(closingListener);
+    if (usernameLabel.getTooltip() != null || clanMenu.getTooltip() != null) {
+      usernameLabel.setTooltip(null);
+      clanMenu.setTooltip(null);
+    }
     clanMenu.setOnMousePressed(event -> {
       event.consume();
       if (clanMenu.isShowing()) {
@@ -359,7 +363,7 @@ public class ChatUserItemController implements Controller<Node> {
     CompletableFuture<Clan> clanCompletableFutureForTooltip = CompletableFuture.supplyAsync(() -> clanService.getClanByTag(player.getClan()));
     clanCompletableFutureForTooltip.thenAccept(clan1 -> {
       clan = clan1;
-      if (clanMenu.getTooltip() != null || clan == null) {
+      if (clanMenu.getTooltip() != null || clan == null || player.getClan().isEmpty()) {
         return;
       }
         Tooltip clanTooltip = new Tooltip();
@@ -427,14 +431,14 @@ public class ChatUserItemController implements Controller<Node> {
     updatePresenceStatusIndicator();
   }
 
-  public void onMouseEnterTag(MouseEvent mouseEvent) {
+  public void onMouseEnterTag() {
     onMouseEnterUsername();
     inflate(clanMenu);
     deflate(clanLabel);
 
   }
 
-  public void onMouseExitedTag(MouseEvent mouseEvent) {
+  public void onMouseExitedTag() {
     if (clanMenu.isShowing()) {
       return;
     }
@@ -442,7 +446,7 @@ public class ChatUserItemController implements Controller<Node> {
     inflate(clanLabel);
   }
 
-  public void inflate(Control control) {
+  private void inflate(Control control) {
     control.setMinWidth(Region.USE_PREF_SIZE);
     control.setMaxHeight(Region.USE_PREF_SIZE);
     control.setPrefWidth(Region.USE_COMPUTED_SIZE);

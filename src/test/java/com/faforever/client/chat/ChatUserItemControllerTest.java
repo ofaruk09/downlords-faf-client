@@ -1,13 +1,13 @@
 package com.faforever.client.chat;
 
 import com.faforever.client.chat.avatar.AvatarService;
+import com.faforever.client.clan.Clan;
 import com.faforever.client.clan.ClanService;
 import com.faforever.client.fx.MouseEvents;
 import com.faforever.client.fx.PlatformService;
 import com.faforever.client.game.GameBuilder;
 import com.faforever.client.game.JoinGameHelper;
 import com.faforever.client.i18n.I18n;
-import com.faforever.client.notification.NotificationService;
 import com.faforever.client.player.Player;
 import com.faforever.client.player.PlayerBuilder;
 import com.faforever.client.player.PlayerService;
@@ -15,13 +15,13 @@ import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.remote.domain.GameState;
 import com.faforever.client.replay.ReplayService;
-import com.faforever.client.reporting.ReportingService;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
 import com.faforever.client.theme.UiService;
 import com.google.common.eventbus.EventBus;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import org.hamcrest.CoreMatchers;
 import org.junit.Before;
@@ -46,6 +46,7 @@ import static org.mockito.Mockito.when;
 public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
 
   private static final String baseClanWebsite = "http://clans.faforever.com/clan_";
+
   private ChatUserItemController instance;
   @Mock
   private AvatarService avatarService;
@@ -61,10 +62,6 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
   private I18n i18n;
   @Mock
   private UiService uiService;
-  @Mock
-  private NotificationService notificationService;
-  @Mock
-  private ReportingService reportingService;
   @Mock
   private JoinGameHelper joinGameHelper;
   @Mock
@@ -86,6 +83,7 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
     when(i18n.get(eq("user.status.hosting"), anyString())).thenReturn("Hosting");
     when(i18n.get(eq("user.status.waiting"), anyString())).thenReturn("Waiting");
     when(i18n.get(eq("user.status.playing"), anyString())).thenReturn("Playing");
+    when(clanService.getClanByTag(anyString())).thenReturn(new Clan());
 
     loadFxml("theme/chat/chat_user_item.fxml", param -> instance);
   }
@@ -173,7 +171,8 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
     WaitForAsyncUtils.waitForFxEvents();
 
     assertThat(instance.usernameLabel.getTooltip(), not(nullValue()));
-    assertThat(instance.clanLabel.getTooltip(), not(nullValue()));
+    assertThat(instance.clanMenu.getTooltip(), not(nullValue()));
+    assertThat(instance.clanLabel.getTooltip(), nullValue());
   }
 
   @Test
@@ -182,7 +181,19 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
     WaitForAsyncUtils.waitForFxEvents();
 
     assertThat(instance.usernameLabel.getTooltip(), nullValue());
-    assertThat(instance.clanLabel.getTooltip(), nullValue());
+    assertThat(instance.clanMenu.getTooltip(), nullValue());
+  }
+
+  @Test
+  public void testOnMouseEnterUsernameIfClanNull() throws Exception {
+    instance.setPlayer(PlayerBuilder.create("junit").defaultValues().get());
+    instance.getPlayer().setClan("");
+
+    WaitForAsyncUtils.asyncFx(() -> instance.onMouseEnterUsername());
+    WaitForAsyncUtils.waitForFxEvents();
+
+    assertThat(instance.usernameLabel.getTooltip(), not(nullValue()));
+    assertThat(instance.clanMenu.getTooltip(), nullValue());
   }
 
   @Test
@@ -239,5 +250,39 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
     instance.setVisible(true);
     assertThat(instance.chatUserItemRoot.isVisible(), is(true));
     assertThat(instance.chatUserItemRoot.isManaged(), is(true));
+  }
+
+  @Test
+  public void testOnMouseExitedTag() throws Exception {
+    instance.clanMenu.setVisible(true);
+    instance.clanMenu.setMinWidth(Region.USE_PREF_SIZE);
+    instance.clanMenu.setMaxWidth(Region.USE_PREF_SIZE);
+    instance.clanMenu.setPrefWidth(Region.USE_PREF_SIZE);
+    instance.onMouseExitedTag();
+    assertThat(instance.clanMenu.getPrefWidth(), is(0.0));
+    assertThat(instance.clanMenu.isVisible(), not(true));
+  }
+
+  @Test
+  public void testOnMouseExitedTagIfClanMenuShows() throws Exception {
+    instance.clanMenu.setVisible(true);
+    instance.clanMenu.setMinWidth(Region.USE_PREF_SIZE);
+    instance.clanMenu.setMaxWidth(Region.USE_PREF_SIZE);
+    instance.clanMenu.setPrefWidth(Region.USE_PREF_SIZE);
+    instance.clanMenu.show();
+    instance.onMouseExitedTag();
+    assertThat(instance.clanMenu.getPrefWidth(), not(0.0));
+    assertThat(instance.clanMenu.isVisible(), is(true));
+  }
+
+  @Test
+  public void testOnMouseEnteredTag() throws Exception {
+    instance.clanMenu.setVisible(false);
+    instance.clanLabel.setVisible(true);
+    instance.onMouseEnterTag();
+    assertThat(instance.clanMenu.getPrefWidth(), not(0.0));
+    assertThat(instance.clanLabel.getPrefWidth(), is(0.0));
+    assertThat(instance.clanMenu.isVisible(), is(true));
+    assertThat(instance.clanLabel.isVisible(), is(false));
   }
 }

@@ -1,5 +1,6 @@
 package com.faforever.client.api;
 
+import com.faforever.client.clan.Clan;
 import com.faforever.client.coop.CoopCategory;
 import com.faforever.client.coop.CoopMission;
 import com.faforever.client.leaderboard.Ranked1v1EntryBean;
@@ -156,6 +157,31 @@ public class FafApiAccessorImplTest {
     assertThat(instance.getAchievementDefinitions(), is(result));
     verify(httpTransport).buildRequest("GET", "http://api.example.com/achievements?sort=order&page%5Bnumber%5D=1");
   }
+
+  @Test
+  public void testGetClans() throws Exception {
+    instance.requestFactory = httpTransport.createRequestFactory();
+    instance.credential = mock(Credential.class);
+
+    mockResponse("{'data': [" +
+        " {" +
+        "   'attributes': {'clan_id':'123'}" +
+        " }," +
+        " {" +
+        "   'attributes': {'clan_id':'456'}" +
+        " }" +
+        "]}");
+
+    Clan clan1 = new Clan();
+    clan1.setClanId("123");
+    Clan clan2 = new Clan();
+    clan2.setClanId("456");
+    List<Clan> result = Arrays.asList(clan1, clan2);
+
+    assertThat(instance.getClans(), is(result));
+    verify(httpTransport).buildRequest("GET", "http://api.example.com/clans");
+  }
+
 
   @Test
   public void testGetAchievementDefinition() throws Exception {
