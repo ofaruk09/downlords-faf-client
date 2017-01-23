@@ -92,7 +92,7 @@ public class TimeServiceImpl implements TimeService {
     if (chatPrefs.getUkTime().equals(TimeInfo.AUTO.name())) {
       return locale;
     }
-    return TimeInfo.valueOf(preferencesService.getPreferences().getChat().getUkTime()).getUsedLocale();
+    return preferencesService.getPreferences().getChat().getUkTime().getUsedLocale();
 
   }
 
