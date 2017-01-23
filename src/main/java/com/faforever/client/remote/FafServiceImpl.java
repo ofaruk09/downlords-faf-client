@@ -137,11 +137,6 @@ public class FafServiceImpl implements FafService {
   }
 
   @Override
-  public Long getSessionId() {
-    return fafServerAccessor.getSessionId();
-  }
-
-  @Override
   public CompletionStage<Ranked1v1Stats> getRanked1v1Stats() {
     return CompletableFuture.supplyAsync(fafApiAccessor::getRanked1v1Stats, threadPoolExecutor);
   }
