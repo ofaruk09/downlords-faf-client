@@ -22,12 +22,16 @@ import java.util.TimeZone;
 @Service
 public class TimeServiceImpl implements TimeService {
 
+  private final I18n i18n;
+  private final Locale locale;
+  private final PreferencesService preferencesService;
+
   @Inject
-  I18n i18n;
-  @Inject
-  Locale locale;
-  @Inject
-  PreferencesService preferencesService;
+  public TimeServiceImpl(Locale locale, PreferencesService preferencesService, I18n i18n) {
+    this.locale = locale;
+    this.preferencesService = preferencesService;
+    this.i18n = i18n;
+  }
 
   @Override
   public String timeAgo(Instant instant) {
@@ -87,7 +91,7 @@ public class TimeServiceImpl implements TimeService {
     );
   }
 
-  public Locale getCurrentTimeLocale() {
+  private Locale getCurrentTimeLocale() {
     ChatPrefs chatPrefs = preferencesService.getPreferences().getChat();
     if (chatPrefs.getUkTime().equals(TimeInfo.AUTO)) {
       return locale;
