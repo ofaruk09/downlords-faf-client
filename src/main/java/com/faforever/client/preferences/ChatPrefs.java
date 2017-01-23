@@ -11,8 +11,6 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleMapProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.scene.paint.Color;
@@ -29,7 +27,7 @@ public class ChatPrefs {
   private final IntegerProperty channelTabScrollPaneWidth;
   private final MapProperty<String, Color> userToColor;
   private final BooleanProperty hideFoeMessages;
-  private final StringProperty ukTime;
+  private final ObjectProperty<TimeInfo> ukTime;
 
   /**
    * Time in minutes a player has to be inactive to be considered idle.
@@ -38,7 +36,7 @@ public class ChatPrefs {
 
 
   public ChatPrefs() {
-    ukTime = new SimpleStringProperty(TimeInfo.AUTO.name());
+    ukTime = new SimpleObjectProperty<>(TimeInfo.AUTO);
     maxMessages = new SimpleIntegerProperty(500);
     zoom = new SimpleDoubleProperty(1);
     learnedAutoComplete = new SimpleBooleanProperty(false);
@@ -58,11 +56,11 @@ public class ChatPrefs {
     this.chatColorMode.set(chatColorMode);
   }
 
-  public String getUkTime() {
+  public TimeInfo getUkTime() {
     return ukTime.get();
   }
 
-  public void setUkTime(String time) {
+  public void setUkTime(TimeInfo time) {
     this.ukTime.set(time);
   }
 
@@ -98,11 +96,11 @@ public class ChatPrefs {
     return zoom.getValue();
   }
 
-  public void setZoom(Double zoom) {
+  public void setZoom(double zoom) {
     this.zoom.set(zoom);
   }
 
-  public void setZoom(double zoom) {
+  public void setZoom(Double zoom) {
     this.zoom.set(zoom);
   }
 

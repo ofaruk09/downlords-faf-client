@@ -1,14 +1,19 @@
 package com.faforever.client.preferences;
 
+import com.faforever.client.i18n.I18n;
+
+import javax.inject.Inject;
 import java.util.Locale;
 
 public enum TimeInfo {
-  AUTO("System", null), MILLITARY_TIME("24h", new Locale("de", "DE")), UK_TIME("12h", new Locale("en", "UK"));
+  AUTO("system", null), MILLITARY_TIME("24", new Locale("de", "DE")), UK_TIME("12", new Locale("en", "UK"));
   private final Locale usedLocale;
-  private final String dispayName;
+  private final String displayNameKey;
+  @Inject
+  private I18n i18n;
 
-  TimeInfo(String displayName, Locale usedLocale) {
-    this.dispayName = displayName;
+  TimeInfo(String displayNameKey, Locale usedLocale) {
+    this.displayNameKey = displayNameKey;
     this.usedLocale = usedLocale;
   }
 
@@ -17,7 +22,7 @@ public enum TimeInfo {
   }
 
   public String getDisplayName() {
-    return dispayName;
+    return i18n.get("settings.time." + displayNameKey);
   }
 
 

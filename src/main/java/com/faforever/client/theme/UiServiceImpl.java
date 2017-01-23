@@ -74,12 +74,12 @@ public class UiServiceImpl implements UiService {
   private static final String METADATA_FILE_NAME = "theme.properties";
   private final Set<Scene> scenes;
   private final Set<WebView> webViews;
-  private PreferencesService preferencesService;
-  private ThreadPoolExecutor threadPoolExecutor;
-  private I18n i18n;
-  private CacheManager cacheManager;
-  private MessageSource messageSource;
-  private ApplicationContext applicationContext;
+  private final PreferencesService preferencesService;
+  private final ThreadPoolExecutor threadPoolExecutor;
+  private final I18n i18n;
+  private final CacheManager cacheManager;
+  private final MessageSource messageSource;
+  private final ApplicationContext applicationContext;
   private WatchService watchService;
   private ObservableMap<String, Theme> themesByFolderName;
   private Map<Theme, String> folderNamesByTheme;

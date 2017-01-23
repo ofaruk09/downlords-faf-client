@@ -1,16 +1,24 @@
 package com.faforever.client.preferences;
 
 
+import com.faforever.client.i18n.I18n;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+
+@Component
 public enum LanguageInfo {
-  AUTO("auto", null, "System"), EN("en", "UK", "English"), DE("de", "DE", "Deutsch"), RU("ru", "RU", "ру́сский");
+  AUTO(null, null, "system"), EN("en", "UK", "english"), DE("de", "DE", "german"), RU("ru", "RU", "russian");
 
   private final String languageCode;
   private final String countryCode;
-  private final String dispayName;
+  private final String displayNameKey;
+  @Inject
+  private I18n i18n;
 
-  LanguageInfo(String languageCode, String countryCode, String displayName) {
+  LanguageInfo(String languageCode, String countryCode, String displayNameKey) {
     this.countryCode = countryCode;
-    this.dispayName = displayName;
+    this.displayNameKey = displayNameKey;
     this.languageCode = languageCode;
   }
 
@@ -18,11 +26,13 @@ public enum LanguageInfo {
   public String getLanguageCode() {
     return languageCode;
   }
+
   public String getCountryCode() {
     return countryCode;
   }
+
   public String getDisplayName() {
-    return dispayName;
+    return i18n.get("settings.languages." + displayNameKey);
   }
 
 

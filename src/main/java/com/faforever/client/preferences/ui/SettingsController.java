@@ -10,7 +10,7 @@ import com.faforever.client.notification.NotificationService;
 import com.faforever.client.notification.PersistentNotification;
 import com.faforever.client.notification.Severity;
 import com.faforever.client.preferences.LanguageInfo;
-import com.faforever.client.preferences.LanguagePrefs;
+import com.faforever.client.preferences.LocalizationPrefs;
 import com.faforever.client.preferences.NotificationsPrefs;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
@@ -242,13 +242,13 @@ public class SettingsController implements Controller<Node> {
     timeComboBox.setOnAction(this::newTimeFormatSelected);
     timeComboBox.setDisable(false);
     timeComboBox.setFocusTraversable(true);
-    timeComboBox.getSelectionModel().select(TimeInfo.valueOf(preferences.getChat().getUkTime()));
+    timeComboBox.getSelectionModel().select(preferences.getChat().getUkTime());
   }
 
   private void newTimeFormatSelected(Event event) {
-    logger.debug("A new time format was elected", timeComboBox.getValue());
+    logger.debug("A new time format was selected: {}", timeComboBox.getValue());
     Preferences preferences = preferencesService.getPreferences();
-    preferences.getChat().setUkTime(timeComboBox.getValue().name());
+    preferences.getChat().setUkTime(timeComboBox.getValue());
     preferencesService.storeInBackground();
   }
 
@@ -292,21 +292,20 @@ public class SettingsController implements Controller<Node> {
     languageComboBox.setButtonCell(new StringListCell<>(LanguageInfo::getDisplayName));
     languageComboBox.setCellFactory(param -> new StringListCell<>(LanguageInfo::getDisplayName));
     languageComboBox.setItems(FXCollections.observableArrayList(LanguageInfo.values()));
-    LanguageInfo languageInfo = LanguageInfo.valueOf(preferences.getLanguagePrefs().getLanguage());
+    LanguageInfo languageInfo = preferences.getLocalization().getLanguage();
     languageComboBox.getSelectionModel().select(languageInfo.ordinal());
-    languageComboBox.setDisable(false);
     languageComboBox.setOnAction(event -> onLanguageSelected(preferences));
   }
 
   private void onLanguageSelected(Preferences preferences) {
-    LanguagePrefs languagePrefs = preferences.getLanguagePrefs();
-    if (Objects.equals(languageComboBox.getValue(), LanguageInfo.valueOf(languagePrefs.getLanguage()).getDisplayName())) {
+    LocalizationPrefs localizationPrefs = preferences.getLocalization();
+    if (Objects.equals(languageComboBox.getValue(), localizationPrefs.getLanguage().getDisplayName())) {
       return;
     }
-    logger.debug("A new language was elected", languageComboBox.getValue());
-    languagePrefs.setLanguage(languageComboBox.getValue().name());
+    logger.debug("A new language was selected: {}", languageComboBox.getValue());
+    localizationPrefs.setLanguage(languageComboBox.getValue());
     preferencesService.storeInBackground();
-    notificationService.addNotification(new PersistentNotification(i18n.get("settings.languages.restart.title") + "\n" + i18n.get("settings.languages.restart.message"), Severity.WARN, Collections.singletonList(new Action(i18n.get("settings.languages.restart"), new ActionCallback() {
+    notificationService.addNotification(new PersistentNotification(i18n.get("settings.languages.restart.message"), Severity.WARN, Collections.singletonList(new Action(i18n.get("settings.languages.restart"), new ActionCallback() {
       @Override
       public void call(Event event) {
           Stage stage = (Stage) languageComboBox.getScene().getWindow();

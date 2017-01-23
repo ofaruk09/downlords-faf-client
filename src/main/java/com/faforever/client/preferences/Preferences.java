@@ -24,7 +24,7 @@ public class Preferences {
   private final NotificationsPrefs notification;
   private final StringProperty themeName;
   private final StringProperty lastGameType;
-  private final LanguagePrefs language;
+  private final LocalizationPrefs localizationPrefs;
   private final StringProperty lastGameTitle;
   private final StringProperty lastMap;
   private final BooleanProperty rememberLastTab;
@@ -39,7 +39,7 @@ public class Preferences {
   public Preferences() {
     chat = new ChatPrefs();
     login = new LoginPrefs();
-    language = new LanguagePrefs();
+    localizationPrefs = new LocalizationPrefs();
     mainWindow = new WindowPrefs();
     forgedAlliance = new ForgedAlliancePrefs();
     themeName = new SimpleStringProperty(DEFAULT_THEME_NAME);
@@ -73,8 +73,8 @@ public class Preferences {
     return mainWindow;
   }
 
-  public LanguagePrefs getLanguagePrefs() {
-    return language;
+  public LocalizationPrefs getLocalization() {
+    return localizationPrefs;
   }
 
   public ForgedAlliancePrefs getForgedAlliance() {
