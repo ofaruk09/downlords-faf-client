@@ -14,7 +14,6 @@ import com.faforever.client.player.PlayerService;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.remote.domain.GameState;
-import com.faforever.client.replay.ReplayService;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
 import com.faforever.client.theme.UiService;
 import com.google.common.eventbus.EventBus;
@@ -57,8 +56,6 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
   @Mock
   private ChatService chatService;
   @Mock
-  private ReplayService replayService;
-  @Mock
   private I18n i18n;
   @Mock
   private UiService uiService;
@@ -75,7 +72,7 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
 
   @Before
   public void setUp() throws Exception {
-    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, replayService, i18n, uiService, joinGameHelper, eventBus, clanService, playerService, platformService, baseClanWebsite);
+    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, i18n, uiService, joinGameHelper, eventBus, clanService, playerService, platformService, baseClanWebsite);
 
     Preferences preferences = new Preferences();
     when(preferencesService.getPreferences()).thenReturn(preferences);

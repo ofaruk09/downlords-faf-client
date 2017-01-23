@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +29,12 @@ public class ClanServiceImplTest extends AbstractPlainJavaFxTest {
   }
 
   @Test
-  public void testClanService() throws Exception {
+  public void testgetClanByTag() throws Exception {
     assertThat(instance.getClanByTag("XXX").getClanName(), is("test1"));
+  }
+
+  @Test
+  public void testgetClanByTagIfTagEmpty() throws Exception {
+    assertThat(instance.getClanByTag(""), nullValue());
   }
 }
