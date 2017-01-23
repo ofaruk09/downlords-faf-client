@@ -456,7 +456,7 @@ public class ChatUserItemController implements Controller<Node> {
   private void inflate(Control control) {
     control.setMinWidth(Region.USE_PREF_SIZE);
     control.setMaxHeight(Region.USE_PREF_SIZE);
-    control.setPrefWidth(Region.USE_COMPUTED_SIZE);
+    control.setPrefWidth(Region.USE_PREF_SIZE);
     control.setVisible(true);
   }
 

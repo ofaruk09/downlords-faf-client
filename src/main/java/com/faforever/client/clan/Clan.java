@@ -4,7 +4,7 @@ import com.google.api.client.util.Key;
 
 public class Clan {
 
-  @Key("attributes.clan_desc")
+  @Key("clan_desc")
   private String description;
   @Key("clan_founder_id")
   private Integer clanFounderId;
