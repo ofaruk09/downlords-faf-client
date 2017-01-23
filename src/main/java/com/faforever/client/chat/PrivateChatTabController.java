@@ -99,37 +99,40 @@ public class PrivateChatTabController extends AbstractChatTabController {
     privateChatTabRoot.setId(username);
     privateChatTabRoot.setText(username);
 
-    //Load receiver information for detail pane
     userPlayer = playerService.getPlayerForUsername(username);
     if (userPlayer != null) {
-      CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
-
-      usernameLabel.setText(username);
-      userImageView.setImage(IdenticonUtil.createIdenticon(userPlayer.getId()));
-      countryImageView.setImage(countryFlagService.loadCountryFlag(userPlayer.getCountry()));
-      countryLabel.setText(countryCode == null ? userPlayer.getCountry() : countryCode.getName());
-
-      userPlayer.globalRatingMeanProperty().addListener((observable) -> loadReceiverGlobalRatingInformation(userPlayer));
-      userPlayer.globalRatingDeviationProperty().addListener((observable) -> loadReceiverGlobalRatingInformation(userPlayer));
-      userPlayer.leaderboardRatingMeanProperty().addListener((observable) -> loadReceiverLadderRatingInformation(userPlayer));
-      userPlayer.leaderboardRatingDeviationProperty().addListener((observable) -> loadReceiverLadderRatingInformation(userPlayer));
-      loadReceiverGlobalRatingInformation(userPlayer);
-      loadReceiverLadderRatingInformation(userPlayer);
-
-      gamesPlayedLabel.textProperty().bind(userPlayer.numberOfGamesProperty().asString());
-      loadPlayerGameInformation(userPlayer.getGame());
-      userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
-        loadPlayerGameInformation(newValue);
-      });
+      loadDetailPane(userPlayer);
     }
   }
 
+  private void loadDetailPane(Player player) {
+    CountryCode countryCode = CountryCode.getByCode(userPlayer.getCountry());
+
+    usernameLabel.setText(player.getUsername());
+    userImageView.setImage(IdenticonUtil.createIdenticon(userPlayer.getId()));
+    countryImageView.setImage(countryFlagService.loadCountryFlag(userPlayer.getCountry()));
+    countryLabel.setText(countryCode == null ? userPlayer.getCountry() : countryCode.getName());
+
+    userPlayer.globalRatingMeanProperty().addListener((observable) -> loadReceiverGlobalRatingInformation(userPlayer));
+    userPlayer.globalRatingDeviationProperty().addListener((observable) -> loadReceiverGlobalRatingInformation(userPlayer));
+    userPlayer.leaderboardRatingMeanProperty().addListener((observable) -> loadReceiverLadderRatingInformation(userPlayer));
+    userPlayer.leaderboardRatingDeviationProperty().addListener((observable) -> loadReceiverLadderRatingInformation(userPlayer));
+    loadReceiverGlobalRatingInformation(userPlayer);
+    loadReceiverLadderRatingInformation(userPlayer);
+
+    gamesPlayedLabel.textProperty().bind(userPlayer.numberOfGamesProperty().asString());
+    loadPlayerGameInformation(userPlayer.getGame());
+    userPlayer.gameProperty().addListener((observable, oldValue, newValue) -> {
+      loadPlayerGameInformation(newValue);
+    });
+  }
+
   private void loadReceiverGlobalRatingInformation(Player player) {
-    globalRatingLevel.setText(Math.round(player.getGlobalRatingMean()) + " +/- " + Math.round(player.getGlobalRatingDeviation() * 3f) + "   (" + RatingUtil.getGlobalRating(player) + ")");
+    globalRatingLevel.setText(i18n.get("chat.privateMessage.ratingFormat", Math.round(player.getGlobalRatingMean()), Math.round(player.getGlobalRatingDeviation() * 3f), RatingUtil.getGlobalRating(player)));
   }
 
   private void loadReceiverLadderRatingInformation(Player player) {
-    leaderboardRatingLevel.setText(Math.round(player.getLeaderboardRatingMean()) + " +/- " + Math.round(player.getLeaderboardRatingDeviation() * 3f) + "   (" + RatingUtil.getLeaderboardRating(player) + ")");
+    leaderboardRatingLevel.setText(i18n.get("chat.privateMessage.ratingFormat", Math.round(player.getLeaderboardRatingMean()), Math.round(player.getLeaderboardRatingDeviation() * 3f), RatingUtil.getLeaderboardRating(player)));
   }
 
   private void loadPlayerGameInformation(Game game) {
@@ -139,39 +142,39 @@ public class PrivateChatTabController extends AbstractChatTabController {
 
     gameTitleLabel.textProperty().unbind();
 
-    if (game != null) {
-      gamePreview.setVisible(true);
-      gamePreview.setManaged(true);
-
-      game.statusProperty().addListener((observable, oldValue, newValue) -> {
-        setIsInGameLabel();
-        setJoinSpectateButton();
-        gameHostVBox.setManaged(false);
-        gameHostVBox.setVisible(false);
-      });
-      setJoinSpectateButton();
-
-      gameTitleLabel.textProperty().bind(game.titleProperty());
-
-      loadMapPreview(game.getMapFolderName());
-      game.mapFolderNameProperty().addListener((observable, oldValue, newValue) -> loadMapPreview(newValue));
-
-      InvalidationListener playerCountListener = (observable) -> gamePlayerCountLabel.setText(game.getNumPlayers() + "/" + game.getMaxPlayers());
-      playerCountListener.invalidated(null);
-      game.numPlayersProperty().addListener(playerCountListener);
-      game.maxPlayersProperty().addListener(playerCountListener);
-
-      featuredModLabel.setText(game.getFeaturedMod());
-
-      if (game.getStatus() == GameStatus.OPEN) {
-        gameHostVBox.setManaged(true);
-        gameHostVBox.setVisible(true);
-        gameHostLabel.setText(game.getHost());
-      }
-
-    } else {
+    if (game == null) {
       gamePreview.setVisible(false);
       gamePreview.setManaged(false);
+      return;
+    }
+
+    gamePreview.setVisible(true);
+    gamePreview.setManaged(true);
+
+    game.statusProperty().addListener((observable, oldValue, newValue) -> {
+      setIsInGameLabel();
+      setJoinSpectateButton();
+      gameHostVBox.setManaged(false);
+      gameHostVBox.setVisible(false);
+    });
+    setJoinSpectateButton();
+
+    gameTitleLabel.textProperty().bind(game.titleProperty());
+
+    loadMapPreview(game.getMapFolderName());
+    game.mapFolderNameProperty().addListener((observable, oldValue, newValue) -> loadMapPreview(newValue));
+
+    InvalidationListener playerCountListener = (observable) -> gamePlayerCountLabel.setText(i18n.get("chat.privateMessage.game.playersFormat", game.getNumPlayers(), game.getMaxPlayers()));
+    playerCountListener.invalidated(null);
+    game.numPlayersProperty().addListener(playerCountListener);
+    game.maxPlayersProperty().addListener(playerCountListener);
+
+    featuredModLabel.setText(game.getFeaturedMod());
+
+    if (game.getStatus() == GameStatus.OPEN) {
+      gameHostVBox.setManaged(true);
+      gameHostVBox.setVisible(true);
+      gameHostLabel.setText(game.getHost());
     }
   }
 
