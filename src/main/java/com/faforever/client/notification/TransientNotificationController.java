@@ -71,7 +71,6 @@ public class TransientNotificationController implements Controller<Node> {
   }
 
   private void animate(Number height) {
-
     timeline = new Timeline();
     timeline.setAutoReverse(true);
     timeline.setCycleCount(2);
@@ -90,6 +89,14 @@ public class TransientNotificationController implements Controller<Node> {
       return;
     }
     parent.getChildren().remove(transientNotificationRoot);
+  }
+
+  public Timeline getTimeline() {
+    return timeline;
+  }
+
+  public void setTimeline(Timeline timeline) {
+    this.timeline = timeline;
   }
 
   public void setNotification(TransientNotification notification) {
