@@ -236,8 +236,8 @@ public class SettingsController implements Controller<Node> {
   }
 
   private void configureTimeSetting(Preferences preferences) {
-    timeComboBox.setButtonCell(new StringListCell<>(TimeInfo::getDisplayName));
-    timeComboBox.setCellFactory(param -> new StringListCell<>(TimeInfo::getDisplayName));
+    timeComboBox.setButtonCell(new StringListCell<>(timeInfo -> timeInfo.getDisplayName(i18n)));
+    timeComboBox.setCellFactory(param -> new StringListCell<>(timeInfo -> timeInfo.getDisplayName(i18n)));
     timeComboBox.setItems(FXCollections.observableArrayList(TimeInfo.values()));
     timeComboBox.setOnAction(this::newTimeFormatSelected);
     timeComboBox.setDisable(false);
@@ -289,8 +289,8 @@ public class SettingsController implements Controller<Node> {
   }
 
   private void configureLanguageSelection(Preferences preferences) {
-    languageComboBox.setButtonCell(new StringListCell<>(LanguageInfo::getDisplayName));
-    languageComboBox.setCellFactory(param -> new StringListCell<>(LanguageInfo::getDisplayName));
+    languageComboBox.setButtonCell(new StringListCell<>(languageInfo -> languageInfo.getDisplayName(i18n)));
+    languageComboBox.setCellFactory(param -> new StringListCell<>(languageInfo -> languageInfo.getDisplayName(i18n)));
     languageComboBox.setItems(FXCollections.observableArrayList(LanguageInfo.values()));
     LanguageInfo languageInfo = preferences.getLocalization().getLanguage();
     languageComboBox.getSelectionModel().select(languageInfo.ordinal());
@@ -299,7 +299,7 @@ public class SettingsController implements Controller<Node> {
 
   private void onLanguageSelected(Preferences preferences) {
     LocalizationPrefs localizationPrefs = preferences.getLocalization();
-    if (Objects.equals(languageComboBox.getValue(), localizationPrefs.getLanguage().getDisplayName())) {
+    if (Objects.equals(languageComboBox.getValue(), localizationPrefs.getLanguage().getDisplayName(i18n))) {
       return;
     }
     logger.debug("A new language was selected: {}", languageComboBox.getValue());

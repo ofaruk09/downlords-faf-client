@@ -27,12 +27,10 @@ public class I18nImpl implements I18n {
 
   @PostConstruct
   public void init() {
+    userSpecificLocale = locale;
     LanguageInfo languageInfo = preferencesService.getPreferences().getLocalization().getLanguage();
-    String languageCode = languageInfo.getLanguageCode();
-    if (!languageCode.equals(LanguageInfo.AUTO.getLanguageCode())) {
-      userSpecificLocale = new Locale(languageCode, languageInfo.getCountryCode());
-    }else {
-      userSpecificLocale=locale;
+    if (!languageInfo.equals(LanguageInfo.AUTO)) {
+      userSpecificLocale = new Locale(languageInfo.getLanguageCode(), languageInfo.getCountryCode());
     }
   }
 
