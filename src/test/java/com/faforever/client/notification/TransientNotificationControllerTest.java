@@ -4,27 +4,25 @@ import com.faforever.client.fx.MouseEvents;
 import com.faforever.client.preferences.Preferences;
 import com.faforever.client.preferences.PreferencesService;
 import com.faforever.client.test.AbstractPlainJavaFxTest;
-import javafx.animation.Animation.Status;
-import javafx.animation.Timeline;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Pane;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class TransientNotificationControllerTest extends AbstractPlainJavaFxTest {
 
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
   private TransientNotificationController instance;
-
   @Mock
   private PreferencesService preferencesService;
 
@@ -57,15 +55,7 @@ public class TransientNotificationControllerTest extends AbstractPlainJavaFxTest
 
   @Test
   public void testOnRightClick() throws Exception {
-    Image image = new Image(getClass().getResource("/theme/images/close.png").toExternalForm());
-    TransientNotification notification = new TransientNotification("title", "text", image);
-    instance.setNotification(notification);
-    Pane mock = Mockito.mock(Pane.class);
-    instance.transientNotificationRoot = mock;
-    instance.setTimeline(new Timeline());
+    expectedException.expectMessage("timeline");
     instance.onClicked(MouseEvents.generateClick(MouseButton.SECONDARY, 1));
-
-    verify(mock).getParent();
-    Assert.assertEquals(instance.getTimeline().getStatus(), Status.STOPPED);
   }
 }

@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Objects;
 
 import static javafx.util.Duration.millis;
 
@@ -83,20 +84,13 @@ public class TransientNotificationController implements Controller<Node> {
   }
 
   private void dismiss() {
+    Objects.requireNonNull(timeline, "timeline has not been set");
     timeline.stop();
     Pane parent = (Pane) transientNotificationRoot.getParent();
     if (parent == null) {
       return;
     }
     parent.getChildren().remove(transientNotificationRoot);
-  }
-
-  public Timeline getTimeline() {
-    return timeline;
-  }
-
-  public void setTimeline(Timeline timeline) {
-    this.timeline = timeline;
   }
 
   public void setNotification(TransientNotification notification) {
