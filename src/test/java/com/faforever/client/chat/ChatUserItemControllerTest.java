@@ -44,8 +44,6 @@ import static org.mockito.Mockito.when;
 
 public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
 
-  private static final String baseClanWebsite = "http://clans.faforever.com/clan_";
-
   private ChatUserItemController instance;
   @Mock
   private AvatarService avatarService;
@@ -72,7 +70,7 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
 
   @Before
   public void setUp() throws Exception {
-    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, i18n, uiService, joinGameHelper, eventBus, clanService, playerService, platformService, baseClanWebsite);
+    instance = new ChatUserItemController(preferencesService, avatarService, countryFlagService, chatService, i18n, uiService, joinGameHelper, eventBus, clanService, playerService, platformService, "http://clans.faforever.com/clan_");
 
     Preferences preferences = new Preferences();
     when(preferencesService.getPreferences()).thenReturn(preferences);
@@ -96,6 +94,7 @@ public class ChatUserItemControllerTest extends AbstractPlainJavaFxTest {
     instance.setPlayer(PlayerBuilder.create("junit").defaultValues().get());
 
     assertThat(instance.clanMenu.getText(), is("[e]"));
+    assertThat(instance.clanLabel.getText(), is("[e]"));
     assertThat(instance.countryImageView.isVisible(), is(true));
     verify(countryFlagService).loadCountryFlag("US");
   }
