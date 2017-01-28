@@ -94,9 +94,6 @@ public class TransientNotificationController implements Controller<Node> {
   public void setNotification(TransientNotification notification) {
     titleLabel.setText(notification.getTitle());
     messageLabel.setText(notification.getText());
-    //fixes wrapping issue
-    messageLabel.setWrapText(true);
-    messageLabel.setMinHeight(Region.USE_PREF_SIZE);
     imageView.setImage(notification.getImage());
     action = notification.getActionCallback();
   }

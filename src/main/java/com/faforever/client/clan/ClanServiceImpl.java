@@ -49,17 +49,6 @@ public class ClanServiceImpl implements ClanService {
 
   @Override
   public Clan getClanByTag(String tag) {
-    /* example Clan
-    if(tag.equals("DEV"))
-    {
-      Clan clan=new Clan();
-      clan.setClanMembers(2);
-      clan.setDescription("some des");
-      clan.setClanName("Developers");
-      clan.setLeaderName("Com");
-      return clan;
-    }
-    */
     return noCatch(() -> {
 
       if (clanByTagFuture.get(60, TimeUnit.SECONDS).containsKey(tag)) {

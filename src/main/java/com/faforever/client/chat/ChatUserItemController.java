@@ -236,7 +236,6 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   private void setClanTag(String newValue) {
-    // code to test can be inserted here set new Value to some existing clanTag and the players clan...player.setClan("TAG")
     if (StringUtils.isEmpty(newValue)) {
       clanLabel.setVisible(false);
       return;
@@ -331,7 +330,6 @@ public class ChatUserItemController implements Controller<Node> {
   }
 
   private void configureClanMenu() {
-    //code to test as api is bugged: if(player.getUsername().equals("axel12"))player.setClan("DEV");
     setClanTag(player.getClan());
     player.clanProperty().addListener(new WeakChangeListener<>(clanChangeListener));
   }
@@ -382,7 +380,7 @@ public class ChatUserItemController implements Controller<Node> {
 
       MenuItem page = new MenuItem(i18n.get("clan.visitPage"));
       page.setOnAction(event -> {
-        platformService.showDocument(baseClanWebsite + clan.getClanId());
+        platformService.showDocument(String.format(baseClanWebsite, clan.getClanId()));
         // TODO: Could be viewed in clan section (if implemented)
       });
       clanMenu.getItems().add(0, page);
